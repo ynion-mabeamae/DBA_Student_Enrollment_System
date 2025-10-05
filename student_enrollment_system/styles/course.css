@@ -1,0 +1,735 @@
+/* course.css - Edit button same size as Delete button */
+:root {
+    --primary: #4361ee;
+    --primary-dark: #3a56d4;
+    --secondary: #7209b7;
+    --success: #4cc9f0;
+    --danger: #f72585;
+    --warning: #f8961e;
+    --info: #4895ef;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #adb5bd;
+    --gray-600: #6c757d;
+    --gray-700: #495057;
+    --gray-800: #343a40;
+    --gray-900: #212529;
+    --border-radius: 8px;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: var(--gray-800);
+    line-height: 1.6;
+}
+
+/* Main Content */
+.main-content {
+    background: white;
+    min-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Page Header */
+.page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #e01e69;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+}
+
+.btn-outline:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-print {
+    background: var(--gray-600);
+    color: white;
+}
+
+/* Search Container */
+.search-container {
+    background: white;
+    padding: 1.5rem;
+    margin: 0 2rem 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--gray-200);
+}
+
+.search-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    align-items: end;
+}
+
+.search-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.search-group label {
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 0.9rem;
+}
+
+.search-input {
+    padding: 0.75rem;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.search-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.search-actions .btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 100px; /* same width */
+    height: 42px; /* same height as Edit/Delete */
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 10px;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+/* Table Container */
+.table-container {
+    background: white;
+    margin: 0 2rem 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+}
+
+.table-container h2 {
+    padding: 1.5rem;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    font-size: 1.25rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+/* Table Styles */
+#courses-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+#courses-table thead {
+    background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-700) 100%);
+    color: white;
+}
+
+#courses-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#courses-table tbody tr {
+    border-bottom: 1px solid var(--gray-200);
+    transition: var(--transition);
+}
+
+#courses-table tbody tr:hover {
+    background: var(--gray-50);
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#courses-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.course-code {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.course-units {
+    background: var(--success);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Badges */
+.hours-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lecture-badge {
+    background: var(--info);
+    color: white;
+}
+
+.lab-badge {
+    background: var(--warning);
+    color: white;
+}
+
+.badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-info {
+    background: var(--info);
+    color: white;
+}
+
+.text-muted {
+    color: var(--gray-500) !important;
+}
+
+/* Actions - EDIT BUTTON SAME SIZE AS DELETE */
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.actions .btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+    border-radius: 10px;
+    min-width: 100px; /* Forces equal width */
+    height: 42px; /* Forces equal height */
+    box-sizing: border-box;
+}
+
+/* Edit button */
+.actions .btn.btn-edit {
+    background: var(--primary);
+    color: white;
+}
+
+.actions .btn.btn-edit:hover {
+    background: var(--primary-dark);
+}
+
+/* Delete button */
+.actions .btn.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.actions .btn.btn-danger:hover {
+    background: #e01e69;
+}
+
+/* No Records */
+.no-records {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray-600);
+}
+
+.no-records a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.no-records a:hover {
+    text-decoration: underline;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: white;
+    margin: 2rem auto;
+    width: 90%;
+    max-width: 500px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    animation: slideDown 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    padding: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+.close-modal:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Form Styles */
+form {
+    padding: 1.25rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.625rem;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.form-actions .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.85rem;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.loading {
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--gray-300);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 0.75rem;
+}
+
+.loading-overlay span {
+    color: var(--gray-600);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.toast {
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    color: white;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    animation: slideInRight 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 300px;
+}
+
+.toast.success {
+    background: var(--success);
+}
+
+.toast.error {
+    background: var(--danger);
+}
+
+.toast.warning {
+    background: var(--warning);
+}
+
+.toast.info {
+    background: var(--info);
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+    }
+    
+    .main-content {
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+    
+    .table-container {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+    
+    #courses-table {
+        border: 1px solid #000;
+    }
+    
+    #courses-table th {
+        background: #f0f0f0 !important;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 1.5rem;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .search-container,
+    .table-container {
+        margin: 0 1rem 1rem;
+    }
+    
+    .search-box {
+        grid-template-columns: 1fr;
+    }
+    
+    .search-actions {
+        justify-content: stretch;
+    }
+    
+    .search-actions .btn {
+        flex: 1;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .actions .btn {
+        min-width: 100%; /* Full width on mobile */
+        justify-content: center;
+    }
+    
+    .modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+        max-width: none;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    #courses-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    form {
+        padding: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .actions .btn {
+        padding: 0.6rem 1rem; /* Maintain same size on mobile */
+        font-size: 0.85rem;
+    }
+}
+
+/* Extra Small Devices */
+@media (max-width: 360px) {
+    .modal-content {
+        margin: 0.5rem;
+        width: calc(100% - 1rem);
+    }
+    
+    .modal-header {
+        padding: 0.875rem;
+    }
+    
+    form {
+        padding: 0.875rem;
+    }
+    
+    .form-group {
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-group input,
+    .form-group select {
+        padding: 0.5rem;
+    }
+    
+    .actions .btn {
+        padding: 0.5rem 0.8rem; /* Maintain same size on very small screens */
+        font-size: 0.8rem;
+    }
+}
