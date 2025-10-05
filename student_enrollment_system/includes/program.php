@@ -99,7 +99,7 @@ $total_programs = $programs->num_rows;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Management</title>
+    <title>Program</title>
     <link rel="stylesheet" href="../styles/program.css">
 </head>
 <body>
@@ -129,7 +129,7 @@ $total_programs = $programs->num_rows;
     <?php endif; ?>
 
     <div class="page-header">
-        <h1>Program Management</h1>
+        <h1>Program</h1>
         <button class="btn btn-primary" id="openProgramModal">Add New Program</button>
     </div>
 
