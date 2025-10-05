@@ -4,84 +4,84 @@ require_once '../includes/config.php';
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['add_instructor'])) {
-        $last_name = $_POST['last_name'];
-        $first_name = $_POST['first_name'];
-        $email = $_POST['email'];
-        $dept_id = $_POST['dept_id'] ?? null;
-        
-        $sql = "INSERT INTO tblinstructor (last_name, first_name, email, dept_id) 
-                VALUES (?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssi", $last_name, $first_name, $email, $dept_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Instructor added successfully!";
-        } else {
-            $_SESSION['error_message'] = "Error adding instructor: " . $conn->error;
-        }
-        
-        // Redirect to prevent form resubmission
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
+  if (isset($_POST['add_instructor'])) {
+    $last_name = $_POST['last_name'];
+    $first_name = $_POST['first_name'];
+    $email = $_POST['email'];
+    $dept_id = $_POST['dept_id'] ?? null;
+    
+    $sql = "INSERT INTO tblinstructor (last_name, first_name, email, dept_id) 
+            VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssi", $last_name, $first_name, $email, $dept_id);
+    
+    if ($stmt->execute()) {
+      $_SESSION['success_message'] = "Instructor added successfully!";
+    } else {
+      $_SESSION['error_message'] = "Error adding instructor: " . $conn->error;
     }
     
-    if (isset($_POST['update_instructor'])) {
-        $instructor_id = $_POST['instructor_id'];
-        $last_name = $_POST['last_name'];
-        $first_name = $_POST['first_name'];
-        $email = $_POST['email'];
-        $dept_id = $_POST['dept_id'] ?? null;
-        
-        $sql = "UPDATE tblinstructor 
-                SET last_name = ?, first_name = ?, email = ?, dept_id = ?
-                WHERE instructor_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssii", $last_name, $first_name, $email, $dept_id, $instructor_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Instructor updated successfully!";
-        } else {
-            $_SESSION['error_message'] = "Error updating instructor: " . $conn->error;
-        }
-        
-        // Redirect to prevent form resubmission
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
+    // Redirect to prevent form resubmission
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+  }
+    
+  if (isset($_POST['update_instructor'])) {
+    $instructor_id = $_POST['instructor_id'];
+    $last_name = $_POST['last_name'];
+    $first_name = $_POST['first_name'];
+    $email = $_POST['email'];
+    $dept_id = $_POST['dept_id'] ?? null;
+    
+    $sql = "UPDATE tblinstructor 
+            SET last_name = ?, first_name = ?, email = ?, dept_id = ?
+            WHERE instructor_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssii", $last_name, $first_name, $email, $dept_id, $instructor_id);
+    
+    if ($stmt->execute()) {
+      $_SESSION['success_message'] = "Instructor updated successfully!";
+    } else {
+      $_SESSION['error_message'] = "Error updating instructor: " . $conn->error;
     }
     
-    if (isset($_POST['delete_instructor'])) {
-        $instructor_id = $_POST['instructor_id'];
-        
-        $sql = "DELETE FROM tblinstructor WHERE instructor_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $instructor_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Instructor deleted successfully!";
-        } else {
-            $_SESSION['error_message'] = "Error deleting instructor: " . $conn->error;
-        }
-        
-        // Redirect to prevent form resubmission
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
+    // Redirect to prevent form resubmission
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+  }
+    
+  if (isset($_POST['delete_instructor'])) {
+    $instructor_id = $_POST['instructor_id'];
+    
+    $sql = "DELETE FROM tblinstructor WHERE instructor_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $instructor_id);
+      
+    if ($stmt->execute()) {
+      $_SESSION['success_message'] = "Instructor deleted successfully!";
+    } else {
+      $_SESSION['error_message'] = "Error deleting instructor: " . $conn->error;
     }
+      
+    // Redirect to prevent form resubmission
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+  }
 }
 
 // Get instructor data for editing if instructor_id is provided
 $edit_instructor = null;
 if (isset($_GET['edit_id'])) {
-    $edit_id = $_GET['edit_id'];
-    $stmt = $conn->prepare("
-        SELECT i.*, d.dept_name 
-        FROM tblinstructor i 
-        LEFT JOIN tbldepartment d ON i.dept_id = d.dept_id 
-        WHERE i.instructor_id = ?
-    ");
-    $stmt->bind_param("i", $edit_id);
-    $stmt->execute();
-    $edit_instructor = $stmt->get_result()->fetch_assoc();
+  $edit_id = $_GET['edit_id'];
+  $stmt = $conn->prepare("
+      SELECT i.*, d.dept_name 
+      FROM tblinstructor i 
+      LEFT JOIN tbldepartment d ON i.dept_id = d.dept_id 
+      WHERE i.instructor_id = ?
+  ");
+  $stmt->bind_param("i", $edit_id);
+  $stmt->execute();
+  $edit_instructor = $stmt->get_result()->fetch_assoc();
 }
 
 // Get all instructors with department information
