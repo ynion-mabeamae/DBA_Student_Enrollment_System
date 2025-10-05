@@ -115,12 +115,9 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
 	<div class="main-content">
 		<div class="page-header">
 			<h1>Course</h1>
-			<div class="action-buttons">
+			<div class="header-actions">
 				<button class="btn" onclick="openModal('add-course-modal')">
-						Add New Course
-				</button>
-				<button class="btn btn-print no-print" onclick="printCourseTable()">
-						Print List
+					Add New Course
 				</button>
 			</div>
 		</div>
