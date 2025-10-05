@@ -367,7 +367,7 @@ body {
 }
 
 .actions .btn-edit {
-    background: var(--primary);
+    background: var(--info);
     color: white;
 }
 
