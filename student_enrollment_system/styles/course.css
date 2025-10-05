@@ -259,11 +259,10 @@ body {
 }
 
 .course-units {
-    background: var(--success);
-    color: white;
+    color: black;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 600;
 }
 
@@ -271,32 +270,29 @@ body {
 .hours-badge {
     padding: 0.375rem 0.75rem;
     border-radius: 20px;
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .lecture-badge {
-    background: var(--info);
-    color: white;
+    color: black;
 }
 
 .lab-badge {
-    background: var(--warning);
-    color: white;
+    color: black;
 }
 
 .badge {
     padding: 0.375rem 0.75rem;
     border-radius: 20px;
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 600;
 }
 
 .badge-info {
-    background: var(--info);
-    color: white;
+    color: black;
 }
 
 .text-muted {
