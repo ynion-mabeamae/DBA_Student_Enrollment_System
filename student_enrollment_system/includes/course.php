@@ -1,0 +1,369 @@
+<?php
+session_start();
+require_once 'config.php';
+
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+  if (isset($_POST['add_course'])) {
+    $course_code = $_POST['course_code'];
+    $course_title = $_POST['course_title'];
+    $units = $_POST['units'];
+    $lecture_hours = $_POST['lecture_hours'] ?: 0;
+    $lab_hours = $_POST['lab_hours'] ?: 0;
+    $dept_id = $_POST['dept_id'];
+    
+    $sql = "INSERT INTO tblcourse (course_code, course_title, units, 
+                                    lecture_hours, lab_hours, dept_id) 
+                                  VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssdiii", $course_code, $course_title, $units, 
+                        $lecture_hours, $lab_hours, $dept_id);
+    
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "success::Course added successfully!";
+    } else {
+        $_SESSION['message'] = "error::Error adding course: " . $conn->error;
+    }
+    header("Location: ".$_SERVER['PHP_SELF']);
+    exit();
+  }
+    
+  if (isset($_POST['edit_course'])) {
+    $course_id = $_POST['course_id'];
+    $course_code = $_POST['course_code'];
+    $course_title = $_POST['course_title'];
+    $units = $_POST['units'];
+    $lecture_hours = $_POST['lecture_hours'] ?: 0;
+    $lab_hours = $_POST['lab_hours'] ?: 0;
+    $dept_id = $_POST['dept_id'];
+    
+    $sql = "UPDATE tblcourse
+            SET course_code=?, course_title=?, units=?, lecture_hours=?,
+                lab_hours=?, dept_id=? WHERE course_id=?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssdiiii", $course_code, $course_title, $units,
+                      $lecture_hours, $lab_hours, $dept_id, $course_id);
+    
+    if ($stmt->execute()) {
+      $_SESSION['message'] = "success::Course updated successfully!";
+    } else {
+      $_SESSION['message'] = "error::Error updating course: " . $conn->error;
+    }
+    header("Location: ".$_SERVER['PHP_SELF']);
+    exit();
+  }
+    
+  if (isset($_POST['delete_course'])) {
+    $course_id = $_POST['course_id'];
+    
+    $sql = "DELETE FROM tblcourse WHERE course_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $course_id);
+    
+    if ($stmt->execute()) {
+      $_SESSION['message'] = "success::Course deleted successfully!";
+    } else {
+      $_SESSION['message'] = "error::Error deleting course: " . $conn->error;
+    }
+    header("Location: ".$_SERVER['PHP_SELF']);
+    exit();
+  }
+}
+
+// Handle search
+$search_condition = "";
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+  $search_term = $conn->real_escape_string($_GET['search']);
+  $search_condition .= "WHERE (c.course_code LIKE '%$search_term%' 
+                        OR c.course_title LIKE '%$search_term%' 
+                        OR d.dept_name LIKE '%$search_term%')";
+}
+
+if (isset($_GET['department']) && !empty($_GET['department'])) {
+  $dept_id = $conn->real_escape_string($_GET['department']);
+  $search_condition .= $search_condition ? " AND c.dept_id = '$dept_id'" : 
+                        "WHERE c.dept_id = '$dept_id'";
+}
+
+// Get all courses with department information
+$courses = $conn->query("
+  SELECT c.*, d.dept_code, d.dept_name 
+  FROM tblcourse c 
+  LEFT JOIN tbldepartment d ON c.dept_id = d.dept_id
+  $search_condition
+  ORDER BY c.course_code
+");
+
+// Get departments for dropdown
+$departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
+
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Management</title>
+  <link rel="stylesheet" href="../styles/course.css">
+</head>
+<body> 
+	<!-- Toast Notification Container -->
+	<div class="toast-container" id="toastContainer"></div>
+
+	<div class="main-content">
+		<div class="page-header">
+			<h1>Course</h1>
+			<div class="action-buttons">
+				<button class="btn" onclick="openModal('add-course-modal')">
+						Add New Course
+				</button>
+				<button class="btn btn-print no-print" onclick="printCourseTable()">
+						Print List
+				</button>
+			</div>
+		</div>
+
+		<!-- Search Form -->
+		<div class="search-container no-print">
+			<form method="GET" class="search-form" id="searchForm">
+				<input type="hidden" name="page" value="courses">
+				<div class="search-box">
+					<div class="search-group">
+						<label>Search Courses</label>
+						<input type="text" name="search" class="search-input" placeholder="Search by course code, title, or department..." 
+											value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+					</div>
+
+					<div class="search-group">
+						<label>Department</label>
+						<select name="department" class="search-input">
+							<option value="">All Departments</option>
+							<?php 
+							$depts_search = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
+							while($dept = $depts_search->fetch_assoc()): 
+							?>
+								<option value="<?php echo $dept['dept_id']; ?>" 
+									<?php echo (isset($_GET['department']) && $_GET['department'] == $dept['dept_id']) ? 'selected' : ''; ?>>
+									<?php echo $dept['dept_name']; ?>
+								</option>
+							<?php endwhile; ?>
+						</select>
+					</div>
+
+					<div class="search-actions">
+						<button type="submit" class="btn">
+							Search
+						</button>
+						<a href="?" class="btn btn-outline">
+							Reset
+						</a>
+					</div>
+				</div>
+			</form>
+		</div>
+
+		<!-- Courses Table -->
+		<div class="table-container">
+      <h2>Course List (<?php echo $courses->num_rows; ?> courses)</h2>
+            
+      <?php if ($courses->num_rows > 0): ?>
+				<table id="courses-table">
+					<thead>
+						<tr>
+							<th>Course Code</th>
+							<th>Course Title</th>
+							<th>Units</th>
+							<th>Lecture Hours</th>
+							<th>Lab Hours</th>
+							<th>Department</th>
+							<th class="no-print">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php while($course = $courses->fetch_assoc()): ?>
+						<tr data-course-id="<?php echo $course['course_id']; ?>">
+							<td>
+								<strong class="course-code"><?php echo $course['course_code']; ?></strong>
+							</td>
+							<td><?php echo $course['course_title']; ?></td>
+							<td>
+								<span class="course-units"><?php echo $course['units']; ?></span>
+							</td>
+							<td>
+								<?php if ($course['lecture_hours'] > 0): ?>
+									<span class="hours-badge lecture-badge"><?php echo $course['lecture_hours']; ?></span>
+								<?php else: ?>
+									<span class="text-muted">-</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php if ($course['lab_hours'] > 0): ?>
+									<span class="hours-badge lab-badge"><?php echo $course['lab_hours']; ?></span>
+								<?php else: ?>
+									<span class="text-muted">-</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<span class="badge badge-info"><?php echo $course['dept_code'] ?? 'N/A'; ?></span>
+							</td>
+							<td class="actions no-print">
+								<button class="btn btn-edit" onclick="editCourse(<?php echo $course['course_id']; ?>)">
+									Edit
+								</button>
+								<form method="POST" style="display: inline;">
+									<input type="hidden" name="course_id" value="<?php echo $course['course_id']; ?>">
+									<button type="submit" name="delete_course" class="btn btn-danger" 
+													onclick="return confirm('Are you sure you want to delete this course?')">
+										Delete
+									</button>
+								</form>
+							</td>
+						</tr>
+							<?php endwhile; ?>
+					</tbody>
+				</table>
+				<?php else: ?>
+				<div class="no-records">
+					<p>No courses found. <a href="javascript:void(0)" onclick="openModal('add-course-modal')">Add the first course</a></p>
+				</div>
+				<?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Add Course Modal -->
+    <div id="add-course-modal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+						<h2>Add New Course</h2>
+						<button class="close-modal" onclick="closeModal('add-course-modal')">&times;</button>
+				</div>
+				<form method="POST" id="add-course-form">
+					<div class="form-group">
+						<label for="course_code">Course Code *</label>
+						<input type="text" id="course_code" name="course_code" required 
+											placeholder="e.g., COMP019, INTE351">
+					</div>
+						
+					<div class="form-group">
+						<label for="course_title">Course Title *</label>
+						<input type="text" id="course_title" name="course_title" required
+											placeholder="e.g., Application Development">
+					</div>
+						
+					<div class="form-group">
+						<label for="units">Units *</label>
+						<input type="number" id="units" name="units" step="0.1" min="0" max="10" required
+											placeholder="e.g., 3.0">
+					</div>
+						
+					<div class="form-group">
+						<label for="lecture_hours">Lecture Hours</label>
+						<input type="number" id="lecture_hours" name="lecture_hours" min="0" max="20"
+											placeholder="e.g., 3">
+					</div>
+						
+					<div class="form-group">
+						<label for="lab_hours">Lab Hours</label>
+						<input type="number" id="lab_hours" name="lab_hours" min="0" max="20"
+											placeholder="e.g., 2">
+					</div>
+						
+					<div class="form-group">
+						<label for="dept_id">Department *</label>
+						<select id="dept_id" name="dept_id" required>
+							<option value="">Select Department</option>
+							<?php 
+							$depts_modal = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
+							while($dept = $depts_modal->fetch_assoc()): 
+							?>
+								<option value="<?php echo $dept['dept_id']; ?>">
+										<?php echo $dept['dept_code'] . ' - ' . $dept['dept_name']; ?>
+								</option>
+							<?php endwhile; ?>
+						</select>
+					</div>
+						
+					<div class="form-actions">
+						<button type="submit" name="add_course" class="btn btn-success">
+							Add Course
+						</button>
+						<button type="button" class="btn" onclick="closeModal('add-course-modal')">
+							Cancel
+						</button>
+					</div>
+				</form>
+			</div>
+    </div>
+
+    <!-- Edit Course Modal -->
+    <div id="edit-course-modal" class="modal">
+			<div class="modal-content">
+				<div class="loading-overlay" id="editLoadingOverlay">
+						<div class="loading"></div>
+						<span>Loading course data...</span>
+				</div>
+
+				<div class="modal-header">
+						<h2>Edit Course</h2>
+						<button class="close-modal" onclick="closeModal('edit-course-modal')">&times;</button>
+				</div>
+
+				<form method="POST" id="edit-course-form">
+					<input type="hidden" id="edit_course_id" name="course_id">
+					<div class="form-group">
+							<label for="edit_course_code">Course Code *</label>
+							<input type="text" id="edit_course_code" name="course_code" required>
+					</div>
+						
+					<div class="form-group">
+							<label for="edit_course_title">Course Title *</label>
+							<input type="text" id="edit_course_title" name="course_title" required>
+					</div>
+						
+					<div class="form-group">
+							<label for="edit_units">Units *</label>
+							<input type="number" id="edit_units" name="units" step="0.1" min="0" max="10" required>
+					</div>
+						
+					<div class="form-group">
+							<label for="edit_lecture_hours">Lecture Hours</label>
+							<input type="number" id="edit_lecture_hours" name="lecture_hours" min="0" max="20">
+					</div>
+						
+					<div class="form-group">
+							<label for="edit_lab_hours">Lab Hours</label>
+							<input type="number" id="edit_lab_hours" name="lab_hours" min="0" max="20">
+					</div>
+						
+					<div class="form-group">
+						<label for="edit_dept_id">Department *</label>
+						<select id="edit_dept_id" name="dept_id" required>
+							<option value="">Select Department</option>
+							<?php 
+							$depts_edit = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
+							while($dept = $depts_edit->fetch_assoc()): 
+							?>
+								<option value="<?php echo $dept['dept_id']; ?>">
+										<?php echo $dept['dept_code'] . ' - ' . $dept['dept_name']; ?>
+								</option>
+							<?php endwhile; ?>
+						</select>
+					</div>
+						
+					<div class="form-actions">
+						<button type="submit" name="edit_course" class="btn btn-success">
+							Update Course
+						</button>
+						<button type="button" class="btn" onclick="closeModal('edit-course-modal')">
+							Cancel
+						</button>
+					</div>
+				</form>
+			</div>
+    </div>
+
+    <script src="../script/course.js"></script>
+</body>
+</html>
