@@ -160,7 +160,7 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Management</title>
+    <title>Student</title>
     <link rel="stylesheet" href="../styles/student.css">
 </head>
 <body>
@@ -177,15 +177,12 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
         <?php endif; ?>
     </div>
 
-        <div class="main-content">
+    <div class="main-content">
         <div class="page-header">
             <h1>Student</h1>
-            <div class="action-buttons">
+            <div class="header-actions">
                 <button class="btn" onclick="openModal('add-student-modal')">
                     Add New Student
-                </button>
-                <button class="btn btn-print no-print" onclick="printStudentTable()">
-                    Print List
                 </button>
             </div>
         </div>
@@ -220,8 +217,8 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                             Search
                         </button>
                         <a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=students" class="btn btn-outline">
-														Reset
-												</a>
+                            Reset
+                        </a>
                     </div>
                 </div>
             </form>
@@ -246,87 +243,87 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
         </div>
         <?php endif; ?>
 
-            <!-- Add Student Modal -->
-    <div id="add-student-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add New Student</h2>
-                <button class="close-modal" onclick="closeModal('add-student-modal')">&times;</button>
+        <!-- Add Student Modal -->
+        <div id="add-student-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add New Student</h2>
+                    <button class="close-modal" onclick="closeModal('add-student-modal')">&times;</button>
+                </div>
+                <form method="POST" id="addStudentForm">
+                    <div class="form-group">
+                        <label for="student_no">Student Number *</label>
+                        <input type="text" id="student_no" name="student_no" required 
+                               placeholder="Enter student number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="last_name">Last Name *</label>
+                        <input type="text" id="last_name" name="last_name" required
+                               placeholder="Enter last name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="first_name">First Name *</label>
+                        <input type="text" id="first_name" name="first_name" required
+                               placeholder="Enter first name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required
+                               placeholder="Enter email address">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="birthdate">Birthdate</label>
+                        <input type="date" id="birthdate" name="birthdate">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="year_level">Year Level</label>
+                        <select id="year_level" name="year_level">
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="program_id">Program</label>
+                        <select id="program_id" name="program_id">
+                            <option value="">Select Program</option>
+                            <?php 
+                            $programs_form = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
+                            while($program = $programs_form->fetch_assoc()): 
+                            ?>
+                                <option value="<?php echo $program['program_id']; ?>">
+                                    <?php echo $program['program_code'] . ' - ' . $program['program_name']; ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" name="add_student" class="btn btn-success">
+                            Add Student
+                        </button>
+                        <button type="button" class="btn" onclick="closeModal('add-student-modal')">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form method="POST" id="addStudentForm">
-                <div class="form-group">
-                    <label for="student_no">Student Number *</label>
-                    <input type="text" id="student_no" name="student_no" required 
-                           placeholder="Enter student number">
-                </div>
-                
-                <div class="form-group">
-                    <label for="last_name">Last Name *</label>
-                    <input type="text" id="last_name" name="last_name" required
-                           placeholder="Enter last name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="first_name">First Name *</label>
-                    <input type="text" id="first_name" name="first_name" required
-                           placeholder="Enter first name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="email">Email *</label>
-                    <input type="email" id="email" name="email" required
-                           placeholder="Enter email address">
-                </div>
-                
-                <div class="form-group">
-                    <label for="gender">Gender</label>
-                    <select id="gender" name="gender">
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="birthdate">Birthdate</label>
-                    <input type="date" id="birthdate" name="birthdate">
-                </div>
-                
-                <div class="form-group">
-                    <label for="year_level">Year Level</label>
-                    <select id="year_level" name="year_level">
-                        <option value="1">1st Year</option>
-                        <option value="2">2nd Year</option>
-                        <option value="3">3rd Year</option>
-                        <option value="4">4th Year</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="program_id">Program</label>
-                    <select id="program_id" name="program_id">
-                        <option value="">Select Program</option>
-                        <?php 
-                        $programs_form = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
-                        while($program = $programs_form->fetch_assoc()): 
-                        ?>
-                            <option value="<?php echo $program['program_id']; ?>">
-                                <?php echo $program['program_code'] . ' - ' . $program['program_name']; ?>
-                            </option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" name="add_student" class="btn btn-success">
-                        Add Student
-                    </button>
-                    <button type="button" class="btn" onclick="closeModal('add-student-modal')">
-                        Cancel
-                    </button>
-                </div>
-            </form>
         </div>
-    </div>
 
         <!-- Students Table -->
         <div class="table-container">
@@ -369,16 +366,16 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                         </td>
                         <td><?php echo htmlspecialchars($student['program_code'] ?? 'N/A'); ?></td>
                         <td class="actions no-print">
-														<button type="button" class="btn btn-edit" onclick="editStudent(<?php echo $student['student_id']; ?>)">
-																Edit
-														</button>
-														<form method="POST" style="display: inline;">
-																<input type="hidden" name="student_id" value="<?php echo $student['student_id']; ?>">
-																<button type="submit" name="delete_student" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this student?')">
-																		Delete
-																</button>
-														</form>
-												</td>
+                            <button type="button" class="btn btn-edit" onclick="editStudent(<?php echo $student['student_id']; ?>)">
+                                Edit
+                            </button>
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="student_id" value="<?php echo $student['student_id']; ?>">
+                                <button type="submit" name="delete_student" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this student?')">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
