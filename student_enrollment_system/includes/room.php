@@ -170,6 +170,10 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
             </div>
+            <a href="course_prerequisite.php" class="menu-item"">
+                <i class="fas fa-sitemap"></i>
+                <span>Course Prerequisite</span>
+			</a>
             <a href="term.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>

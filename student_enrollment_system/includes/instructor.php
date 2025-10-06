@@ -188,6 +188,10 @@ $total_instructors = $instructors->num_rows;
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
             </a>
+            <a href="course_prerequisite.php" class="menu-item"">
+                <i class="fas fa-sitemap"></i>
+                <span>Course Prerequisite</span>
+						</a>
             <a href="term.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
