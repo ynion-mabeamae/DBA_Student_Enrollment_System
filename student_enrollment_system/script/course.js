@@ -1,11 +1,9 @@
-// course.js
-
 // Modal Functions
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'block';
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        document.body.style.overflow = 'hidden';
     }
 }
 
@@ -13,49 +11,9 @@ function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'none';
-        document.body.style.overflow = 'auto'; // Restore scrolling
+        document.body.style.overflow = 'auto';
     }
 }
-
-// Close modal when clicking outside the modal content
-document.addEventListener('DOMContentLoaded', function() {
-    // Add click event listeners to all modals
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeModal(modal.id);
-            }
-        });
-    });
-
-    // Add escape key listener to close modals
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const openModals = document.querySelectorAll('.modal[style*="display: block"]');
-            openModals.forEach(modal => {
-                closeModal(modal.id);
-            });
-        }
-    });
-
-    // Add form submission handlers
-    const addCourseForm = document.getElementById('add-course-form');
-    if (addCourseForm) {
-        addCourseForm.addEventListener('submit', function(e) {
-            // You can add form validation here
-            console.log('Add course form submitted');
-        });
-    }
-
-    const editCourseForm = document.getElementById('edit-course-form');
-    if (editCourseForm) {
-        editCourseForm.addEventListener('submit', function(e) {
-            // You can add form validation here
-            console.log('Edit course form submitted');
-        });
-    }
-});
 
 // Edit Course Function
 function editCourse(courseId) {
@@ -68,62 +26,32 @@ function editCourse(courseId) {
     // Open the modal first
     openModal('edit-course-modal');
 
-    // Simulate API call to fetch course data (replace with actual AJAX call)
+    // Get course data from table row
+    const courseRow = document.querySelector(`tr[data-course-id="${courseId}"]`);
+    if (courseRow) {
+        const cells = courseRow.querySelectorAll('td');
+        
+        // Populate the form fields directly from table data
+        document.getElementById('edit_course_id').value = courseId;
+        document.getElementById('edit_course_code').value = courseRow.querySelector('.course-code').textContent;
+        document.getElementById('edit_course_title').value = cells[1].textContent;
+        document.getElementById('edit_units').value = parseFloat(courseRow.querySelector('.course-units').textContent);
+        
+        // Get lecture hours
+        const lectureBadge = cells[3].querySelector('.hours-badge');
+        document.getElementById('edit_lecture_hours').value = lectureBadge ? parseInt(lectureBadge.textContent) : 0;
+        
+        // Get lab hours
+        const labBadge = cells[4].querySelector('.hours-badge');
+        document.getElementById('edit_lab_hours').value = labBadge ? parseInt(labBadge.textContent) : 0;
+    }
+
+    // Hide loading overlay after a short delay
     setTimeout(() => {
-        // This is a mock implementation - replace with actual data fetching
-        fetchCourseData(courseId).then(courseData => {
-            // Populate the form fields
-            document.getElementById('edit_course_id').value = courseData.course_id;
-            document.getElementById('edit_course_code').value = courseData.course_code;
-            document.getElementById('edit_course_title').value = courseData.course_title;
-            document.getElementById('edit_units').value = courseData.units;
-            document.getElementById('edit_lecture_hours').value = courseData.lecture_hours || '';
-            document.getElementById('edit_lab_hours').value = courseData.lab_hours || '';
-            document.getElementById('edit_dept_id').value = courseData.dept_id;
-
-            // Hide loading overlay
-            if (loadingOverlay) {
-                loadingOverlay.style.display = 'none';
-            }
-        }).catch(error => {
-            console.error('Error fetching course data:', error);
-            showToast('Error loading course data', 'error');
-            if (loadingOverlay) {
-                loadingOverlay.style.display = 'none';
-            }
-        });
-    }, 500);
-}
-
-// Mock function to fetch course data (replace with actual AJAX call)
-function fetchCourseData(courseId) {
-    return new Promise((resolve, reject) => {
-        // This should be replaced with actual API call
-        // For now, we'll try to get data from the table row
-        const courseRow = document.querySelector(`tr[data-course-id="${courseId}"]`);
-        if (courseRow) {
-            const cells = courseRow.querySelectorAll('td');
-            const courseData = {
-                course_id: courseId,
-                course_code: courseRow.querySelector('.course-code').textContent,
-                course_title: cells[1].textContent,
-                units: parseFloat(courseRow.querySelector('.course-units').textContent),
-                lecture_hours: cells[3].querySelector('.hours-badge') ? 
-                    parseInt(cells[3].querySelector('.hours-badge').textContent) : 0,
-                lab_hours: cells[4].querySelector('.hours-badge') ? 
-                    parseInt(cells[4].querySelector('.hours-badge').textContent) : 0,
-                dept_id: '' // You'll need to get this from a data attribute or make an API call
-            };
-            resolve(courseData);
-        } else {
-            reject('Course not found');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
         }
-    });
-}
-
-// Print Function
-function printCourseTable() {
-    window.print();
+    }, 500);
 }
 
 // Toast Notification Function
@@ -133,8 +61,7 @@ function showToast(message, type = 'info') {
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.textContent = message;
-
+    
     // Add icon based on type
     let icon = 'ℹ️';
     switch (type) {
@@ -158,36 +85,84 @@ function showToast(message, type = 'info') {
     }, 5000);
 }
 
-// Form Validation
-function validateCourseForm(formData) {
-    const errors = [];
-
-    if (!formData.course_code || formData.course_code.trim() === '') {
-        errors.push('Course code is required');
-    }
-
-    if (!formData.course_title || formData.course_title.trim() === '') {
-        errors.push('Course title is required');
-    }
-
-    if (!formData.units || formData.units <= 0) {
-        errors.push('Valid units are required');
-    }
-
-    if (!formData.dept_id) {
-        errors.push('Department is required');
-    }
-
-    return errors;
-}
-
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Course management system initialized');
     
-    // Check if there are any URL parameters that might indicate success messages
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
-        showToast('Operation completed successfully!', 'success');
-    }
+    // Delete Confirmation Modal Functionality
+    const deleteModal = document.getElementById('deleteConfirmation');
+    const confirmDeleteBtn = document.getElementById('confirmDelete');
+    const cancelDeleteBtn = document.getElementById('cancelDelete');
+    const deleteForm = document.getElementById('deleteCourseForm');
+    const deleteMessage = document.getElementById('deleteMessage');
+
+    // Delete button functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-btn')) {
+            const courseId = e.target.getAttribute('data-course-id');
+            const courseCode = e.target.getAttribute('data-course-code');
+            const courseTitle = e.target.getAttribute('data-course-title');
+            
+            // Set delete message
+            deleteMessage.textContent = `Are you sure you want to delete the course "${courseCode} - ${courseTitle}"? This action cannot be undone.`;
+            
+            // Set delete form values
+            document.getElementById('deleteCourseId').value = courseId;
+            
+            // Show delete confirmation modal
+            deleteModal.style.display = 'flex';
+            setTimeout(() => {
+                deleteModal.style.opacity = '1';
+            }, 10);
+        }
+    });
+
+    // Delete confirmation
+    confirmDeleteBtn.addEventListener('click', function() {
+        deleteForm.submit();
+    });
+
+    // Cancel delete
+    cancelDeleteBtn.addEventListener('click', function() {
+        deleteModal.style.opacity = '0';
+        setTimeout(() => {
+            deleteModal.style.display = 'none';
+        }, 300);
+    });
+
+    // Close modal when clicking outside
+    deleteModal.addEventListener('click', function(event) {
+        if (event.target === deleteModal) {
+            deleteModal.style.opacity = '0';
+            setTimeout(() => {
+                deleteModal.style.display = 'none';
+            }, 300);
+        }
+    });
+
+    // Close modals when clicking outside
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+
+    // Close modals with escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const openModals = document.querySelectorAll('.modal[style*="display: block"]');
+            openModals.forEach(modal => {
+                closeModal(modal.id);
+            });
+            
+            // Also close delete confirmation
+            deleteModal.style.opacity = '0';
+            setTimeout(() => {
+                deleteModal.style.display = 'none';
+            }, 300);
+        }
+    });
 });

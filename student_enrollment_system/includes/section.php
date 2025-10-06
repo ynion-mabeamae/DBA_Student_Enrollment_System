@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../includes/config.php';
+require_once 'config.php';
 
 // Handle logout
 if (isset($_GET['logout'])) {
@@ -15,169 +15,114 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'section';
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['add_section'])) {
-        $section_code = $_POST['section_code'];
-        $course_id = $_POST['course_id'];
-        $term_id = $_POST['term_id'];
-        $instructor_id = $_POST['instructor_id'];
-        $day_pattern = $_POST['day_pattern'];
-        $start_time = $_POST['start_time'];
-        $end_time = $_POST['end_time'];
-        $room_id = $_POST['room_id'];
-        $max_capacity = $_POST['max_capacity'];
-        
-        $sql = "INSERT INTO tblsection (section_code, course_id, term_id, instruction_id, day_pattern, start_time, end_time, room_id, max_capacity) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siiisssii", $section_code, $course_id, $term_id, $instructor_id, $day_pattern, $start_time, $end_time, $room_id, $max_capacity);
-        
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Section added successfully!";
-        } else {
-            $_SESSION['error_message'] = "Error adding section: " . $conn->error;
-        }
-        
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-    }
+  if (isset($_POST['add_course'])) {
+    $course_code = $_POST['course_code'];
+    $course_title = $_POST['course_title'];
+    $units = $_POST['units'];
+    $lecture_hours = $_POST['lecture_hours'] ?: 0;
+    $lab_hours = $_POST['lab_hours'] ?: 0;
+    $dept_id = $_POST['dept_id'];
     
-    if (isset($_POST['update_section'])) {
-        $section_id = $_POST['section_id'];
-        $section_code = $_POST['section_code'];
-        $course_id = $_POST['course_id'];
-        $term_id = $_POST['term_id'];
-        $instructor_id = $_POST['instructor_id'];
-        $day_pattern = $_POST['day_pattern'];
-        $start_time = $_POST['start_time'];
-        $end_time = $_POST['end_time'];
-        $room_id = $_POST['room_id'];
-        $max_capacity = $_POST['max_capacity'];
-        
-        $sql = "UPDATE tblsection SET section_code = ?, course_id = ?, term_id = ?, instruction_id = ?, day_pattern = ?, start_time = ?, end_time = ?, room_id = ?, max_capacity = ? 
-                WHERE section_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siiisssiii", $section_code, $course_id, $term_id, $instructor_id, $day_pattern, $start_time, $end_time, $room_id, $max_capacity, $section_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Section updated successfully!";
-        } else {
-            $_SESSION['error_message'] = "Error updating section: " . $conn->error;
-        }
-        
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-    }
+    $sql = "INSERT INTO tblcourse (course_code, course_title, units, 
+                                    lecture_hours, lab_hours, dept_id) 
+                                  VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssdiii", $course_code, $course_title, $units, 
+                        $lecture_hours, $lab_hours, $dept_id);
     
-    if (isset($_POST['delete_section'])) {
-        $section_id = $_POST['section_id'];
-        
-        $sql = "DELETE FROM tblsection WHERE section_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $section_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Section deleted successfully!";
-        } else {
-            $_SESSION['error_message'] = "Error deleting section: " . $conn->error;
-        }
-        
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "success::Course added successfully!";
+    } else {
+        $_SESSION['message'] = "error::Error adding course: " . $conn->error;
     }
+    header("Location: ".$_SERVER['PHP_SELF']);
+    exit();
+  }
+    
+  if (isset($_POST['edit_course'])) {
+    $course_id = $_POST['course_id'];
+    $course_code = $_POST['course_code'];
+    $course_title = $_POST['course_title'];
+    $units = $_POST['units'];
+    $lecture_hours = $_POST['lecture_hours'] ?: 0;
+    $lab_hours = $_POST['lab_hours'] ?: 0;
+    $dept_id = $_POST['dept_id'];
+    
+    $sql = "UPDATE tblcourse
+            SET course_code=?, course_title=?, units=?, lecture_hours=?,
+                lab_hours=?, dept_id=? WHERE course_id=?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssdiiii", $course_code, $course_title, $units,
+                      $lecture_hours, $lab_hours, $dept_id, $course_id);
+    
+    if ($stmt->execute()) {
+      $_SESSION['message'] = "success::Course updated successfully!";
+    } else {
+      $_SESSION['message'] = "error::Error updating course: " . $conn->error;
+    }
+    header("Location: ".$_SERVER['PHP_SELF']);
+    exit();
+  }
+    
+  if (isset($_POST['delete_course'])) {
+    $course_id = $_POST['course_id'];
+    
+    $sql = "DELETE FROM tblcourse WHERE course_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $course_id);
+    
+    if ($stmt->execute()) {
+      $_SESSION['message'] = "success::Course deleted successfully!";
+    } else {
+      $_SESSION['message'] = "error::Error deleting course: " . $conn->error;
+    }
+    header("Location: ".$_SERVER['PHP_SELF']);
+    exit();
+  }
 }
 
-// Get section data for editing if section_id is provided
-$edit_section = null;
-if (isset($_GET['edit_id'])) {
-    $edit_id = $_GET['edit_id'];
-    $stmt = $conn->prepare("
-        SELECT s.*, 
-               c.course_code,
-               t.term_code,
-               i.first_name, i.last_name,
-               r.building, r.room_code, r.capacity as room_capacity
-        FROM tblsection s
-        LEFT JOIN tblcourse c ON s.course_id = c.course_id
-        LEFT JOIN tblterm t ON s.term_id = t.term_id
-        LEFT JOIN tblinstructor i ON s.instruction_id = i.instructor_id
-        LEFT JOIN tblroom r ON s.room_id = r.room_id
-        WHERE s.section_id = ?
-    ");
-    $stmt->bind_param("i", $edit_id);
-    $stmt->execute();
-    $edit_section = $stmt->get_result()->fetch_assoc();
+// Handle search
+$search_condition = "";
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+  $search_term = $conn->real_escape_string($_GET['search']);
+  $search_condition .= "WHERE (c.course_code LIKE '%$search_term%' 
+                        OR c.course_title LIKE '%$search_term%' 
+                        OR d.dept_name LIKE '%$search_term%')";
 }
 
-// Get all sections with related data - FIXED: Removed course_name
-$sections = $conn->query("
-    SELECT s.*, 
-           c.course_code,
-           t.term_code,
-           i.first_name, i.last_name,
-           r.building, r.room_code, r.capacity as room_capacity
-    FROM tblsection s
-    LEFT JOIN tblcourse c ON s.course_id = c.course_id
-    LEFT JOIN tblterm t ON s.term_id = t.term_id
-    LEFT JOIN tblinstructor i ON s.instructor_id = i.instructor_id
-    LEFT JOIN tblroom r ON s.room_id = r.room_id
-    ORDER BY s.section_code
+if (isset($_GET['department']) && !empty($_GET['department'])) {
+  $dept_id = $conn->real_escape_string($_GET['department']);
+  $search_condition .= $search_condition ? " AND c.dept_id = '$dept_id'" : 
+                        "WHERE c.dept_id = '$dept_id'";
+}
+
+// Get all courses with department information
+$courses = $conn->query("
+  SELECT c.*, d.dept_code, d.dept_name 
+  FROM tblcourse c 
+  LEFT JOIN tbldepartment d ON c.dept_id = d.dept_id
+  $search_condition
+  ORDER BY c.course_code
 ");
 
-// Check if query failed and show error
-if (!$sections) {
-    die("Database error: " . $conn->error);
-}
+// Get departments for dropdown
+$departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
 
-// Get related data for dropdowns
-$courses = $conn->query("SELECT * FROM tblcourse ORDER BY course_code");
-$terms = $conn->query("SELECT * FROM tblterm ORDER BY start_date DESC");
-$instructors = $conn->query("SELECT * FROM tblinstructor ORDER BY last_name, first_name");
-$rooms = $conn->query("SELECT * FROM tblroom ORDER BY building, room_code");
 
-// Count total sections
-$total_sections = $sections->num_rows;
-
-// Day patterns for dropdown
-$day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Section Management</title>
-    <link rel="stylesheet" href="../styles/section.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../styles/dashboard.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Management</title>
+  <link rel="stylesheet" href="../styles/course.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
-<body>
-    <!-- Success/Error Notification -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="notification success" id="successNotification">
-            <div class="notification-content">
-                <span class="notification-icon">✓</span>
-                <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="notification error" id="errorNotification">
-            <div class="notification-content">
-                <span class="notification-icon">⚠</span>
-                <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
-
-    <!-- Sidebar -->
+<body> 
+	<!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>Student Enrollment System</h2>
@@ -219,15 +164,15 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
             </a>
-            <a href="course_prerequisite.php" class="menu-item"">
+						<a href="course_prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
                 <span>Course Prerequisite</span>
-			</a>
+						</a>
             <a href="term.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
-            <!-- Logout Item -->
+						<!-- Logout Item -->
             <div class="logout-item">
                 <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
                     <i class="fas fa-sign-out-alt"></i>
@@ -236,301 +181,458 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
             </div>
         </div>
     </div>
-    <div class="main-content">
-        <div class="page-header">
-            <h1>Section Management</h1>
-            <button class="btn btn-primary" id="openSectionModal">Add New Section</button>
-        </div>
 
-        <!-- Add/Edit Section Modal -->
-        <div id="sectionModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 id="sectionModalTitle">Add New Section</h2>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form method="POST" id="sectionForm">
-                        <input type="hidden" name="section_id" id="section_id">
-                        
-                        <div class="form-group">
-                            <label for="section_code">Section Code *</label>
-                            <input type="text" id="section_code" name="section_code" 
-                                required maxlength="20" placeholder="Enter section code">
-                            <small class="form-help">Unique code for the section (e.g., CS101-A)</small>
-                        </div>
+	<!-- Toast Notification Container -->
+	<div class="toast-container" id="toastContainer"></div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="course_id">Course *</label>
-                                <select id="course_id" name="course_id" required>
-                                    <option value="">Select Course</option>
-                                    <?php 
-                                    if ($courses && $courses->num_rows > 0):
-                                        $courses->data_seek(0);
-                                        while($course = $courses->fetch_assoc()): 
-                                            $selected = ($edit_section && $edit_section['course_id'] == $course['course_id']) ? 'selected' : '';
-                                    ?>
-                                        <option value="<?php echo $course['course_id']; ?>" <?php echo $selected; ?>>
-                                            <?php echo htmlspecialchars($course['course_code']); ?>
-                                        </option>
-                                    <?php 
-                                        endwhile;
-                                    endif; 
-                                    ?>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="term_id">Term *</label>
-                                <select id="term_id" name="term_id" required>
-                                    <option value="">Select Term</option>
-                                    <?php 
-                                    if ($terms && $terms->num_rows > 0):
-                                        $terms->data_seek(0);
-                                        while($term = $terms->fetch_assoc()): 
-                                            $selected = ($edit_section && $edit_section['term_id'] == $term['term_id']) ? 'selected' : '';
-                                    ?>
-                                        <option value="<?php echo $term['term_id']; ?>" <?php echo $selected; ?>>
-                                            <?php echo htmlspecialchars($term['term_code']); ?>
-                                        </option>
-                                    <?php 
-                                        endwhile;
-                                    endif; 
-                                    ?>
-                                </select>
-                            </div>
-                        </div>
+	<div class="main-content">
+		<div class="page-header">
+			<h1>Course</h1>
+			<div class="header-actions">
+				<button class="btn" onclick="openModal('add-course-modal')">
+					Add New Course
+				</button>
+			</div>
+		</div>
 
-                        <div class="form-group">
-                            <label for="instructor_id">Instructor</label>
-                            <select id="instructor_id" name="instructor_id">
-                                <option value="">Select Instructor</option>
-                                <?php 
-                                if ($instructors && $instructors->num_rows > 0):
-                                    $instructors->data_seek(0);
-                                    while($instructor = $instructors->fetch_assoc()): 
-                                        $selected = ($edit_section && $edit_section['instruction_id'] == $instructor['instructor_id']) ? 'selected' : '';
-                                ?>
-                                    <option value="<?php echo $instructor['instructor_id']; ?>" <?php echo $selected; ?>>
-                                        <?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>
-                                    </option>
-                                <?php 
-                                    endwhile;
-                                endif; 
-                                ?>
-                            </select>
-                        </div>
+		<!-- Search Form -->
+		<div class="search-container no-print">
+			<form method="GET" class="search-form" id="searchForm">
+				<input type="hidden" name="page" value="courses">
+				<div class="search-box">
+					<div class="search-group">
+						<label>Search Courses</label>
+						<input type="text" name="search" class="search-input" placeholder="Search by course code, title, or department..." 
+											value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+					</div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="day_pattern">Day Pattern</label>
-                                <select id="day_pattern" name="day_pattern">
-                                    <option value="">Select Days</option>
-                                    <?php foreach($day_patterns as $pattern): 
-                                        $selected = ($edit_section && $edit_section['day_pattern'] == $pattern) ? 'selected' : '';
-                                    ?>
-                                        <option value="<?php echo $pattern; ?>" <?php echo $selected; ?>>
-                                            <?php echo $pattern; ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="start_time">Start Time</label>
-                                <input type="time" id="start_time" name="start_time" 
-                                    value="<?php echo $edit_section ? $edit_section['start_time'] : ''; ?>">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="end_time">End Time</label>
-                                <input type="time" id="end_time" name="end_time" 
-                                    value="<?php echo $edit_section ? $edit_section['end_time'] : ''; ?>">
-                            </div>
-                        </div>
+					<div class="search-group">
+						<label>Department</label>
+						<select name="department" class="search-input">
+							<option value="">All Departments</option>
+							<?php 
+							$depts_search = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
+							while($dept = $depts_search->fetch_assoc()): 
+							?>
+								<option value="<?php echo $dept['dept_id']; ?>" 
+									<?php echo (isset($_GET['department']) && $_GET['department'] == $dept['dept_id']) ? 'selected' : ''; ?>>
+									<?php echo $dept['dept_name']; ?>
+								</option>
+							<?php endwhile; ?>
+						</select>
+					</div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="room_id">Room</label>
-                                <select id="room_id" name="room_id">
-                                    <option value="">Select Room</option>
-                                    <?php 
-                                    if ($rooms && $rooms->num_rows > 0):
-                                        $rooms->data_seek(0);
-                                        while($room = $rooms->fetch_assoc()): 
-                                            $selected = ($edit_section && $edit_section['room_id'] == $room['room_id']) ? 'selected' : '';
-                                    ?>
-                                        <option value="<?php echo $room['room_id']; ?>" <?php echo $selected; ?>>
-                                            <?php echo htmlspecialchars($room['building'] . ' - ' . $room['room_code'] . ' (' . $room['capacity'] . ' seats)'); ?>
-                                        </option>
-                                    <?php 
-                                        endwhile;
-                                    endif; 
-                                    ?>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="max_capacity">Max Capacity</label>
-                                <input type="number" id="max_capacity" name="max_capacity" 
-                                    min="1" max="1000" placeholder="Enter capacity"
-                                    value="<?php echo $edit_section ? $edit_section['max_capacity'] : ''; ?>">
-                            </div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" name="add_section" class="btn btn-success" id="addSectionBtn">Add Section</button>
-                            <button type="submit" name="update_section" class="btn btn-success" id="updateSectionBtn" style="display: none;">Update Section</button>
-                            <button type="button" class="btn btn-cancel" id="cancelSection">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+					<div class="search-actions">
+						<button type="submit" class="btn">
+							Search
+						</button>
+						<a href="?" class="btn btn-outline">
+							Reset
+						</a>
+					</div>
+				</div>
+			</form>
+		</div>
 
-        <!-- Delete Confirmation Dialog -->
-        <div class="delete-confirmation" id="deleteConfirmation">
-            <div class="confirmation-dialog">
-                <h3>Delete Section</h3>
-                <p id="deleteMessage">Are you sure you want to delete this section? This action cannot be undone.</p>
-                <div class="confirmation-actions">
-                    <button class="confirm-delete" id="confirmDelete">Yes</button>
-                    <button class="cancel-delete" id="cancelDelete">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Hidden delete form -->
-        <form method="POST" id="deleteSectionForm" style="display: none;">
-            <input type="hidden" name="section_id" id="deleteSectionId">
-            <input type="hidden" name="delete_section" value="1">
-        </form>
-
-        <!-- Sections Table -->
-        <div class="table-container">
-            <h2>Section List</h2>
+		<!-- Courses Table -->
+		<div class="table-container">
+      <h2>Course List (<?php echo $courses->num_rows; ?> courses)</h2>
             
-            <!-- Search and Filters -->
-            <div class="search-container">
-                <div class="search-box">
-                    <div class="search-icon">🔍</div>
-                    <input type="text" id="searchSections" class="search-input" placeholder="Search sections by code, course, instructor...">
-                </div>
-                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
-                
-                <div class="search-stats" id="searchStats">Showing <?php echo $total_sections; ?> of <?php echo $total_sections; ?> sections</div>
-                
-                <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Section Code</th>
-                        <th>Course</th>
-                        <th>Term</th>
-                        <th>Instructor</th>
-                        <th>Schedule</th>
-                        <th>Room</th>
-                        <th>Capacity</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php 
-                    if ($sections && $sections->num_rows > 0):
-                        $sections->data_seek(0);
-                        while($section = $sections->fetch_assoc()): 
-                            $schedule = '';
-                            if ($section['day_pattern']) {
-                                $schedule = $section['day_pattern'];
-                                if ($section['start_time']) {
-                                    $schedule .= ' ' . date('g:i A', strtotime($section['start_time']));
-                                    if ($section['end_time']) {
-                                        $schedule .= '-' . date('g:i A', strtotime($section['end_time']));
-                                    }
-                                }
-                            }
-                    ?>
-                    <tr>
-                        <td>
-                            <div class="section-info">
-                                <div class="section-code"><?php echo htmlspecialchars($section['section_code']); ?></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="course-info">
-                                <div class="course-code"><?php echo htmlspecialchars($section['course_code']); ?></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="term-info">
-                                <div class="term-code"><?php echo htmlspecialchars($section['term_code']); ?></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="instructor-info">
-                                <?php if ($section['first_name']): ?>
-                                    <div class="instructor-name"><?php echo htmlspecialchars($section['last_name'] . ', ' . $section['first_name']); ?></div>
-                                <?php else: ?>
-                                    <div class="no-instructor">Not Assigned</div>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="schedule-info">
-                                <?php if ($schedule): ?>
-                                    <div class="schedule"><?php echo htmlspecialchars($schedule); ?></div>
-                                <?php else: ?>
-                                    <div class="no-schedule">Not Scheduled</div>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="room-info">
-                                <?php if ($section['building']): ?>
-                                    <div class="room-location"><?php echo htmlspecialchars($section['building'] . ' ' . $section['room_code']); ?></div>
-                                <?php else: ?>
-                                    <div class="no-room">Not Assigned</div>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="capacity-info">
-                                <span class="capacity-badge"><?php echo $section['max_capacity'] ? $section['max_capacity'] : 'N/A'; ?></span>
-                            </div>
-                        </td>
-                        <td class="actions">
-                            <button type="button" class="btn btn-edit edit-btn" 
-                                    >
-                                Edit
-                            </button>
-                            <button type="button" class="btn btn-danger delete-btn" 
-                                    data-section-id="<?php echo $section['section_id']; ?>"
-                                    data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>">
-                                Delete
-                            </button>
-                        </td>
-                    </tr>
-                    <?php 
-                        endwhile;
-                    else: 
-                    ?>
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 2rem;">
-                            <div style="color: var(--gray-500); font-style: italic;">
-                                No sections found. Click "Add New Section" to get started.
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+      <?php if ($courses->num_rows > 0): ?>
+				<table id="courses-table">
+					<thead>
+						<tr>
+							<th>Course Code</th>
+							<th>Course Title</th>
+							<th>Units</th>
+							<th>Lecture Hours</th>
+							<th>Lab Hours</th>
+							<th>Department</th>
+							<th class="no-print">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php while($course = $courses->fetch_assoc()): ?>
+						<tr data-course-id="<?php echo $course['course_id']; ?>" data-dept-id="<?php echo $course['dept_id']; ?>">
+							<td>
+								<strong class="course-code"><?php echo $course['course_code']; ?></strong>
+							</td>
+							<td><?php echo $course['course_title']; ?></td>
+							<td>
+								<span class="course-units"><?php echo $course['units']; ?></span>
+							</td>
+							<td>
+								<?php if ($course['lecture_hours'] > 0): ?>
+									<span class="hours-badge lecture-badge"><?php echo $course['lecture_hours']; ?></span>
+								<?php else: ?>
+									<span class="text-muted">-</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php if ($course['lab_hours'] > 0): ?>
+									<span class="hours-badge lab-badge"><?php echo $course['lab_hours']; ?></span>
+								<?php else: ?>
+									<span class="text-muted">-</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<span class="badge badge-info"><?php echo $course['dept_code'] ?? 'N/A'; ?></span>
+							</td>
+							<td class="actions no-print">
+								<button class="btn btn-edit" onclick="editCourse(<?php echo $course['course_id']; ?>)">
+										Edit
+								</button>
+								<button class="btn btn-danger delete-btn" 
+												data-course-id="<?php echo $course['course_id']; ?>"
+												data-course-code="<?php echo htmlspecialchars($course['course_code']); ?>"
+												data-course-title="<?php echo htmlspecialchars($course['course_title']); ?>">
+										Delete
+								</button>
+						</td>
+						</tr>
+							<?php endwhile; ?>
+					</tbody>
+				</table>
+				<?php else: ?>
+				<div class="no-records">
+					<p>No courses found. <a href="javascript:void(0)" onclick="openModal('add-course-modal')">Add the first course</a></p>
+				</div>
+				<?php endif; ?>
         </div>
     </div>
-    
 
-    <script src="../script/section.js"></script>
+    <!-- Add Course Modal -->
+<div id="add-course-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add New Course</h2>
+            <button class="close-modal" onclick="closeModal('add-course-modal')">&times;</button>
+        </div>
+        <form method="POST" id="add-course-form">
+            <div class="form-group">
+                <label for="course_code">Course Code *</label>
+                <input type="text" id="course_code" name="course_code" required 
+                            placeholder="e.g., COMP019, INTE351">
+            </div>
+                
+            <div class="form-group">
+                <label for="course_title">Course Title *</label>
+                <input type="text" id="course_title" name="course_title" required
+                            placeholder="e.g., Application Development">
+            </div>
+                
+            <div class="form-group">
+                <label for="units">Units *</label>
+                <input type="number" id="units" name="units" step="0.1" min="0" max="10" required
+                            placeholder="e.g., 3.0">
+            </div>
+                
+            <div class="form-group">
+                <label for="lecture_hours">Lecture Hours</label>
+                <input type="number" id="lecture_hours" name="lecture_hours" min="0" max="20"
+                            placeholder="e.g., 3">
+            </div>
+                
+            <div class="form-group">
+                <label for="lab_hours">Lab Hours</label>
+                <input type="number" id="lab_hours" name="lab_hours" min="0" max="20"
+                            placeholder="e.g., 2">
+            </div>
+                
+            <div class="form-group">
+                <label for="dept_id">Department *</label>
+                <select id="dept_id" name="dept_id" required>
+                    <option value="">Select Department</option>
+                    <?php 
+                    $depts_modal = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
+                    while($dept = $depts_modal->fetch_assoc()): 
+                    ?>
+                        <option value="<?php echo $dept['dept_id']; ?>">
+                            <?php echo $dept['dept_code'] . ' - ' . $dept['dept_name']; ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+                
+            <div class="form-actions">
+                <button type="submit" name="add_course" class="btn btn-success">
+                    Add Course
+                </button>
+                <button type="button" class="btn" onclick="closeModal('add-course-modal')">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Course Modal -->
+<div id="edit-course-modal" class="modal">
+    <div class="modal-content">
+        <div class="loading-overlay" id="editLoadingOverlay">
+            <div class="loading"></div>
+            <span>Loading course data...</span>
+        </div>
+
+        <div class="modal-header">
+            <h2>Edit Course</h2>
+            <button class="close-modal" onclick="closeModal('edit-course-modal')">&times;</button>
+        </div>
+
+        <form method="POST" id="edit-course-form">
+            <input type="hidden" id="edit_course_id" name="course_id">
+            <div class="form-group">
+                <label for="edit_course_code">Course Code *</label>
+                <input type="text" id="edit_course_code" name="course_code" required>
+            </div>
+                
+            <div class="form-group">
+                <label for="edit_course_title">Course Title *</label>
+                <input type="text" id="edit_course_title" name="course_title" required>
+            </div>
+                
+            <div class="form-group">
+                <label for="edit_units">Units *</label>
+                <input type="number" id="edit_units" name="units" step="0.1" min="0" max="10" required>
+            </div>
+                
+            <div class="form-group">
+                <label for="edit_lecture_hours">Lecture Hours</label>
+                <input type="number" id="edit_lecture_hours" name="lecture_hours" min="0" max="20">
+            </div>
+                
+            <div class="form-group">
+                <label for="edit_lab_hours">Lab Hours</label>
+                <input type="number" id="edit_lab_hours" name="lab_hours" min="0" max="20">
+            </div>
+                
+            <div class="form-group">
+                <label for="edit_dept_id">Department *</label>
+                <select id="edit_dept_id" name="dept_id" required>
+                    <option value="">Select Department</option>
+                    <?php 
+                    $depts_edit = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
+                    while($dept = $depts_edit->fetch_assoc()): 
+                    ?>
+                        <option value="<?php echo $dept['dept_id']; ?>">
+                            <?php echo $dept['dept_code'] . ' - ' . $dept['dept_name']; ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+                
+            <div class="form-actions">
+                <button type="submit" name="edit_course" class="btn btn-success">
+                    Update Course
+                </button>
+                <button type="button" class="btn" onclick="closeModal('edit-course-modal')">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="delete-confirmation" id="deleteConfirmation">
+    <div class="confirmation-dialog">
+        <h3>Delete Course</h3>
+        <p id="deleteMessage">Are you sure you want to delete this course? This action cannot be undone.</p>
+        <div class="confirmation-actions">
+            <button class="confirm-delete" id="confirmDelete">Yes</button>
+            <button class="cancel-delete" id="cancelDelete">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden delete form -->
+<form method="POST" id="deleteCourseForm">
+    <input type="hidden" name="course_id" id="deleteCourseId">
+    <input type="hidden" name="delete_course" value="1">
+</form>
+
+  <script>
+    // Simple Modal Functions
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    // Edit Course Function
+    function editCourse(courseId) {
+        // Show loading overlay
+        const loadingOverlay = document.getElementById('editLoadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        // Open the modal first
+        openModal('edit-course-modal');
+
+        // Get course data from table row
+        const courseRow = document.querySelector(`tr[data-course-id="${courseId}"]`);
+        if (courseRow) {
+            const cells = courseRow.querySelectorAll('td');
+            const deptId = courseRow.getAttribute('data-dept-id');
+            
+            // Populate the form fields directly from table data
+            document.getElementById('edit_course_id').value = courseId;
+            document.getElementById('edit_course_code').value = courseRow.querySelector('.course-code').textContent;
+            document.getElementById('edit_course_title').value = cells[1].textContent;
+            document.getElementById('edit_units').value = parseFloat(courseRow.querySelector('.course-units').textContent);
+            
+            // Get lecture hours
+            const lectureBadge = cells[3].querySelector('.hours-badge');
+            document.getElementById('edit_lecture_hours').value = lectureBadge ? parseInt(lectureBadge.textContent) : 0;
+            
+            // Get lab hours
+            const labBadge = cells[4].querySelector('.hours-badge');
+            document.getElementById('edit_lab_hours').value = labBadge ? parseInt(labBadge.textContent) : 0;
+            
+            // Set department
+            if (deptId) {
+                document.getElementById('edit_dept_id').value = deptId;
+            }
+        }
+
+        // Hide loading overlay after a short delay
+        setTimeout(() => {
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+        }, 500);
+    }
+
+    // Toast Notification Function
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        // Add icon based on type
+        let icon = 'ℹ️';
+        switch (type) {
+            case 'success':
+                icon = '✅';
+                break;
+            case 'error':
+                icon = '❌';
+                break;
+            case 'warning':
+                icon = '⚠️';
+                break;
+        }
+        toast.innerHTML = `${icon} ${message}`;
+
+        toastContainer.appendChild(toast);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+
+    // Delete Confirmation Modal Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteModal = document.getElementById('deleteConfirmation');
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        const cancelDeleteBtn = document.getElementById('cancelDelete');
+        const deleteForm = document.getElementById('deleteCourseForm');
+        const deleteMessage = document.getElementById('deleteMessage');
+
+        // Delete button functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-btn')) {
+                const courseId = e.target.getAttribute('data-course-id');
+                const courseCode = e.target.getAttribute('data-course-code');
+                const courseTitle = e.target.getAttribute('data-course-title');
+                
+                // Set delete message
+                deleteMessage.textContent = `Are you sure you want to delete the course "${courseCode} - ${courseTitle}"? This action cannot be undone.`;
+                
+                // Set delete form values
+                document.getElementById('deleteCourseId').value = courseId;
+                
+                // Show delete confirmation modal
+                deleteModal.style.display = 'flex';
+                setTimeout(() => {
+                    deleteModal.style.opacity = '1';
+                }, 10);
+            }
+        });
+
+        // Delete confirmation
+        confirmDeleteBtn.addEventListener('click', function() {
+            deleteForm.submit();
+        });
+
+        // Cancel delete
+        cancelDeleteBtn.addEventListener('click', function() {
+            deleteModal.style.opacity = '0';
+            setTimeout(() => {
+                deleteModal.style.display = 'none';
+            }, 300);
+        });
+
+        // Close modal when clicking outside
+        deleteModal.addEventListener('click', function(event) {
+            if (event.target === deleteModal) {
+                deleteModal.style.opacity = '0';
+                setTimeout(() => {
+                    deleteModal.style.display = 'none';
+                }, 300);
+            }
+        });
+
+        // Close modals when clicking outside
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeModal(modal.id);
+                }
+            });
+        });
+
+        // Close modals with escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const openModals = document.querySelectorAll('.modal[style*="display: block"]');
+                openModals.forEach(modal => {
+                    closeModal(modal.id);
+                });
+                
+                // Also close delete confirmation
+                deleteModal.style.opacity = '0';
+                setTimeout(() => {
+                    deleteModal.style.display = 'none';
+                }, 300);
+            }
+        });
+
+        // Check for session messages on page load
+        <?php if (isset($_SESSION['message'])): ?>
+            <?php 
+            $message = $_SESSION['message'];
+            unset($_SESSION['message']);
+            list($type, $text) = explode('::', $message, 2);
+            ?>
+            showToast('<?php echo addslashes($text); ?>', '<?php echo $type; ?>');
+        <?php endif; ?>
+    });
+  </script>
 </body>
 </html>

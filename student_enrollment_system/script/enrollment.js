@@ -313,3 +313,62 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Delete Confirmation Modal Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('deleteConfirmation');
+    const confirmDeleteBtn = document.getElementById('confirmDelete');
+    const cancelDeleteBtn = document.getElementById('cancelDelete');
+    const deleteForm = document.getElementById('deleteEnrollmentForm');
+    const deleteMessage = document.getElementById('deleteMessage');
+
+    // Delete button functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-btn')) {
+            const enrollmentId = e.target.getAttribute('data-enrollment-id');
+            const courseCode = e.target.getAttribute('data-course-code');
+            const courseTitle = e.target.getAttribute('data-course-title');
+            const studentName = e.target.getAttribute('data-student-name');
+            
+            // Set delete message
+            deleteMessage.textContent = `Are you sure you want to delete the enrollment for "${courseCode} - ${courseTitle}" for student "${studentName}"? This action cannot be undone.`;
+            
+            // Set delete form values
+            document.getElementById('deleteEnrollmentId').value = enrollmentId;
+            
+            // Show delete confirmation modal
+            showDeleteModal();
+        }
+    });
+
+    // Delete confirmation
+    confirmDeleteBtn.addEventListener('click', function() {
+        deleteForm.submit();
+    });
+
+    // Cancel delete
+    cancelDeleteBtn.addEventListener('click', function() {
+        hideDeleteModal();
+    });
+
+    // Close modal when clicking outside
+    deleteModal.addEventListener('click', function(event) {
+        if (event.target === deleteModal) {
+            hideDeleteModal();
+        }
+    });
+
+    function showDeleteModal() {
+        deleteModal.style.display = 'flex';
+        setTimeout(() => {
+            deleteModal.style.opacity = '1';
+        }, 10);
+    }
+
+    function hideDeleteModal() {
+        deleteModal.style.opacity = '0';
+        setTimeout(() => {
+            deleteModal.style.display = 'none';
+        }, 300);
+    }
+});

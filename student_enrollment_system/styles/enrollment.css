@@ -417,6 +417,155 @@ table td {
 .grade-poor { color: var(--danger); font-weight: 600; }
 .grade-pending { color: var(--gray-500); font-style: italic; }
 
+/* Delete Confirmation Modal Styles */
+.delete-confirmation {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirmation-dialog {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    margin: 0;
+    position: relative;
+}
+
+.confirmation-dialog h3 {
+    margin: 0 0 1rem 0;
+    color: #e53e3e;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.confirmation-dialog p {
+    margin: 0 0 2rem 0;
+    color: #4a5568;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.confirmation-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.confirm-delete {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    min-width: 80px;
+}
+
+.confirm-delete:hover {
+    background: #c53030;
+}
+
+.cancel-delete {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    min-width: 80px;
+}
+
+.cancel-delete:hover {
+    background: #4b5563;
+}
+
+/* No Records Styles */
+.no-records {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin: 2rem;
+    border: 2px dashed var(--gray-300);
+}
+
+.no-records p {
+    color: var(--gray-600);
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.no-records a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--primary);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    display: inline-block;
+    background: rgba(67, 97, 238, 0.1);
+}
+
+.no-records a:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.no-records a:active {
+    transform: translateY(0);
+}
+
+/* Icon for no records (optional) */
+.no-records::before {
+    content: "📋";
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+/* Animation for no records */
+.no-records {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
 /* Modal Styles */
 .modal {
   display: none;

@@ -442,24 +442,17 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                             <button type="button" class="btn btn-edit" onclick="editStudent(<?php echo $student['student_id']; ?>)">
                                 Edit
                             </button>
-                            <form method="POST" style="display: inline;">
-                                <input type="hidden" name="student_id" value="<?php echo $student['student_id']; ?>">
-                                <button type="submit" name="delete_student" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this student?')">
-                                    Delete
-                                </button>
-                            </form>
+                            <button class="btn btn-danger delete-btn" 
+                                    data-student-id="<?php echo $student['student_id']; ?>"
+                                    data-student-no="<?php echo htmlspecialchars($student['student_no']); ?>"
+                                    data-student-name="<?php echo htmlspecialchars($student['last_name'] . ', ' . $student['first_name']); ?>">
+                                Delete
+                            </button>
                         </td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
             </table>
-            
-            <!-- Pagination -->
-            <div class="pagination no-print">
-                <button class="pagination-btn" disabled>Previous</button>
-                <span class="pagination-info">Page 1 of 1</span>
-                <button class="pagination-btn" disabled>Next</button>
-            </div>
             
             <?php else: ?>
             <div class="no-records">
@@ -468,6 +461,24 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="delete-confirmation" id="deleteConfirmation">
+        <div class="confirmation-dialog">
+            <h3>Delete Student</h3>
+            <p id="deleteMessage">Are you sure you want to delete this student? This action cannot be undone.</p>
+            <div class="confirmation-actions">
+                <button class="confirm-delete" id="confirmDelete">Yes</button>
+                <button class="cancel-delete" id="cancelDelete">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden delete form -->
+    <form method="POST" id="deleteStudentForm">
+        <input type="hidden" name="student_id" id="deleteStudentId">
+        <input type="hidden" name="delete_student" value="1">
+    </form>
 
     <!-- Edit Student Modal -->
     <div id="edit-student-modal" class="modal">

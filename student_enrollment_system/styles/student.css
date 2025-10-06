@@ -382,6 +382,128 @@ body {
     background: var(--primary-dark);
 }
 
+/* Delete Confirmation Modal Styles */
+.delete-confirmation {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirmation-dialog {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    margin: 0;
+    position: relative;
+}
+
+.confirmation-dialog h3 {
+    margin: 0 0 1rem 0;
+    color: #e53e3e;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.confirmation-dialog p {
+    margin: 0 0 2rem 0;
+    color: #4a5568;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.confirmation-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.confirm-delete {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    min-width: 80px;
+}
+
+.confirm-delete:hover {
+    background: #c53030;
+}
+
+.cancel-delete {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    min-width: 80px;
+}
+
+.cancel-delete:hover {
+    background: #4b5563;
+}
+
+/* Hidden delete form */
+#deleteStudentForm {
+    display: none;
+}
+
+/* Ensure edit and delete buttons are same size */
+.actions .btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+    border-radius: 10px;
+    min-width: 100px;
+    height: 42px;
+    box-sizing: border-box;
+}
+
+/* Edit button */
+.actions .btn.btn-edit {
+    background: var(--info);
+    color: white;
+}
+
+.actions .btn.btn-edit:hover {
+    background: var(--primary-dark);
+}
+
+/* Delete button */
+.actions .btn.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.actions .btn.btn-danger:hover {
+    background: #e01e69;
+}
+
 /* Modal Styles */
 .modal {
     display: none;

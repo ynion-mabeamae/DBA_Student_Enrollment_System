@@ -228,3 +228,61 @@ function showPopup(message, type = 'info') {
         }
     };
 }
+
+// Delete Confirmation Modal Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('deleteConfirmation');
+    const confirmDeleteBtn = document.getElementById('confirmDelete');
+    const cancelDeleteBtn = document.getElementById('cancelDelete');
+    const deleteForm = document.getElementById('deleteStudentForm');
+    const deleteMessage = document.getElementById('deleteMessage');
+
+    // Delete button functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-btn')) {
+            const studentId = e.target.getAttribute('data-student-id');
+            const studentNo = e.target.getAttribute('data-student-no');
+            const studentName = e.target.getAttribute('data-student-name');
+            
+            // Set delete message
+            deleteMessage.textContent = `Are you sure you want to delete student "${studentNo} - ${studentName}"? This action cannot be undone.`;
+            
+            // Set delete form values
+            document.getElementById('deleteStudentId').value = studentId;
+            
+            // Show delete confirmation modal
+            showDeleteModal();
+        }
+    });
+
+    // Delete confirmation
+    confirmDeleteBtn.addEventListener('click', function() {
+        deleteForm.submit();
+    });
+
+    // Cancel delete
+    cancelDeleteBtn.addEventListener('click', function() {
+        hideDeleteModal();
+    });
+
+    // Close modal when clicking outside
+    deleteModal.addEventListener('click', function(event) {
+        if (event.target === deleteModal) {
+            hideDeleteModal();
+        }
+    });
+
+    function showDeleteModal() {
+        deleteModal.style.display = 'flex';
+        setTimeout(() => {
+            deleteModal.style.opacity = '1';
+        }, 10);
+    }
+
+    function hideDeleteModal() {
+        deleteModal.style.opacity = '0';
+        setTimeout(() => {
+            deleteModal.style.display = 'none';
+        }, 300);
+    }
+});

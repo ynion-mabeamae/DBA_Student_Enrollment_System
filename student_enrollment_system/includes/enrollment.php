@@ -139,7 +139,7 @@ $sections = $conn->query("
 ");
 
 // Grade options
-$grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F', 'W', 'I'];
+$grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', '3.0'];
 ?>
 
 <!DOCTYPE html>
@@ -397,6 +397,7 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
     </div>
 
         <!-- Enrollments Table -->
+   <!-- Enrollments Table -->
     <div class="table-container">
       <?php
       // Get the first enrollment for the header (if any enrollments exist)
@@ -414,6 +415,7 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
         <h2>Enrollment List</h2>
       <?php endif; ?>
 
+      <?php if ($enrollments->num_rows > 0): ?>
       <table>
         <thead>
           <tr>
@@ -474,16 +476,45 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
               <?php endif; ?>
             </td>
             <td class="actions">
-              <a href="?edit_id=<?php echo $enrollment['enrollment_id']; ?>" class="btn btn-edit">Edit</a>
-              <form method="POST" style="display: inline;">
-                <input type="hidden" name="enrollment_id" value="<?php echo $enrollment['enrollment_id']; ?>">
-                <button type="submit" name="delete_enrollment" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this enrollment?')">Delete</button>
-              </form>
+                <a href="?edit_id=<?php echo $enrollment['enrollment_id']; ?>" class="btn btn-edit">Edit</a>
+                <button class="btn btn-danger delete-btn" 
+                        data-enrollment-id="<?php echo $enrollment['enrollment_id']; ?>"
+                        data-course-code="<?php echo htmlspecialchars($enrollment['course_code']); ?>"
+                        data-course-title="<?php echo htmlspecialchars($enrollment['course_title']); ?>"
+                        data-student-name="<?php echo htmlspecialchars($enrollment['last_name'] . ', ' . $enrollment['first_name']); ?>">
+                    Delete
+                </button>
             </td>
           </tr>
           <?php endwhile; ?>
         </tbody>
       </table>
+
+      <!-- Delete Confirmation Modal -->
+      <div class="delete-confirmation" id="deleteConfirmation">
+          <div class="confirmation-dialog">
+              <h3>Delete Enrollment</h3>
+              <p id="deleteMessage">Are you sure you want to delete this enrollment? This action cannot be undone.</p>
+              <div class="confirmation-actions">
+                  <button class="confirm-delete" id="confirmDelete">Yes</button>
+                  <button class="cancel-delete" id="cancelDelete">Cancel</button>
+              </div>
+          </div>
+      </div>
+
+      <!-- Hidden delete form -->
+      <form method="POST" id="deleteEnrollmentForm">
+          <input type="hidden" name="enrollment_id" id="deleteEnrollmentId">
+          <input type="hidden" name="delete_enrollment" value="1">
+      </form>
+      
+      <?php else: ?>
+      <div class="no-records">
+          <p>No enrollments found. <a href="javascript:void(0)" onclick="openModal('enrollmentModal')">Add the first enrollment</a></p>
+      </div>
+      <?php endif; ?>
+    </div>
+
     </div>
   </div>
 
