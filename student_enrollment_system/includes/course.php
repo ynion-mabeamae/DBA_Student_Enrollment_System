@@ -107,8 +107,60 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Course Management</title>
   <link rel="stylesheet" href="../styles/course.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body> 
+	<!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Enrollment System</h2>
+            <p>Student Management</p>
+        </div>
+        <div class="sidebar-menu">
+            <a href="dashboard.php" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="student.php" class="menu-item" >
+                <i class="fas fa-user-graduate"></i>
+                <span>Students</span>
+            </a>
+            <a href="course.php" class="menu-item">
+                <i class="fas fa-book"></i>
+                <span>Courses</span>
+            </a>
+            <a href="enrollment.php" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Enrollments</span>
+            </a>
+            <a href="instructor.php" class="menu-item">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Instructors</span>
+            </a>
+            <a href="department.php" class="menu-item">
+                <i class="fas fa-building"></i>
+                <span>Departments</span>
+            </a>
+            <a href="program.php" class="menu-item">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Programs</span>
+            </a>
+            <a href="section.php" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Sections</span>
+            </a>
+            <a href="room.php" class="menu-item">
+                <i class="fas fa-door-open"></i>
+                <span>Rooms</span>
+            </a>
+            <a href="term.php" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Terms</span>
+            </a>
+        </div>
+    </div>
+
 	<!-- Toast Notification Container -->
 	<div class="toast-container" id="toastContainer"></div>
 
