@@ -83,6 +83,8 @@ $total_departments = $departments->num_rows;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Department</title>
     <link rel="stylesheet" href="../styles/department.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
     <!-- Success/Error Notification -->
@@ -110,135 +112,195 @@ $total_departments = $departments->num_rows;
         <?php unset($_SESSION['error_message']); ?>
     <?php endif; ?>
 
-    <div class="page-header">
-        <h1>Department</h1>
-        <button class="btn btn-primary" id="openDepartmentModal">Add New Department</button>
-    </div>
-
-    <!-- Add/Edit Department Modal -->
-    <div id="departmentModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="departmentModalTitle">Add New Department</h2>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form method="POST" id="departmentForm">
-                    <input type="hidden" name="dept_id" id="dept_id">
-                    
-                    <div class="form-group">
-                        <label for="dept_code">Department Code *</label>
-                        <input type="text" id="dept_code" name="dept_code" 
-                               required maxlength="10" placeholder="Enter department code">
-                        <small class="form-help">Unique code for the department (max 10 characters)</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="dept_name">Department Name *</label>
-                        <input type="text" id="dept_name" name="dept_name" 
-                               required maxlength="100" placeholder="Enter department name">
-                        <small class="form-help">Full name of the department</small>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" name="add_department" class="btn btn-success" id="addDepartmentBtn">Add Department</button>
-                        <button type="submit" name="update_department" class="btn btn-success" id="updateDepartmentBtn" style="display: none;">Update Department</button>
-                        <button type="button" class="btn btn-cancel" id="cancelDepartment">Cancel</button>
-                    </div>
-                </form>
-            </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Enrollment System</h2>
+            <p>Student Management</p>
+        </div>
+        <div class="sidebar-menu">
+            <a href="dashboard.php" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="student.php" class="menu-item" >
+                <i class="fas fa-user-graduate"></i>
+                <span>Students</span>
+            </a>
+            <a href="course.php" class="menu-item">
+                <i class="fas fa-book"></i>
+                <span>Courses</span>
+            </a>
+            <a href=".enrollment.php" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Enrollments</span>
+            </a>
+            <a href="instructor.php" class="menu-item">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Instructors</span>
+            </a>
+            <a href="department.php" class="menu-item">
+                <i class="fas fa-building"></i>
+                <span>Departments</span>
+            </a>
+            <a href="program.php" class="menu-item">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Programs</span>
+            </a>
+            <a href="section.php" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Sections</span>
+            </a>
+            <a href="room.php" class="menu-item">
+                <i class="fas fa-door-open"></i>
+                <span>Rooms</span>
+            </a>
+            <a href="term.php" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Terms</span>
+            </a>
         </div>
     </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Department</h1>
+            <button class="btn btn-primary" id="openDepartmentModal">Add New Department</button>
+        </div>
+            <!-- Add/Edit Department Modal -->
+        <div id="departmentModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="departmentModalTitle">Add New Department</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="departmentForm">
+                        <input type="hidden" name="dept_id" id="dept_id">
+                        
+                        <div class="form-group">
+                            <label for="dept_code">Department Code *</label>
+                            <input type="text" id="dept_code" name="dept_code" 
+                                required maxlength="10" placeholder="Enter department code">
+                            <small class="form-help">Unique code for the department (max 10 characters)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dept_name">Department Name *</label>
+                            <input type="text" id="dept_name" name="dept_name" 
+                                required maxlength="100" placeholder="Enter department name">
+                            <small class="form-help">Full name of the department</small>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" name="add_department" class="btn btn-success" id="addDepartmentBtn">Add Department</button>
+                            <button type="submit" name="update_department" class="btn btn-success" id="updateDepartmentBtn" style="display: none;">Update Department</button>
+                            <button type="button" class="btn btn-cancel" id="cancelDepartment">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Dialog -->
+        <div class="delete-confirmation" id="deleteConfirmation">
+            <div class="confirmation-dialog">
+                <h3>Delete Department</h3>
+                <p id="deleteMessage">Are you sure you want to delete this department? This action cannot be undone.</p>
+                <div class="confirmation-actions">
+                    <button class="confirm-delete" id="confirmDelete">Yes</button>
+                    <button class="cancel-delete" id="cancelDelete">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden delete form -->
+        <form method="POST" id="deleteDepartmentForm" style="display: none;">
+            <input type="hidden" name="dept_id" id="deleteDeptId">
+            <input type="hidden" name="delete_department" value="1">
+        </form>
+
+            <!-- Departments Table -->
+        <div class="table-container">
+            <h2>Department List</h2>
+            
+                    <!-- Search and Filters -->
+            <div class="search-container">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" id="searchDepartments" class="search-input" placeholder="Search departments by code or name...">
+                </div>
+                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+                
+                <div class="search-stats" id="searchStats">Showing <?php echo $total_departments; ?> of <?php echo $total_departments; ?> departments</div>
+                
+                <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Department Code</th>
+                        <th>Department Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    if ($departments && $departments->num_rows > 0):
+                        $departments->data_seek(0);
+                        while($department = $departments->fetch_assoc()): 
+                    ?>
+                    <tr>
+                        <td>
+                            <div class="department-info">
+                                <div class="department-code"><?php echo htmlspecialchars($department['dept_code']); ?></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="department-name"><?php echo htmlspecialchars($department['dept_name']); ?></div>
+                        </td>
+                        <td class="actions">
+                            <button type="button" class="btn btn-edit edit-btn" 
+                                    data-dept-id="<?php echo $department['dept_id']; ?>"
+                                    data-dept-code="<?php echo htmlspecialchars($department['dept_code']); ?>"
+                                    data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
+                                Edit
+                            </button>
+                            <button type="button" class="btn btn-danger delete-btn" 
+                                    data-dept-id="<?php echo $department['dept_id']; ?>"
+                                    data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    <?php 
+                        endwhile;
+                    else: 
+                    ?>
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 2rem;">
+                            <div style="color: var(--gray-500); font-style: italic;">
+                                No departments found. Click "Add New Department" to get started.
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
 
     
 
-    <!-- Delete Confirmation Dialog -->
-    <div class="delete-confirmation" id="deleteConfirmation">
-        <div class="confirmation-dialog">
-            <h3>Delete Department</h3>
-            <p id="deleteMessage">Are you sure you want to delete this department? This action cannot be undone.</p>
-            <div class="confirmation-actions">
-                <button class="confirm-delete" id="confirmDelete">Yes</button>
-                <button class="cancel-delete" id="cancelDelete">Cancel</button>
-            </div>
-        </div>
-    </div>
+    
 
-    <!-- Hidden delete form -->
-    <form method="POST" id="deleteDepartmentForm" style="display: none;">
-        <input type="hidden" name="dept_id" id="deleteDeptId">
-        <input type="hidden" name="delete_department" value="1">
-    </form>
+    
 
-    <!-- Departments Table -->
-    <div class="table-container">
-        <h2>Department List</h2>
-        
-                <!-- Search and Filters -->
-        <div class="search-container">
-            <div class="search-box">
-                <div class="search-icon">🔍</div>
-                <input type="text" id="searchDepartments" class="search-input" placeholder="Search departments by code or name...">
-            </div>
-            <button class="btn btn-primary search-btn" id="searchButton">Search</button>
-            
-            <div class="search-stats" id="searchStats">Showing <?php echo $total_departments; ?> of <?php echo $total_departments; ?> departments</div>
-            
-            <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
-        </div>
+    
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Department Code</th>
-                    <th>Department Name</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php 
-                if ($departments && $departments->num_rows > 0):
-                    $departments->data_seek(0);
-                    while($department = $departments->fetch_assoc()): 
-                ?>
-                <tr>
-                    <td>
-                        <div class="department-info">
-                            <div class="department-code"><?php echo htmlspecialchars($department['dept_code']); ?></div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="department-name"><?php echo htmlspecialchars($department['dept_name']); ?></div>
-                    </td>
-                    <td class="actions">
-                        <button type="button" class="btn btn-edit edit-btn" 
-                                data-dept-id="<?php echo $department['dept_id']; ?>"
-                                data-dept-code="<?php echo htmlspecialchars($department['dept_code']); ?>"
-                                data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
-                            Edit
-                        </button>
-                        <button type="button" class="btn btn-danger delete-btn" 
-                                data-dept-id="<?php echo $department['dept_id']; ?>"
-                                data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-                <?php 
-                    endwhile;
-                else: 
-                ?>
-                <tr>
-                    <td colspan="3" style="text-align: center; padding: 2rem;">
-                        <div style="color: var(--gray-500); font-style: italic;">
-                            No departments found. Click "Add New Department" to get started.
-                        </div>
-                    </td>
-                </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
+    
 
     <script src="../script/department.js"></script>
 </body>
