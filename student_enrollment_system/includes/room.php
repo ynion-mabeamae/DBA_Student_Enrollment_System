@@ -266,7 +266,7 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                 </div>
                 <button class="btn btn-primary search-btn" id="searchButton">Search</button>
                 
-                <div class="quick-actions">
+                <!-- <div class="quick-actions">
                     <button class="filter-btn active" data-filter="all">All</button>
                     <?php 
                     if ($buildings && $buildings->num_rows > 0):
@@ -280,7 +280,7 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                         endwhile;
                     endif; 
                     ?>
-                </div>
+                </div> -->
                 
                 <div class="search-stats" id="searchStats">Showing <?php echo $total_rooms; ?> of <?php echo $total_rooms; ?> rooms</div>
                 

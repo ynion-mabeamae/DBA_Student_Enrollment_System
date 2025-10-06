@@ -436,7 +436,9 @@ table td {
 .quick-actions {
     display: flex;
     gap: 0.5rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
 }
 
 .filter-btn {
@@ -448,6 +450,7 @@ table td {
     font-size: 0.8rem;
     transition: all 0.2s;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .filter-btn.active {
