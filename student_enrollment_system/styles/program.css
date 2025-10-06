@@ -37,6 +37,15 @@ body {
     line-height: 1.6;
 }
 
+/* Main Content */
+.main-content {
+    background: white;
+    min-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
 /* Page Header */
 .page-header {
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
