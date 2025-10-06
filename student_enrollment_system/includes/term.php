@@ -83,7 +83,7 @@ $total_terms = $terms->num_rows;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Term Management</title>
+    <title>Term</title>
     <link rel="stylesheet" href="../styles/term.css">
 </head>
 <body>
@@ -113,7 +113,7 @@ $total_terms = $terms->num_rows;
     <?php endif; ?>
 
     <div class="page-header">
-        <h1>Term Management</h1>
+        <h1>Term</h1>
         <button class="btn btn-primary" id="openTermModal">Add New Term</button>
     </div>
 
