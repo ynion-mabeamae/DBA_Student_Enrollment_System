@@ -840,13 +840,6 @@ table td {
   margin-bottom: 1.5rem;
 }
 
-/* Hide student dropdown when editing since we're showing the info above */
-<?php if ($edit_enrollment): ?>
-.student-display + .form-group:first-of-type {
-  display: none;
-}
-<?php endif; ?>
-
 /* Enrollment Header with Student Info */
 .enrollment-header-with-student {
   color: var(--gray-800);
