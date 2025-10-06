@@ -227,12 +227,6 @@ $total_programs = $programs->num_rows;
             <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
         </div>
 
-        <!-- Program Header -->
-        <div class="program-header-global">
-            <h3 class="program-name-global">All Programs</h3>
-            <span class="program-count-global">Total Programs: <?php echo $total_programs; ?></span>
-        </div>
-
         <table>
             <thead>
                 <tr>
