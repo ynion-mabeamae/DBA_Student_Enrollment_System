@@ -2,6 +2,21 @@
 session_start();
 require_once '../includes/config.php';
 
+// Check if user is logged in, redirect to login if not
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../includes/login.php");
+    exit();
+}
+
+// Handle logout
+if (isset($_GET['logout'])) {
+    // Destroy all session data
+    session_destroy();
+    // Redirect to login page
+    header("Location: ../includes/login.php");
+    exit();
+}
+
 // Initialize variables
 $error = '';
 $success = '';
@@ -78,15 +93,14 @@ $conn->close();
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Enrollment System</h2>
-            <p>Student Management</p>
+            <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
             <div class="menu-item active" data-tab="dashboard">
                 <i class="fas fa-tachometer-alt"></i>
                 <span>Dashboard</span>
             </div>
-            <a href="student.php" class="menu-item" >
+            <a href="student.php" class="menu-item">
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
             </a>
@@ -122,6 +136,14 @@ $conn->close();
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
+            
+            <!-- Logout Item -->
+            <div class="logout-item">
+                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -130,12 +152,35 @@ $conn->close();
         <div class="header">
             <h1>Student Enrollment System</h1>
             <div class="user-info">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 10px;">
-                    A
+                <div class="user-avatar">
+                    <?php 
+                    // Display user's first initial
+                    if (isset($_SESSION['first_name'])) {
+                        echo strtoupper(substr($_SESSION['first_name'], 0, 1));
+                    } else {
+                        echo 'A';
+                    }
+                    ?>
                 </div>
-                <div>
-                    <div>Admin User</div>
-                    <div style="font-size: 0.8rem; color: var(--gray);">Administrator</div>
+                <div class="user-details">
+                    <div class="user-name">
+                        <?php 
+                        if (isset($_SESSION['first_name']) && isset($_SESSION['last_name'])) {
+                            echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']);
+                        } else {
+                            echo 'Admin User';
+                        }
+                        ?>
+                    </div>
+                    <div class="user-role">
+                        <?php 
+                        if (isset($_SESSION['role'])) {
+                            echo htmlspecialchars($_SESSION['role']);
+                        } else {
+                            echo 'Administrator';
+                        }
+                        ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -290,8 +335,7 @@ $conn->close();
 
                 <!-- Students Tab -->
                 <div class="tab-pane" id="students">
-                    <h2>Student Management</h2>
-                    <p>This tab would display student management interface. You can integrate your existing student.php functionality here.</p>
+                    <h2>Student</h2>
                     <div class="table-container">
                         <table>
                             <thead>

@@ -2,6 +2,17 @@
 session_start();
 require_once '../includes/config.php';
 
+// Handle logout
+if (isset($_GET['logout'])) {
+    // Destroy all session data
+    session_destroy();
+    // Redirect to login page
+    header("Location: ../includes/login.php");
+    exit();
+}
+
+$active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'section';
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_section'])) {
@@ -169,8 +180,7 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Enrollment System</h2>
-            <p>Student Management</p>
+            <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
@@ -201,10 +211,10 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
                 <i class="fas fa-graduation-cap"></i>
                 <span>Programs</span>
             </a>
-            <a href="section.php" class="menu-item">
+            <div href="section.php" class="menu-item active" data-tab="section">
                 <i class="fas fa-users"></i>
                 <span>Sections</span>
-            </a>
+            </div>
             <a href="room.php" class="menu-item">
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
@@ -213,6 +223,13 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
+            <!-- Logout Item -->
+            <div class="logout-item">
+                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
         </div>
     </div>
     <div class="main-content">

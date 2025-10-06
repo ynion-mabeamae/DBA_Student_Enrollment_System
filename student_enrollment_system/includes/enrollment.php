@@ -2,6 +2,18 @@
 session_start();
 require_once '../includes/config.php';
 
+// Handle logout
+if (isset($_GET['logout'])) {
+    // Destroy all session data
+    session_destroy();
+    // Redirect to login page
+    header("Location: ../includes/login.php");
+    exit();
+}
+
+$active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'enrollment';
+
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_enrollment'])) {
@@ -176,8 +188,7 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
   <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Enrollment System</h2>
-            <p>Student Management</p>
+            <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
@@ -192,10 +203,10 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
                 <i class="fas fa-book"></i>
                 <span>Courses</span>
             </a>
-            <a href="enrollment.php" class="menu-item">
+            <div href="enrollment.php" class="menu-item active" data-tab="enrollment">
                 <i class="fas fa-clipboard-list"></i>
                 <span>Enrollments</span>
-            </a>
+            </div>
             <a href="instructor.php" class="menu-item">
                 <i class="fas fa-chalkboard-teacher"></i>
                 <span>Instructors</span>
@@ -220,6 +231,14 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
+
+            <!-- Logout Item -->
+            <div class="logout-item">
+                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
         </div>
     </div>
 

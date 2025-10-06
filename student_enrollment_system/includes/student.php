@@ -2,6 +2,17 @@
 session_start();
 require_once 'config.php';
 
+// Handle logout
+if (isset($_GET['logout'])) {
+    // Destroy all session data
+    session_destroy();
+    // Redirect to login page
+    header("Location: ../includes/login.php");
+    exit();
+}
+
+$active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'student';
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_student'])) {
@@ -182,18 +193,17 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Enrollment System</h2>
-            <p>Student Management</p>
+            <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
                 <i class="fas fa-tachometer-alt"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="student.php" class="menu-item" >
+            <div href="student.php" class="menu-item active" data-tab="students">
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
-            </a>
+            </div>
             <a href="course.php" class="menu-item">
                 <i class="fas fa-book"></i>
                 <span>Courses</span>
@@ -226,6 +236,13 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
+            <!-- Logout Item -->
+            <div class="logout-item">
+                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
         </div>
     </div>
 
