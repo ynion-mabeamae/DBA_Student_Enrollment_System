@@ -13,19 +13,18 @@ if (isset($_GET['logout'])) {
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'enrollment';
 
-
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_enrollment'])) {
         $student_id = $_POST['student_id'];
         $section_id = $_POST['section_id'];
         $date_enrolled = $_POST['date_enrolled'];
-        $start_date = $_POST['start_date'];
+        $start_time = $_POST['start_time'];
         
-        $sql = "INSERT INTO tblenrollment (student_id, section_id, date_enrolled, start_date) 
+        $sql = "INSERT INTO tblenrollment (student_id, section_id, date_enrolled, start_time) 
                 VALUES (?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iiss", $student_id, $section_id, $date_enrolled, $start_date);
+        $stmt->bind_param("iiss", $student_id, $section_id, $date_enrolled, $start_time);
         
         if ($stmt->execute()) {
             $_SESSION['success_message'] = "Enrollment added successfully!";
@@ -43,14 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $student_id = $_POST['student_id'];
         $section_id = $_POST['section_id'];
         $date_enrolled = $_POST['date_enrolled'];
-        $start_date = $_POST['start_date'];
+        $start_time = $_POST['start_time'];
         $letter_grade = $_POST['letter_grade'] ?? null;
         
         $sql = "UPDATE tblenrollment 
-                SET student_id = ?, section_id = ?, date_enrolled = ?, start_date = ?, letter_grade = ?
+                SET student_id = ?, section_id = ?, date_enrolled = ?, start_time = ?, letter_grade = ?
                 WHERE enrollment_id = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iissi", $student_id, $section_id, $date_enrolled, $start_date, $letter_grade, $enrollment_id);
+        // Fixed: Changed "iissi" to "iissii" - 6 parameters for 6 variables
+        $stmt->bind_param("iissii", $student_id, $section_id, $date_enrolled, $start_time, $letter_grade, $enrollment_id);
         
         if ($stmt->execute()) {
             $_SESSION['success_message'] = "Enrollment updated successfully!";
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
     
-    // Handle export requests - FIXED PATHS
+    // Handle export requests
     if (isset($_POST['export_pdf'])) {
         require_once 'export_pdf.php';
         exit();
@@ -151,6 +151,26 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
   <link rel="stylesheet" href="../styles/enrollment.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../styles/dashboard.css">
+  <style>
+    .course-code {
+      font-weight: 600;
+      color: #2d3748;
+      font-size: 0.9rem;
+    }
+    .course-title {
+      color: #718096;
+      font-size: 0.8rem;
+    }
+    .time-display {
+      font-weight: 600;
+      color: #2d3748;
+    }
+    .time-period {
+      color: #718096;
+      font-size: 0.8rem;
+      margin-left: 2px;
+    }
+  </style>
 </head>
 <style>
   <?php if ($edit_enrollment): ?>
@@ -191,10 +211,10 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
-            <a href="dashboard.php" class="menu-item">
+            <!-- <a href="dashboard.php" class="menu-item">
                 <i class="fas fa-tachometer-alt"></i>
                 <span>Dashboard</span>
-            </a>
+            </a> -->
             <a href="student.php" class="menu-item" >
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
@@ -337,14 +357,14 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
             </div>
             
             <div class="form-group">
-              <label for="start_date">Start Date *</label>
-              <input type="date" id="start_date" name="start_date" 
+              <label for="start_time">Start Time *</label>
+              <input type="time" id="start_time" name="start_time" 
                     value="<?php 
-                    if ($edit_enrollment && isset($edit_enrollment['start_date'])) {
-                        echo $edit_enrollment['start_date'];
+                    if ($edit_enrollment && isset($edit_enrollment['start_time']) && !empty($edit_enrollment['start_time'])) {
+                        echo $edit_enrollment['start_time'];
                     } else {
-                        // Default: 7 days from enrollment date
-                        echo date('Y-m-d', strtotime('+7 days'));
+                        // Default: 08:00 AM
+                        echo '08:00';
                     }
                     ?>" required>
             </div>
@@ -397,11 +417,12 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
       <table>
         <thead>
           <tr>
-            <th>Course</th>
+            <th>Subject Code</th>
+            <th>Subject Course</th>
             <th>Section</th>
             <th>Term</th>
             <th>Date Enrolled</th>
-            <th>Start Date</th>
+            <th>Start Time</th>
             <th>Grade</th>
             <th>Actions</th>
           </tr>
@@ -411,24 +432,37 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
           // Reset pointer and loop through all enrollments
           $enrollments->data_seek(0);
           while($enrollment = $enrollments->fetch_assoc()): 
+              // Safely get start_time with null check and format with AM/PM
+              $start_time_display = '';
+              $time_period = '';
+              if (isset($enrollment['start_time']) && !empty($enrollment['start_time'])) {
+                  $time = DateTime::createFromFormat('H:i:s', $enrollment['start_time']);
+                  if ($time) {
+                      $start_time_display = $time->format('g:i');
+                      $time_period = $time->format('A');
+                  } else {
+                      $start_time_display = '8:00';
+                      $time_period = 'AM';
+                  }
+              } else {
+                  // Fallback: default time
+                  $start_time_display = '8:00';
+                  $time_period = 'AM';
+              }
           ?>
           <tr>
             <td>
-              <div class="course-info">
-                <div class="course-code"><?php echo $enrollment['course_code']; ?></div>
-                <div class="course-title"><?php echo $enrollment['course_title']; ?></div>
-              </div>
+              <div class="course-code"><?php echo $enrollment['course_code']; ?></div>
+            </td>
+            <td>
+              <div class="course-title"><?php echo $enrollment['course_title']; ?></div>
             </td>
             <td><span class="section-badge"><?php echo $enrollment['section_code']; ?></span></td>
             <td><span class="term-badge"><?php echo $enrollment['term_code']; ?></span></td>
             <td><?php echo date('M j, Y', strtotime($enrollment['date_enrolled'])); ?></td>
             <td>
-              <?php 
-              // Calculate start date (you can modify this logic based on your business rules)
-              // Example: Start date is 7 days after enrollment date
-              $start_date = date('M j, Y', strtotime($enrollment['date_enrolled'] . ' +7 days'));
-              echo $start_date;
-              ?>
+              <span class="time-display"><?php echo $start_time_display; ?></span>
+              <span class="time-period"><?php echo $time_period; ?></span>
             </td>
             <td>
               <?php if ($enrollment['letter_grade']): ?>
@@ -452,11 +486,6 @@ $grade_options = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 
       </table>
     </div>
   </div>
-  
-
-  
-
-  
 
   <script src="../script/enrollment.js"></script>
   <script>

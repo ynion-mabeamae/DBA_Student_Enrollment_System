@@ -128,10 +128,10 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
-            <a href="dashboard.php" class="menu-item">
+            <!-- <a href="dashboard.php" class="menu-item">
                 <i class="fas fa-tachometer-alt"></i>
                 <span>Dashboard</span>
-            </a>
+            </a> -->
             <a href="student.php" class="menu-item" >
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
