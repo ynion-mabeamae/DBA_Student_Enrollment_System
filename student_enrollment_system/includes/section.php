@@ -137,6 +137,8 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Section Management</title>
     <link rel="stylesheet" href="../styles/section.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
     <!-- Success/Error Notification -->
@@ -164,297 +166,349 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
         <?php unset($_SESSION['error_message']); ?>
     <?php endif; ?>
 
-    <div class="page-header">
-        <h1>Section Management</h1>
-        <button class="btn btn-primary" id="openSectionModal">Add New Section</button>
-    </div>
-
-    <!-- Add/Edit Section Modal -->
-    <div id="sectionModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="sectionModalTitle">Add New Section</h2>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form method="POST" id="sectionForm">
-                    <input type="hidden" name="section_id" id="section_id">
-                    
-                    <div class="form-group">
-                        <label for="section_code">Section Code *</label>
-                        <input type="text" id="section_code" name="section_code" 
-                               required maxlength="20" placeholder="Enter section code">
-                        <small class="form-help">Unique code for the section (e.g., CS101-A)</small>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="course_id">Course *</label>
-                            <select id="course_id" name="course_id" required>
-                                <option value="">Select Course</option>
-                                <?php 
-                                if ($courses && $courses->num_rows > 0):
-                                    $courses->data_seek(0);
-                                    while($course = $courses->fetch_assoc()): 
-                                        $selected = ($edit_section && $edit_section['course_id'] == $course['course_id']) ? 'selected' : '';
-                                ?>
-                                    <option value="<?php echo $course['course_id']; ?>" <?php echo $selected; ?>>
-                                        <?php echo htmlspecialchars($course['course_code']); ?>
-                                    </option>
-                                <?php 
-                                    endwhile;
-                                endif; 
-                                ?>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="term_id">Term *</label>
-                            <select id="term_id" name="term_id" required>
-                                <option value="">Select Term</option>
-                                <?php 
-                                if ($terms && $terms->num_rows > 0):
-                                    $terms->data_seek(0);
-                                    while($term = $terms->fetch_assoc()): 
-                                        $selected = ($edit_section && $edit_section['term_id'] == $term['term_id']) ? 'selected' : '';
-                                ?>
-                                    <option value="<?php echo $term['term_id']; ?>" <?php echo $selected; ?>>
-                                        <?php echo htmlspecialchars($term['term_code']); ?>
-                                    </option>
-                                <?php 
-                                    endwhile;
-                                endif; 
-                                ?>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="instructor_id">Instructor</label>
-                        <select id="instructor_id" name="instructor_id">
-                            <option value="">Select Instructor</option>
-                            <?php 
-                            if ($instructors && $instructors->num_rows > 0):
-                                $instructors->data_seek(0);
-                                while($instructor = $instructors->fetch_assoc()): 
-                                    $selected = ($edit_section && $edit_section['instruction_id'] == $instructor['instructor_id']) ? 'selected' : '';
-                            ?>
-                                <option value="<?php echo $instructor['instructor_id']; ?>" <?php echo $selected; ?>>
-                                    <?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>
-                                </option>
-                            <?php 
-                                endwhile;
-                            endif; 
-                            ?>
-                        </select>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="day_pattern">Day Pattern</label>
-                            <select id="day_pattern" name="day_pattern">
-                                <option value="">Select Days</option>
-                                <?php foreach($day_patterns as $pattern): 
-                                    $selected = ($edit_section && $edit_section['day_pattern'] == $pattern) ? 'selected' : '';
-                                ?>
-                                    <option value="<?php echo $pattern; ?>" <?php echo $selected; ?>>
-                                        <?php echo $pattern; ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="start_time">Start Time</label>
-                            <input type="time" id="start_time" name="start_time" 
-                                   value="<?php echo $edit_section ? $edit_section['start_time'] : ''; ?>">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="end_time">End Time</label>
-                            <input type="time" id="end_time" name="end_time" 
-                                   value="<?php echo $edit_section ? $edit_section['end_time'] : ''; ?>">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="room_id">Room</label>
-                            <select id="room_id" name="room_id">
-                                <option value="">Select Room</option>
-                                <?php 
-                                if ($rooms && $rooms->num_rows > 0):
-                                    $rooms->data_seek(0);
-                                    while($room = $rooms->fetch_assoc()): 
-                                        $selected = ($edit_section && $edit_section['room_id'] == $room['room_id']) ? 'selected' : '';
-                                ?>
-                                    <option value="<?php echo $room['room_id']; ?>" <?php echo $selected; ?>>
-                                        <?php echo htmlspecialchars($room['building'] . ' - ' . $room['room_code'] . ' (' . $room['capacity'] . ' seats)'); ?>
-                                    </option>
-                                <?php 
-                                    endwhile;
-                                endif; 
-                                ?>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="max_capacity">Max Capacity</label>
-                            <input type="number" id="max_capacity" name="max_capacity" 
-                                   min="1" max="1000" placeholder="Enter capacity"
-                                   value="<?php echo $edit_section ? $edit_section['max_capacity'] : ''; ?>">
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" name="add_section" class="btn btn-success" id="addSectionBtn">Add Section</button>
-                        <button type="submit" name="update_section" class="btn btn-success" id="updateSectionBtn" style="display: none;">Update Section</button>
-                        <button type="button" class="btn btn-cancel" id="cancelSection">Cancel</button>
-                    </div>
-                </form>
-            </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Enrollment System</h2>
+            <p>Student Management</p>
+        </div>
+        <div class="sidebar-menu">
+            <a href="dashboard.php" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="student.php" class="menu-item" >
+                <i class="fas fa-user-graduate"></i>
+                <span>Students</span>
+            </a>
+            <a href="course.php" class="menu-item">
+                <i class="fas fa-book"></i>
+                <span>Courses</span>
+            </a>
+            <a href="enrollment.php" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Enrollments</span>
+            </a>
+            <a href="instructor.php" class="menu-item">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Instructors</span>
+            </a>
+            <a href="department.php" class="menu-item">
+                <i class="fas fa-building"></i>
+                <span>Departments</span>
+            </a>
+            <a href="program.php" class="menu-item">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Programs</span>
+            </a>
+            <a href="section.php" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Sections</span>
+            </a>
+            <a href="room.php" class="menu-item">
+                <i class="fas fa-door-open"></i>
+                <span>Rooms</span>
+            </a>
+            <a href="term.php" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Terms</span>
+            </a>
         </div>
     </div>
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Section Management</h1>
+            <button class="btn btn-primary" id="openSectionModal">Add New Section</button>
+        </div>
 
-    <!-- Delete Confirmation Dialog -->
-    <div class="delete-confirmation" id="deleteConfirmation">
-        <div class="confirmation-dialog">
-            <h3>Delete Section</h3>
-            <p id="deleteMessage">Are you sure you want to delete this section? This action cannot be undone.</p>
-            <div class="confirmation-actions">
-                <button class="confirm-delete" id="confirmDelete">Yes</button>
-                <button class="cancel-delete" id="cancelDelete">Cancel</button>
+        <!-- Add/Edit Section Modal -->
+        <div id="sectionModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="sectionModalTitle">Add New Section</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="sectionForm">
+                        <input type="hidden" name="section_id" id="section_id">
+                        
+                        <div class="form-group">
+                            <label for="section_code">Section Code *</label>
+                            <input type="text" id="section_code" name="section_code" 
+                                required maxlength="20" placeholder="Enter section code">
+                            <small class="form-help">Unique code for the section (e.g., CS101-A)</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="course_id">Course *</label>
+                                <select id="course_id" name="course_id" required>
+                                    <option value="">Select Course</option>
+                                    <?php 
+                                    if ($courses && $courses->num_rows > 0):
+                                        $courses->data_seek(0);
+                                        while($course = $courses->fetch_assoc()): 
+                                            $selected = ($edit_section && $edit_section['course_id'] == $course['course_id']) ? 'selected' : '';
+                                    ?>
+                                        <option value="<?php echo $course['course_id']; ?>" <?php echo $selected; ?>>
+                                            <?php echo htmlspecialchars($course['course_code']); ?>
+                                        </option>
+                                    <?php 
+                                        endwhile;
+                                    endif; 
+                                    ?>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="term_id">Term *</label>
+                                <select id="term_id" name="term_id" required>
+                                    <option value="">Select Term</option>
+                                    <?php 
+                                    if ($terms && $terms->num_rows > 0):
+                                        $terms->data_seek(0);
+                                        while($term = $terms->fetch_assoc()): 
+                                            $selected = ($edit_section && $edit_section['term_id'] == $term['term_id']) ? 'selected' : '';
+                                    ?>
+                                        <option value="<?php echo $term['term_id']; ?>" <?php echo $selected; ?>>
+                                            <?php echo htmlspecialchars($term['term_code']); ?>
+                                        </option>
+                                    <?php 
+                                        endwhile;
+                                    endif; 
+                                    ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="instructor_id">Instructor</label>
+                            <select id="instructor_id" name="instructor_id">
+                                <option value="">Select Instructor</option>
+                                <?php 
+                                if ($instructors && $instructors->num_rows > 0):
+                                    $instructors->data_seek(0);
+                                    while($instructor = $instructors->fetch_assoc()): 
+                                        $selected = ($edit_section && $edit_section['instruction_id'] == $instructor['instructor_id']) ? 'selected' : '';
+                                ?>
+                                    <option value="<?php echo $instructor['instructor_id']; ?>" <?php echo $selected; ?>>
+                                        <?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>
+                                    </option>
+                                <?php 
+                                    endwhile;
+                                endif; 
+                                ?>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="day_pattern">Day Pattern</label>
+                                <select id="day_pattern" name="day_pattern">
+                                    <option value="">Select Days</option>
+                                    <?php foreach($day_patterns as $pattern): 
+                                        $selected = ($edit_section && $edit_section['day_pattern'] == $pattern) ? 'selected' : '';
+                                    ?>
+                                        <option value="<?php echo $pattern; ?>" <?php echo $selected; ?>>
+                                            <?php echo $pattern; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="start_time">Start Time</label>
+                                <input type="time" id="start_time" name="start_time" 
+                                    value="<?php echo $edit_section ? $edit_section['start_time'] : ''; ?>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="end_time">End Time</label>
+                                <input type="time" id="end_time" name="end_time" 
+                                    value="<?php echo $edit_section ? $edit_section['end_time'] : ''; ?>">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="room_id">Room</label>
+                                <select id="room_id" name="room_id">
+                                    <option value="">Select Room</option>
+                                    <?php 
+                                    if ($rooms && $rooms->num_rows > 0):
+                                        $rooms->data_seek(0);
+                                        while($room = $rooms->fetch_assoc()): 
+                                            $selected = ($edit_section && $edit_section['room_id'] == $room['room_id']) ? 'selected' : '';
+                                    ?>
+                                        <option value="<?php echo $room['room_id']; ?>" <?php echo $selected; ?>>
+                                            <?php echo htmlspecialchars($room['building'] . ' - ' . $room['room_code'] . ' (' . $room['capacity'] . ' seats)'); ?>
+                                        </option>
+                                    <?php 
+                                        endwhile;
+                                    endif; 
+                                    ?>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="max_capacity">Max Capacity</label>
+                                <input type="number" id="max_capacity" name="max_capacity" 
+                                    min="1" max="1000" placeholder="Enter capacity"
+                                    value="<?php echo $edit_section ? $edit_section['max_capacity'] : ''; ?>">
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" name="add_section" class="btn btn-success" id="addSectionBtn">Add Section</button>
+                            <button type="submit" name="update_section" class="btn btn-success" id="updateSectionBtn" style="display: none;">Update Section</button>
+                            <button type="button" class="btn btn-cancel" id="cancelSection">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Hidden delete form -->
-    <form method="POST" id="deleteSectionForm" style="display: none;">
-        <input type="hidden" name="section_id" id="deleteSectionId">
-        <input type="hidden" name="delete_section" value="1">
-    </form>
-
-    <!-- Sections Table -->
-    <div class="table-container">
-        <h2>Section List</h2>
-        
-        <!-- Search and Filters -->
-        <div class="search-container">
-            <div class="search-box">
-                <div class="search-icon">🔍</div>
-                <input type="text" id="searchSections" class="search-input" placeholder="Search sections by code, course, instructor...">
+        <!-- Delete Confirmation Dialog -->
+        <div class="delete-confirmation" id="deleteConfirmation">
+            <div class="confirmation-dialog">
+                <h3>Delete Section</h3>
+                <p id="deleteMessage">Are you sure you want to delete this section? This action cannot be undone.</p>
+                <div class="confirmation-actions">
+                    <button class="confirm-delete" id="confirmDelete">Yes</button>
+                    <button class="cancel-delete" id="cancelDelete">Cancel</button>
+                </div>
             </div>
-            <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+        </div>
+
+        <!-- Hidden delete form -->
+        <form method="POST" id="deleteSectionForm" style="display: none;">
+            <input type="hidden" name="section_id" id="deleteSectionId">
+            <input type="hidden" name="delete_section" value="1">
+        </form>
+
+        <!-- Sections Table -->
+        <div class="table-container">
+            <h2>Section List</h2>
             
-            <div class="search-stats" id="searchStats">Showing <?php echo $total_sections; ?> of <?php echo $total_sections; ?> sections</div>
-            
-            <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
-        </div>
+            <!-- Search and Filters -->
+            <div class="search-container">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" id="searchSections" class="search-input" placeholder="Search sections by code, course, instructor...">
+                </div>
+                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+                
+                <div class="search-stats" id="searchStats">Showing <?php echo $total_sections; ?> of <?php echo $total_sections; ?> sections</div>
+                
+                <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
+            </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Section Code</th>
-                    <th>Course</th>
-                    <th>Term</th>
-                    <th>Instructor</th>
-                    <th>Schedule</th>
-                    <th>Room</th>
-                    <th>Capacity</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php 
-                if ($sections && $sections->num_rows > 0):
-                    $sections->data_seek(0);
-                    while($section = $sections->fetch_assoc()): 
-                        $schedule = '';
-                        if ($section['day_pattern']) {
-                            $schedule = $section['day_pattern'];
-                            if ($section['start_time']) {
-                                $schedule .= ' ' . date('g:i A', strtotime($section['start_time']));
-                                if ($section['end_time']) {
-                                    $schedule .= '-' . date('g:i A', strtotime($section['end_time']));
+            <table>
+                <thead>
+                    <tr>
+                        <th>Section Code</th>
+                        <th>Course</th>
+                        <th>Term</th>
+                        <th>Instructor</th>
+                        <th>Schedule</th>
+                        <th>Room</th>
+                        <th>Capacity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    if ($sections && $sections->num_rows > 0):
+                        $sections->data_seek(0);
+                        while($section = $sections->fetch_assoc()): 
+                            $schedule = '';
+                            if ($section['day_pattern']) {
+                                $schedule = $section['day_pattern'];
+                                if ($section['start_time']) {
+                                    $schedule .= ' ' . date('g:i A', strtotime($section['start_time']));
+                                    if ($section['end_time']) {
+                                        $schedule .= '-' . date('g:i A', strtotime($section['end_time']));
+                                    }
                                 }
                             }
-                        }
-                ?>
-                <tr>
-                    <td>
-                        <div class="section-info">
-                            <div class="section-code"><?php echo htmlspecialchars($section['section_code']); ?></div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="course-info">
-                            <div class="course-code"><?php echo htmlspecialchars($section['course_code']); ?></div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="term-info">
-                            <div class="term-code"><?php echo htmlspecialchars($section['term_code']); ?></div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="instructor-info">
-                            <?php if ($section['first_name']): ?>
-                                <div class="instructor-name"><?php echo htmlspecialchars($section['last_name'] . ', ' . $section['first_name']); ?></div>
-                            <?php else: ?>
-                                <div class="no-instructor">Not Assigned</div>
-                            <?php endif; ?>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="schedule-info">
-                            <?php if ($schedule): ?>
-                                <div class="schedule"><?php echo htmlspecialchars($schedule); ?></div>
-                            <?php else: ?>
-                                <div class="no-schedule">Not Scheduled</div>
-                            <?php endif; ?>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="room-info">
-                            <?php if ($section['building']): ?>
-                                <div class="room-location"><?php echo htmlspecialchars($section['building'] . ' ' . $section['room_code']); ?></div>
-                            <?php else: ?>
-                                <div class="no-room">Not Assigned</div>
-                            <?php endif; ?>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="capacity-info">
-                            <span class="capacity-badge"><?php echo $section['max_capacity'] ? $section['max_capacity'] : 'N/A'; ?></span>
-                        </div>
-                    </td>
-                    <td class="actions">
-                        <button type="button" class="btn btn-edit edit-btn" 
-                                >
-                            Edit
-                        </button>
-                        <button type="button" class="btn btn-danger delete-btn" 
-                                data-section-id="<?php echo $section['section_id']; ?>"
-                                data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-                <?php 
-                    endwhile;
-                else: 
-                ?>
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 2rem;">
-                        <div style="color: var(--gray-500); font-style: italic;">
-                            No sections found. Click "Add New Section" to get started.
-                        </div>
-                    </td>
-                </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    ?>
+                    <tr>
+                        <td>
+                            <div class="section-info">
+                                <div class="section-code"><?php echo htmlspecialchars($section['section_code']); ?></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="course-info">
+                                <div class="course-code"><?php echo htmlspecialchars($section['course_code']); ?></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="term-info">
+                                <div class="term-code"><?php echo htmlspecialchars($section['term_code']); ?></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="instructor-info">
+                                <?php if ($section['first_name']): ?>
+                                    <div class="instructor-name"><?php echo htmlspecialchars($section['last_name'] . ', ' . $section['first_name']); ?></div>
+                                <?php else: ?>
+                                    <div class="no-instructor">Not Assigned</div>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="schedule-info">
+                                <?php if ($schedule): ?>
+                                    <div class="schedule"><?php echo htmlspecialchars($schedule); ?></div>
+                                <?php else: ?>
+                                    <div class="no-schedule">Not Scheduled</div>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="room-info">
+                                <?php if ($section['building']): ?>
+                                    <div class="room-location"><?php echo htmlspecialchars($section['building'] . ' ' . $section['room_code']); ?></div>
+                                <?php else: ?>
+                                    <div class="no-room">Not Assigned</div>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="capacity-info">
+                                <span class="capacity-badge"><?php echo $section['max_capacity'] ? $section['max_capacity'] : 'N/A'; ?></span>
+                            </div>
+                        </td>
+                        <td class="actions">
+                            <button type="button" class="btn btn-edit edit-btn" 
+                                    >
+                                Edit
+                            </button>
+                            <button type="button" class="btn btn-danger delete-btn" 
+                                    data-section-id="<?php echo $section['section_id']; ?>"
+                                    data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    <?php 
+                        endwhile;
+                    else: 
+                    ?>
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem;">
+                            <div style="color: var(--gray-500); font-style: italic;">
+                                No sections found. Click "Add New Section" to get started.
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
+    
 
     <script src="../script/section.js"></script>
 </body>
