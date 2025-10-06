@@ -106,6 +106,8 @@ $total_instructors = $instructors->num_rows;
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Instructor</title>
   <link rel="stylesheet" href="../styles/instructor.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
   <!-- Success/Error Notification -->
@@ -133,181 +135,236 @@ $total_instructors = $instructors->num_rows;
     <?php unset($_SESSION['error_message']); ?>
   <?php endif; ?>
 
-  <div class="page-header">
-    <h1>Instructor</h1>
-    <button class="btn btn-primary" id="openInstructorModal">Add New Instructor</button>
-  </div>
+  <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Enrollment System</h2>
+            <p>Student Management</p>
+        </div>
+        <div class="sidebar-menu">
+            <a href="dashboard.php" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="student.php" class="menu-item" >
+                <i class="fas fa-user-graduate"></i>
+                <span>Students</span>
+            </a>
+            <a href="course.php" class="menu-item">
+                <i class="fas fa-book"></i>
+                <span>Courses</span>
+            </a>
+            <a href="enrollment.php" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Enrollments</span>
+            </a>
+            <a href="instructor.php" class="menu-item">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Instructors</span>
+            </a>
+            <a href="department.php" class="menu-item">
+                <i class="fas fa-building"></i>
+                <span>Departments</span>
+            </a>
+            <a href="program.php" class="menu-item">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Programs</span>
+            </a>
+            <a href="section.php" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Sections</span>
+            </a>
+            <a href="room.php" class="menu-item">
+                <i class="fas fa-door-open"></i>
+                <span>Rooms</span>
+            </a>
+            <a href="term.php" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Terms</span>
+            </a>
+        </div>
+    </div>
 
-  <!-- Instructor Modal -->
-  <div id="instructorModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2><?php echo $edit_instructor ? 'Edit Instructor' : 'Add New Instructor'; ?></h2>
-        <span class="close">&times;</span>
-      </div>
-      <div class="modal-body">
-        <form method="POST" id="instructorForm">
-          <?php if ($edit_instructor): ?>
-              <input type="hidden" name="instructor_id" value="<?php echo $edit_instructor['instructor_id']; ?>">
-          <?php endif; ?>
-            
-          <div class="form-row">
-            <div class="form-group">
-              <label for="last_name">Last Name *</label>
-              <input type="text" id="last_name" name="last_name" 
-                        value="<?php echo $edit_instructor ? htmlspecialchars($edit_instructor['last_name']) : ''; ?>" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="first_name">First Name *</label>
-              <input type="text" id="first_name" name="first_name" 
-                        value="<?php echo $edit_instructor ? htmlspecialchars($edit_instructor['first_name']) : ''; ?>" required>
-            </div>
-          </div>
-            
-          <div class="form-group">
-            <label for="email">Email *</label>
-            <input type="email" id="email" name="email" 
-                      value="<?php echo $edit_instructor ? htmlspecialchars($edit_instructor['email']) : ''; ?>" required>
-          </div>
-            
-          <div class="form-group">
-            <label for="dept_id">Department</label>
-            <select id="dept_id" name="dept_id">
-              <option value="">Select Department</option>
-              <?php 
-                if ($departments) {
-                  $departments->data_seek(0);
-                  while($department = $departments->fetch_assoc()): 
-                      $selected = ($edit_instructor && $edit_instructor['dept_id'] == $department['dept_id']) ? 'selected' : '';
-                  ?>
-                  <option value="<?php echo $department['dept_id']; ?>" <?php echo $selected; ?>>
-                      <?php echo htmlspecialchars($department['dept_name']); ?>
-                  </option>
-                  <?php endwhile;
-                }
-              ?>
-            </select>
-          </div>
-            
-          <div class="form-actions">
+  <div class="main-content">
+    <div class="page-header">
+      <h1>Instructor</h1>
+      <button class="btn btn-primary" id="openInstructorModal">Add New Instructor</button>
+    </div>
+
+      <!-- Instructor Modal -->
+    <div id="instructorModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><?php echo $edit_instructor ? 'Edit Instructor' : 'Add New Instructor'; ?></h2>
+          <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+          <form method="POST" id="instructorForm">
             <?php if ($edit_instructor): ?>
-              <button type="submit" name="update_instructor" class="btn btn-success">Update Instructor</button>
-            <?php else: ?>
-              <button type="submit" name="add_instructor" class="btn btn-success">Add Instructor</button>
+                <input type="hidden" name="instructor_id" value="<?php echo $edit_instructor['instructor_id']; ?>">
             <?php endif; ?>
-            <button type="button" class="btn btn-cancel" id="cancelInstructor">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Instructors Table -->
-  <div class="table-container">
-    <h2>Instructor List</h2>
-      
-    <!-- Search and Filters -->
-    <div class="search-container">
-      <div class="search-box">
-        <div class="search-icon">🔍</div>
-        <input type="text" id="searchInstructors" class="search-input" placeholder="Search instructors by name, email, or department...">
-      </div>
-        
-      <div class="quick-actions">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="assigned">With Department</button>
-        <button class="filter-btn" data-filter="unassigned">No Department</button>
-      </div>
-        
-      <div class="search-stats" id="searchStats">Showing <?php echo $total_instructors; ?> of <?php echo $total_instructors; ?> instructors</div>
-      
-      <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
-    </div>
-
-    <!-- Instructor Header -->
-    <div class="instructor-header-global">
-      <h3 class="instructor-name-global">All Instructors</h3>
-      <span class="instructor-count-global">Total Instructors: <?php echo $total_instructors; ?></span>
-    </div>
-
-    <!-- Delete Confirmation Dialog -->
-    <div class="delete-confirmation" id="deleteConfirmation">
-      <div class="confirmation-dialog">
-        <h3>Delete Instructor</h3>
-        <p id="deleteMessage">Are you sure you want to delete this instructor? This action cannot be undone.</p>
-        <div class="confirmation-actions">
-          <button class="confirm-delete" id="confirmDelete">Yes</button>
-          <button class="cancel-delete" id="cancelDelete">Cancel</button>
+              
+            <div class="form-row">
+              <div class="form-group">
+                <label for="last_name">Last Name *</label>
+                <input type="text" id="last_name" name="last_name" 
+                          value="<?php echo $edit_instructor ? htmlspecialchars($edit_instructor['last_name']) : ''; ?>" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="first_name">First Name *</label>
+                <input type="text" id="first_name" name="first_name" 
+                          value="<?php echo $edit_instructor ? htmlspecialchars($edit_instructor['first_name']) : ''; ?>" required>
+              </div>
+            </div>
+              
+            <div class="form-group">
+              <label for="email">Email *</label>
+              <input type="email" id="email" name="email" 
+                        value="<?php echo $edit_instructor ? htmlspecialchars($edit_instructor['email']) : ''; ?>" required>
+            </div>
+              
+            <div class="form-group">
+              <label for="dept_id">Department</label>
+              <select id="dept_id" name="dept_id">
+                <option value="">Select Department</option>
+                <?php 
+                  if ($departments) {
+                    $departments->data_seek(0);
+                    while($department = $departments->fetch_assoc()): 
+                        $selected = ($edit_instructor && $edit_instructor['dept_id'] == $department['dept_id']) ? 'selected' : '';
+                    ?>
+                    <option value="<?php echo $department['dept_id']; ?>" <?php echo $selected; ?>>
+                        <?php echo htmlspecialchars($department['dept_name']); ?>
+                    </option>
+                    <?php endwhile;
+                  }
+                ?>
+              </select>
+            </div>
+              
+            <div class="form-actions">
+              <?php if ($edit_instructor): ?>
+                <button type="submit" name="update_instructor" class="btn btn-success">Update Instructor</button>
+              <?php else: ?>
+                <button type="submit" name="add_instructor" class="btn btn-success">Add Instructor</button>
+              <?php endif; ?>
+              <button type="button" class="btn btn-cancel" id="cancelInstructor">Cancel</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
 
-    <!-- Hidden delete form -->
-    <form method="POST" id="deleteInstructorForm" style="display: none;">
-      <input type="hidden" name="instructor_id" id="deleteInstructorId">
-      <input type="hidden" name="delete_instructor" value="1">
-    </form>
+    <!-- Instructors Table -->
+    <div class="table-container">
+      <h2>Instructor List</h2>
+        
+      <!-- Search and Filters -->
+      <div class="search-container">
+        <div class="search-box">
+          <div class="search-icon">🔍</div>
+          <input type="text" id="searchInstructors" class="search-input" placeholder="Search instructors by name, email, or department...">
+        </div>
+          
+        <div class="quick-actions">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="assigned">With Department</button>
+          <button class="filter-btn" data-filter="unassigned">No Department</button>
+        </div>
+          
+        <div class="search-stats" id="searchStats">Showing <?php echo $total_instructors; ?> of <?php echo $total_instructors; ?> instructors</div>
+        
+        <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
+      </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Department</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php 
-        if ($instructors && $instructors->num_rows > 0):
-            $instructors->data_seek(0);
-            while($instructor = $instructors->fetch_assoc()): 
-        ?>
-        <tr>
-          <td>
-            <div class="instructor-info">
-              <div class="instructor-name"><?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?></div>
-            </div>
-          </td>
-          <td>
-            <div class="email-info">
-              <a href="mailto:<?php echo htmlspecialchars($instructor['email']); ?>" class="email-link">
-                  <?php echo htmlspecialchars($instructor['email']); ?>
-              </a>
-            </div>
-          </td>
-          <td>
-            <?php if ($instructor['dept_name']): ?>
-                <span class="dept-badge"><?php echo htmlspecialchars($instructor['dept_name']); ?></span>
-            <?php else: ?>
-                <span class="no-dept">Not Assigned</span>
-            <?php endif; ?>
-          </td>
-          <td class="actions">
-            <a href="?edit_id=<?php echo $instructor['instructor_id']; ?>" class="btn btn-edit">Edit</a>
-            <button type="button" class="btn btn-danger delete-btn" 
-                    data-instructor-id="<?php echo $instructor['instructor_id']; ?>"
-                    data-instructor-name="<?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>">
-              Delete
-            </button>
-          </td>
-        </tr>
+      <!-- Instructor Header -->
+      <div class="instructor-header-global">
+        <h3 class="instructor-name-global">All Instructors</h3>
+        <span class="instructor-count-global">Total Instructors: <?php echo $total_instructors; ?></span>
+      </div>
+
+      <!-- Delete Confirmation Dialog -->
+      <div class="delete-confirmation" id="deleteConfirmation">
+        <div class="confirmation-dialog">
+          <h3>Delete Instructor</h3>
+          <p id="deleteMessage">Are you sure you want to delete this instructor? This action cannot be undone.</p>
+          <div class="confirmation-actions">
+            <button class="confirm-delete" id="confirmDelete">Yes</button>
+            <button class="cancel-delete" id="cancelDelete">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden delete form -->
+      <form method="POST" id="deleteInstructorForm" style="display: none;">
+        <input type="hidden" name="instructor_id" id="deleteInstructorId">
+        <input type="hidden" name="delete_instructor" value="1">
+      </form>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
           <?php 
-            endwhile;
-          else: 
+          if ($instructors && $instructors->num_rows > 0):
+              $instructors->data_seek(0);
+              while($instructor = $instructors->fetch_assoc()): 
           ?>
           <tr>
-            <td colspan="4" style="text-align: center; padding: 2rem;">
-              <div style="color: var(--gray-500); font-style: italic;">
-                No instructors found. Click "Add New Instructor" to get started.
+            <td>
+              <div class="instructor-info">
+                <div class="instructor-name"><?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?></div>
               </div>
             </td>
+            <td>
+              <div class="email-info">
+                <a href="mailto:<?php echo htmlspecialchars($instructor['email']); ?>" class="email-link">
+                    <?php echo htmlspecialchars($instructor['email']); ?>
+                </a>
+              </div>
+            </td>
+            <td>
+              <?php if ($instructor['dept_name']): ?>
+                  <span class="dept-badge"><?php echo htmlspecialchars($instructor['dept_name']); ?></span>
+              <?php else: ?>
+                  <span class="no-dept">Not Assigned</span>
+              <?php endif; ?>
+            </td>
+            <td class="actions">
+              <a href="?edit_id=<?php echo $instructor['instructor_id']; ?>" class="btn btn-edit">Edit</a>
+              <button type="button" class="btn btn-danger delete-btn" 
+                      data-instructor-id="<?php echo $instructor['instructor_id']; ?>"
+                      data-instructor-name="<?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>">
+                Delete
+              </button>
+            </td>
           </tr>
-          <?php endif; ?>
-      </tbody>
-    </table>
+            <?php 
+              endwhile;
+            else: 
+            ?>
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 2rem;">
+                <div style="color: var(--gray-500); font-style: italic;">
+                  No instructors found. Click "Add New Instructor" to get started.
+                </div>
+              </td>
+            </tr>
+            <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
   </div>
+  
+
+  
 
     <script src="../script/instructor.js"></script>
 </body>
