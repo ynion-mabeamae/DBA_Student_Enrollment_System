@@ -2,19 +2,16 @@
 session_start();
 require_once '../includes/config.php';
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
+// Handle logout
+if (isset($_GET['logout'])) {
+    session_destroy();
     header("Location: ../includes/login.php");
     exit();
 }
 
-// Initialize variables
-$error = '';
-$success = '';
-$prerequisites = [];
-$courses = [];
+$active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'course_prerequisite';
 
-// Handle form submissions
+// Handle form submissions for Course Prerequisite
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_prerequisite'])) {
         $course_id = $_POST['course_id'];
@@ -25,23 +22,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("ii", $course_id, $prereq_course_id);
         $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
+        $check_stmt->store_result();
         
-        if ($check_result->num_rows > 0) {
-            $error = "This prerequisite relationship already exists.";
+        if ($check_stmt->num_rows > 0) {
+            $_SESSION['error_message'] = "This prerequisite relationship already exists!";
         } else {
             $sql = "INSERT INTO tblcourse_prerequisite (course_id, prereq_course_id) VALUES (?, ?)";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("ii", $course_id, $prereq_course_id);
             
             if ($stmt->execute()) {
-                $success = "Prerequisite added successfully!";
+                $_SESSION['success_message'] = "Course prerequisite added successfully!";
             } else {
-                $error = "Error adding prerequisite: " . $conn->error;
+                $_SESSION['error_message'] = "Error adding course prerequisite: " . $conn->error;
             }
-            $stmt->close();
         }
-        $check_stmt->close();
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . "?tab=course_prerequisite");
+        exit();
+    }
+    
+    if (isset($_POST['update_prerequisite'])) {
+        $course_id_old = $_POST['course_id_old'];
+        $prereq_course_id_old = $_POST['prereq_course_id_old'];
+        $course_id_new = $_POST['course_id'];
+        $prereq_course_id_new = $_POST['prereq_course_id'];
+        
+        // Check if the new prerequisite already exists (excluding current one)
+        $check_sql = "SELECT * FROM tblcourse_prerequisite WHERE course_id = ? AND prereq_course_id = ? AND (course_id != ? OR prereq_course_id != ?)";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("iiii", $course_id_new, $prereq_course_id_new, $course_id_old, $prereq_course_id_old);
+        $check_stmt->execute();
+        $check_stmt->store_result();
+        
+        if ($check_stmt->num_rows > 0) {
+            $_SESSION['error_message'] = "This prerequisite relationship already exists!";
+        } else {
+            $sql = "UPDATE tblcourse_prerequisite SET course_id = ?, prereq_course_id = ? WHERE course_id = ? AND prereq_course_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("iiii", $course_id_new, $prereq_course_id_new, $course_id_old, $prereq_course_id_old);
+            
+            if ($stmt->execute()) {
+                $_SESSION['success_message'] = "Course prerequisite updated successfully!";
+            } else {
+                $_SESSION['error_message'] = "Error updating course prerequisite: " . $conn->error;
+            }
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . "?tab=course_prerequisite");
+        exit();
     }
     
     if (isset($_POST['delete_prerequisite'])) {
@@ -53,39 +82,62 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ii", $course_id, $prereq_course_id);
         
         if ($stmt->execute()) {
-            $success = "Prerequisite deleted successfully!";
+            $_SESSION['success_message'] = "Course prerequisite deleted successfully!";
         } else {
-            $error = "Error deleting prerequisite: " . $conn->error;
+            $_SESSION['error_message'] = "Error deleting course prerequisite: " . $conn->error;
         }
-        $stmt->close();
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . "?tab=course_prerequisite");
+        exit();
     }
 }
 
-// Fetch all prerequisites with course names
-$prereq_sql = "SELECT cp.*, 
-                       c1.course_code as course_code, c1.course_title as course_title,
-                       c2.course_code as prereq_code, c2.course_title as prereq_title
-                FROM tblcourse_prerequisite cp
-                JOIN tblcourse c1 ON cp.course_id = c1.course_id
-                JOIN tblcourse c2 ON cp.prereq_course_id = c2.course_id
-                ORDER BY c1.course_code, c2.course_code";
-$prereq_result = $conn->query($prereq_sql);
-if ($prereq_result && $prereq_result->num_rows > 0) {
-    while ($row = $prereq_result->fetch_assoc()) {
-        $prerequisites[] = $row;
+// First, let's check the structure of tblcourse to see available columns
+$course_columns = $conn->query("SHOW COLUMNS FROM tblcourse");
+$course_columns_array = [];
+if ($course_columns && $course_columns->num_rows > 0) {
+    while($column = $course_columns->fetch_assoc()) {
+        $course_columns_array[] = $column['Field'];
     }
 }
 
-// Fetch all courses for dropdown
-$courses_sql = "SELECT * FROM tblcourse ORDER BY course_code";
-$courses_result = $conn->query($courses_sql);
-if ($courses_result && $courses_result->num_rows > 0) {
-    while ($row = $courses_result->fetch_assoc()) {
-        $courses[] = $row;
-    }
+// Build the query based on available columns
+$select_fields = "cp.course_id, cp.prereq_course_id";
+$join_conditions = "";
+
+if (in_array('course_code', $course_columns_array)) {
+    $select_fields .= ", c1.course_code as course_code, c2.course_code as prereq_course_code";
+    $join_conditions = "LEFT JOIN tblcourse c1 ON cp.course_id = c1.course_id
+                        LEFT JOIN tblcourse c2 ON cp.prereq_course_id = c2.course_id";
+} elseif (in_array('course_name', $course_columns_array)) {
+    $select_fields .= ", c1.course_name, c2.course_name as prereq_course_name";
+    $join_conditions = "LEFT JOIN tblcourse c1 ON cp.course_id = c1.course_id
+                        LEFT JOIN tblcourse c2 ON cp.prereq_course_id = c2.course_id";
 }
 
-$conn->close();
+// Get all course prerequisites
+$prerequisites_query = "
+    SELECT $select_fields 
+    FROM tblcourse_prerequisite cp
+    $join_conditions
+    ORDER BY cp.course_id, cp.prereq_course_id
+";
+
+$prerequisites = $conn->query($prerequisites_query);
+
+// Count total prerequisites
+$total_prerequisites = $prerequisites ? $prerequisites->num_rows : 0;
+
+// Get all courses for dropdown - adjust based on available columns
+$course_select_field = "course_id";
+if (in_array('course_code', $course_columns_array)) {
+    $course_select_field .= ", course_code";
+}
+if (in_array('course_name', $course_columns_array)) {
+    $course_select_field .= ", course_name";
+}
+
+$courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY course_id");
 ?>
 
 <!DOCTYPE html>
@@ -93,17 +145,59 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Prerequisites - Student Enrollment System</title>
+    <title>Course Prerequisite</title>
+    <link rel="stylesheet" href="../styles/room.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/dashboard.css">
-    <link rel="stylesheet" href="../styles/prerequisite.css">
+    <style>
+        .course-info {
+            text-align: center;
+        }
+        .course-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+        .course-id {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        .course-code {
+            font-weight: 600;
+            color: #1f2937;
+        }
+    </style>
 </head>
 <body>
+    <!-- Success/Error Notification -->
+    <?php if (isset($_SESSION['success_message'])): ?>
+        <div class="notification success" id="successNotification">
+            <div class="notification-content">
+                <span class="notification-icon">✓</span>
+                <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
+                <button class="notification-close">&times;</button>
+            </div>
+            <div class="notification-progress"></div>
+        </div>
+        <?php unset($_SESSION['success_message']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error_message'])): ?>
+        <div class="notification error" id="errorNotification">
+            <div class="notification-content">
+                <span class="notification-icon">⚠</span>
+                <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
+                <button class="notification-close">&times;</button>
+            </div>
+            <div class="notification-progress"></div>
+        </div>
+        <?php unset($_SESSION['error_message']); ?>
+    <?php endif; ?>
+
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Enrollment System</h2>
-            <p>Course Management</p>
+            <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
@@ -118,10 +212,6 @@ $conn->close();
                 <i class="fas fa-book"></i>
                 <span>Courses</span>
             </a>
-            <a href="prerequisite.php" class="menu-item active">
-                <i class="fas fa-project-diagram"></i>
-                <span>Prerequisites</span>
-            </a>
             <a href="enrollment.php" class="menu-item">
                 <i class="fas fa-clipboard-list"></i>
                 <span>Enrollments</span>
@@ -130,7 +220,30 @@ $conn->close();
                 <i class="fas fa-chalkboard-teacher"></i>
                 <span>Instructors</span>
             </a>
-            
+            <a href="department.php" class="menu-item">
+                <i class="fas fa-building"></i>
+                <span>Departments</span>
+            </a>
+            <a href="program.php" class="menu-item">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Programs</span>
+            </a>
+            <a href="section.php" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Sections</span>
+            </a>
+            <a href="room.php" class="menu-item">
+                <i class="fas fa-door-open"></i>
+                <span>Rooms</span>
+            </a>
+            <div href="course_prerequisite.php" class="menu-item active" data-tab="course_prerequisite">
+                <i class="fas fa-sitemap"></i>
+                <span>Course Prerequisites</span>
+            </div>
+            <a href="term.php" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Terms</span>
+            </a>
             <!-- Logout Item -->
             <div class="logout-item">
                 <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
@@ -141,163 +254,391 @@ $conn->close();
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-        <div class="header">
-            <h1>Course Prerequisites Management</h1>
-            <div class="user-info">
-                <div class="user-avatar">
-                    <?php echo strtoupper(substr($_SESSION['first_name'], 0, 1)); ?>
-                </div>
-                <div class="user-details">
-                    <div class="user-name">
-                        <?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>
-                    </div>
-                    <div class="user-role">
-                        <?php echo htmlspecialchars($_SESSION['role']); ?>
-                    </div>
-                </div>
-            </div>
+        <div class="page-header">
+            <h1>Course Prerequisite</h1>
+            <button class="btn btn-primary" id="openPrerequisiteModal">Add New Prerequisite</button>
         </div>
 
-        <!-- Alerts -->
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-error">
-                <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
-            </div>
-        <?php endif; ?>
-        
-        <?php if (!empty($success)): ?>
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> <?php echo $success; ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- Add Prerequisite Form -->
-        <div class="form-container">
-            <h3><i class="fas fa-plus-circle"></i> Add New Prerequisite</h3>
-            <form method="POST" id="prerequisiteForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="course_id">Course *</label>
-                        <select id="course_id" name="course_id" required>
-                            <option value="">Select Course</option>
-                            <?php foreach ($courses as $course): ?>
-                                <option value="<?php echo $course['course_id']; ?>">
-                                    <?php echo htmlspecialchars($course['course_code'] . ' - ' . $course['course_title']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="prereq_course_id">Prerequisite Course *</label>
-                        <select id="prereq_course_id" name="prereq_course_id" required>
-                            <option value="">Select Prerequisite Course</option>
-                            <?php foreach ($courses as $course): ?>
-                                <option value="<?php echo $course['course_id']; ?>">
-                                    <?php echo htmlspecialchars($course['course_code'] . ' - ' . $course['course_title']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
+        <!-- Add/Edit Prerequisite Modal -->
+        <div id="prerequisiteModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="prerequisiteModalTitle">Add New Course Prerequisite</h2>
+                    <span class="close">&times;</span>
                 </div>
-                <div class="form-actions">
-                    <button type="submit" name="add_prerequisite" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Add Prerequisite
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="clearForm()">
-                        <i class="fas fa-times"></i> Clear
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Prerequisites List -->
-        <div class="table-container">
-            <div class="table-header">
-                <h3><i class="fas fa-list"></i> Course Prerequisites (<?php echo count($prerequisites); ?>)</h3>
-                <div class="table-actions">
-                    <button class="btn btn-outline" onclick="refreshPage()">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                </div>
-            </div>
-
-            <?php if (count($prerequisites) > 0): ?>
-                <div class="prerequisites-grid">
-                    <?php foreach ($prerequisites as $prereq): ?>
-                        <div class="prereq-card">
-                            <div class="prereq-main">
-                                <div class="course-info">
-                                    <div class="course-code"><?php echo htmlspecialchars($prereq['course_code']); ?></div>
-                                    <div class="course-title"><?php echo htmlspecialchars($prereq['course_title']); ?></div>
-                                </div>
-                                <div class="prereq-arrow">
-                                    <i class="fas fa-arrow-right"></i>
-                                    <div class="prereq-label">Requires</div>
-                                </div>
-                                <div class="prereq-info">
-                                    <div class="course-code"><?php echo htmlspecialchars($prereq['prereq_code']); ?></div>
-                                    <div class="course-title"><?php echo htmlspecialchars($prereq['prereq_title']); ?></div>
-                                </div>
-                            </div>
-                            <div class="prereq-actions">
-                                <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this prerequisite?')">
-                                    <input type="hidden" name="course_id" value="<?php echo $prereq['course_id']; ?>">
-                                    <input type="hidden" name="prereq_course_id" value="<?php echo $prereq['prereq_course_id']; ?>">
-                                    <button type="submit" name="delete_prerequisite" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </form>
-                            </div>
+                <div class="modal-body">
+                    <form method="POST" id="prerequisiteForm">
+                        <input type="hidden" name="course_id_old" id="course_id_old">
+                        <input type="hidden" name="prereq_course_id_old" id="prereq_course_id_old">
+                        
+                        <div class="form-group">
+                            <label for="course_id">Course *</label>
+                            <select id="course_id" name="course_id" required class="form-control">
+                                <option value="">Select Course</option>
+                                <?php 
+                                if ($courses && $courses->num_rows > 0):
+                                    $courses->data_seek(0);
+                                    while($course = $courses->fetch_assoc()): 
+                                        $display_text = "Course ID: " . $course['course_id'];
+                                        if (isset($course['course_code']) && isset($course['course_name'])) {
+                                            $display_text = $course['course_code'] . ' - ' . $course['course_name'];
+                                        } elseif (isset($course['course_code'])) {
+                                            $display_text = $course['course_code'];
+                                        } elseif (isset($course['course_name'])) {
+                                            $display_text = $course['course_name'];
+                                        }
+                                ?>
+                                    <option value="<?php echo $course['course_id']; ?>">
+                                        <?php echo htmlspecialchars($display_text); ?>
+                                    </option>
+                                <?php 
+                                    endwhile;
+                                endif; 
+                                ?>
+                            </select>
+                            <small class="form-help">Select the main course</small>
                         </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <div class="empty-state">
-                    <i class="fas fa-project-diagram"></i>
-                    <h3>No Prerequisites Found</h3>
-                    <p>No course prerequisites have been defined yet. Add your first prerequisite using the form above.</p>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Prerequisites Visualization -->
-        <?php if (count($prerequisites) > 0): ?>
-        <div class="table-container">
-            <h3><i class="fas fa-network-wired"></i> Prerequisites Visualization</h3>
-            <div class="visualization-container">
-                <div class="prereq-flow">
-                    <?php 
-                    // Group prerequisites by course
-                    $coursePrereqs = [];
-                    foreach ($prerequisites as $prereq) {
-                        $coursePrereqs[$prereq['course_code']][] = $prereq['prereq_code'];
-                    }
-                    
-                    $displayed = [];
-                    foreach ($coursePrereqs as $course => $prereqs): 
-                        if (count($prereqs) > 0):
-                    ?>
-                        <div class="flow-item">
-                            <div class="flow-course"><?php echo htmlspecialchars($course); ?></div>
-                            <div class="flow-requires">Requires</div>
-                            <div class="flow-prereqs">
-                                <?php foreach ($prereqs as $prereq): ?>
-                                    <span class="prereq-badge"><?php echo htmlspecialchars($prereq); ?></span>
-                                <?php endforeach; ?>
-                            </div>
+                        
+                        <div class="form-group">
+                            <label for="prereq_course_id">Prerequisite Course *</label>
+                            <select id="prereq_course_id" name="prereq_course_id" required class="form-control">
+                                <option value="">Select Prerequisite Course</option>
+                                <?php 
+                                if ($courses && $courses->num_rows > 0):
+                                    $courses->data_seek(0);
+                                    while($course = $courses->fetch_assoc()): 
+                                        $display_text = "Course ID: " . $course['course_id'];
+                                        if (isset($course['course_code']) && isset($course['course_name'])) {
+                                            $display_text = $course['course_code'] . ' - ' . $course['course_name'];
+                                        } elseif (isset($course['course_code'])) {
+                                            $display_text = $course['course_code'];
+                                        } elseif (isset($course['course_name'])) {
+                                            $display_text = $course['course_name'];
+                                        }
+                                ?>
+                                    <option value="<?php echo $course['course_id']; ?>">
+                                        <?php echo htmlspecialchars($display_text); ?>
+                                    </option>
+                                <?php 
+                                    endwhile;
+                                endif; 
+                                ?>
+                            </select>
+                            <small class="form-help">Select the prerequisite course</small>
                         </div>
-                    <?php 
-                        endif;
-                    endforeach; 
-                    ?>
+                        
+                        <div class="form-actions">
+                            <button type="submit" name="add_prerequisite" class="btn btn-success" id="addPrerequisiteBtn">Add Prerequisite</button>
+                            <button type="submit" name="update_prerequisite" class="btn btn-success" id="updatePrerequisiteBtn" style="display: none;">Update Prerequisite</button>
+                            <button type="button" class="btn btn-cancel" id="cancelPrerequisite">Cancel</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-        <?php endif; ?>
+
+        <!-- Delete Confirmation Dialog -->
+        <div class="delete-confirmation" id="deleteConfirmation">
+            <div class="confirmation-dialog">
+                <h3>Delete Prerequisite</h3>
+                <p id="deleteMessage">Are you sure you want to delete this prerequisite relationship? This action cannot be undone.</p>
+                <div class="confirmation-actions">
+                    <button class="confirm-delete" id="confirmDelete">Yes</button>
+                    <button class="cancel-delete" id="cancelDelete">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden delete form -->
+        <form method="POST" id="deletePrerequisiteForm" style="display: none;">
+            <input type="hidden" name="course_id" id="deleteCourseId">
+            <input type="hidden" name="prereq_course_id" id="deletePrereqCourseId">
+            <input type="hidden" name="delete_prerequisite" value="1">
+        </form>
+
+        <!-- Prerequisites Table -->
+        <div class="table-container">
+            <h2>Course Prerequisites List</h2>
+            
+            <!-- Search and Filters -->
+            <div class="search-container">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" id="searchPrerequisites" class="search-input" placeholder="Search prerequisites by course ID...">
+                </div>
+                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+                
+                <div class="search-stats" id="searchStats">Showing <?php echo $total_prerequisites; ?> of <?php echo $total_prerequisites; ?> prerequisites</div>
+                
+                <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Prerequisite Course</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    if ($prerequisites && $prerequisites->num_rows > 0):
+                        $prerequisites->data_seek(0);
+                        while($prereq = $prerequisites->fetch_assoc()): 
+                            // Determine display text for course
+                            $course_display = "Course ID: " . $prereq['course_id'];
+                            $prereq_display = "Course ID: " . $prereq['prereq_course_id'];
+                            
+                            if (isset($prereq['course_code']) && isset($prereq['prereq_course_code'])) {
+                                $course_display = $prereq['course_code'];
+                                $prereq_display = $prereq['prereq_course_code'];
+                            } elseif (isset($prereq['course_name']) && isset($prereq['prereq_course_name'])) {
+                                $course_display = $prereq['course_name'];
+                                $prereq_display = $prereq['prereq_course_name'];
+                            } elseif (isset($prereq['course_code'])) {
+                                $course_display = $prereq['course_code'];
+                                $prereq_display = $prereq['prereq_course_code'];
+                            } elseif (isset($prereq['course_name'])) {
+                                $course_display = $prereq['course_name'];
+                                $prereq_display = $prereq['prereq_course_name'];
+                            }
+                    ?>
+                    <tr>
+                        <td>
+                            <div class="course-info">
+                                <div class="course-name"><?php echo htmlspecialchars($course_display); ?></div>
+                                <!-- <div class="course-id">ID: <?php echo $prereq['course_id']; ?></div> -->
+                            </div>
+                        </td>
+                        <td>
+                            <div class="course-info">
+                                <div class="course-name"><?php echo htmlspecialchars($prereq_display); ?></div>
+                                <!-- <div class="course-id">ID: <?php echo $prereq['prereq_course_id']; ?></div> -->
+                            </div>
+                        </td>
+                        <td class="actions">
+                            <button type="button" class="btn btn-edit edit-btn" 
+                                    data-course-id="<?php echo $prereq['course_id']; ?>"
+                                    data-prereq-course-id="<?php echo $prereq['prereq_course_id']; ?>">
+                                Edit
+                            </button>
+                            <button type="button" class="btn btn-danger delete-btn" 
+                                    data-course-id="<?php echo $prereq['course_id']; ?>"
+                                    data-prereq-course-id="<?php echo $prereq['prereq_course_id']; ?>"
+                                    data-course-name="<?php echo htmlspecialchars($course_display); ?>"
+                                    data-prereq-course-name="<?php echo htmlspecialchars($prereq_display); ?>">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    <?php 
+                        endwhile;
+                    else: 
+                    ?>
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 2rem;">
+                            <div style="color: var(--gray-500); font-style: italic;">
+                                No course prerequisites found. Click "Add New Prerequisite" to get started.
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <script src="../script/prerequisite.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal elements
+            const modal = document.getElementById('prerequisiteModal');
+            const openModalBtn = document.getElementById('openPrerequisiteModal');
+            const closeModalBtn = document.querySelector('.close');
+            const cancelBtn = document.getElementById('cancelPrerequisite');
+            const addBtn = document.getElementById('addPrerequisiteBtn');
+            const updateBtn = document.getElementById('updatePrerequisiteBtn');
+            const modalTitle = document.getElementById('prerequisiteModalTitle');
+            const form = document.getElementById('prerequisiteForm');
+            
+            // Delete confirmation elements
+            const deleteModal = document.getElementById('deleteConfirmation');
+            const confirmDeleteBtn = document.getElementById('confirmDelete');
+            const cancelDeleteBtn = document.getElementById('cancelDelete');
+            const deleteForm = document.getElementById('deletePrerequisiteForm');
+            const deleteMessage = document.getElementById('deleteMessage');
+
+            // Open modal for adding new prerequisite
+            openModalBtn.addEventListener('click', function() {
+                resetForm();
+                modal.style.display = 'block';
+                setTimeout(() => {
+                    modal.classList.add('show');
+                }, 10);
+            });
+
+            // Close modal
+            function closeModal() {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelBtn.addEventListener('click', closeModal);
+
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+                if (event.target === deleteModal) {
+                    hideDeleteModal();
+                }
+            });
+
+            // Edit button functionality
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const courseId = this.getAttribute('data-course-id');
+                    const prereqCourseId = this.getAttribute('data-prereq-course-id');
+                    
+                    // Set form values
+                    document.getElementById('course_id').value = courseId;
+                    document.getElementById('prereq_course_id').value = prereqCourseId;
+                    document.getElementById('course_id_old').value = courseId;
+                    document.getElementById('prereq_course_id_old').value = prereqCourseId;
+                    
+                    // Update UI for edit mode
+                    modalTitle.textContent = 'Edit Course Prerequisite';
+                    addBtn.style.display = 'none';
+                    updateBtn.style.display = 'inline-block';
+                    
+                    // Show modal
+                    modal.style.display = 'block';
+                    setTimeout(() => {
+                        modal.classList.add('show');
+                    }, 10);
+                });
+            });
+
+            // Delete button functionality
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const courseId = this.getAttribute('data-course-id');
+                    const prereqCourseId = this.getAttribute('data-prereq-course-id');
+                    const courseName = this.getAttribute('data-course-name');
+                    const prereqCourseName = this.getAttribute('data-prereq-course-name');
+                    
+                    // Set delete message
+                    deleteMessage.textContent = `Are you sure you want to delete the prerequisite relationship between "${courseName}" and "${prereqCourseName}"? This action cannot be undone.`;
+                    
+                    // Set delete form values
+                    document.getElementById('deleteCourseId').value = courseId;
+                    document.getElementById('deletePrereqCourseId').value = prereqCourseId;
+                    
+                    // Show delete confirmation
+                    showDeleteModal();
+                });
+            });
+
+            // Delete confirmation
+            confirmDeleteBtn.addEventListener('click', function() {
+                deleteForm.submit();
+            });
+
+            cancelDeleteBtn.addEventListener('click', hideDeleteModal);
+
+            function showDeleteModal() {
+                deleteModal.style.display = 'flex';
+                setTimeout(() => {
+                    deleteModal.classList.add('show');
+                }, 10);
+            }
+
+            function hideDeleteModal() {
+                deleteModal.classList.remove('show');
+                setTimeout(() => {
+                    deleteModal.style.display = 'none';
+                }, 300);
+            }
+
+            function resetForm() {
+                form.reset();
+                modalTitle.textContent = 'Add New Course Prerequisite';
+                addBtn.style.display = 'inline-block';
+                updateBtn.style.display = 'none';
+                document.getElementById('course_id_old').value = '';
+                document.getElementById('prereq_course_id_old').value = '';
+            }
+
+            // Notification auto-hide
+            const notifications = document.querySelectorAll('.notification');
+            notifications.forEach(notification => {
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 100);
+
+                const closeBtn = notification.querySelector('.notification-close');
+                closeBtn.addEventListener('click', function() {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                });
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.classList.remove('show');
+                        setTimeout(() => {
+                            if (notification.parentNode) {
+                                notification.remove();
+                            }
+                        }, 300);
+                    }
+                }, 5000);
+            });
+
+            // Search functionality
+            const searchInput = document.getElementById('searchPrerequisites');
+            const searchButton = document.getElementById('searchButton');
+            const clearSearch = document.getElementById('clearSearch');
+            const searchStats = document.getElementById('searchStats');
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            function performSearch() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                tableRows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                searchStats.textContent = `Showing ${visibleCount} of ${tableRows.length} prerequisites`;
+                clearSearch.style.display = searchTerm ? 'block' : 'none';
+            }
+
+            searchButton.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            clearSearch.addEventListener('click', function() {
+                searchInput.value = '';
+                performSearch();
+            });
+        });
+    </script>
 </body>
 </html>
