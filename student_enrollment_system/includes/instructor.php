@@ -278,12 +278,6 @@ $total_instructors = $instructors->num_rows;
         <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
       </div>
 
-      <!-- Instructor Header -->
-      <div class="instructor-header-global">
-        <h3 class="instructor-name-global">All Instructors</h3>
-        <span class="instructor-count-global">Total Instructors: <?php echo $total_instructors; ?></span>
-      </div>
-
       <!-- Delete Confirmation Dialog -->
       <div class="delete-confirmation" id="deleteConfirmation">
         <div class="confirmation-dialog">
