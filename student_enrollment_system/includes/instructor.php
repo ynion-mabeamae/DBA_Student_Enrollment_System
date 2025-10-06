@@ -288,12 +288,6 @@ $total_instructors = $instructors->num_rows;
           <input type="text" id="searchInstructors" class="search-input" placeholder="Search instructors by name, email, or department...">
         </div>
           
-        <div class="quick-actions">
-          <button class="filter-btn active" data-filter="all">All</button>
-          <button class="filter-btn" data-filter="assigned">With Department</button>
-          <button class="filter-btn" data-filter="unassigned">No Department</button>
-        </div>
-          
         <div class="search-stats" id="searchStats">Showing <?php echo $total_instructors; ?> of <?php echo $total_instructors; ?> instructors</div>
         
         <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
