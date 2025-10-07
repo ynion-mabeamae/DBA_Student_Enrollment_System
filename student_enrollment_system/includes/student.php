@@ -263,7 +263,7 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
 
     <div class="main-content">
         <div class="page-header">
-            <h1>Student Management</h1>
+            <h1>Student</h1>
             <div class="header-actions">
                 <?php if (!$show_archived): ?>
                 <button class="btn" onclick="openModal('add-student-modal')">
