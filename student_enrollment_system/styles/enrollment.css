@@ -185,11 +185,12 @@ body {
 /* Table Container */
 .table-container {
     background: white;
-    margin: 0 2rem 2rem;
+    margin: 0;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     overflow: hidden;
     border: 1px solid var(--gray-200);
+    max-width: 1500px;
 }
 
 .table-container h2 {
@@ -389,7 +390,7 @@ table td {
 
 .course-title {
     color: var(--gray-600);
-    font-size: 0.9rem;
+    font-size: 1rem;
     margin-top: 0.25rem;
 }
 
