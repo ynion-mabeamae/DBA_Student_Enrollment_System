@@ -4,9 +4,7 @@ require_once 'config.php';
 
 // Handle logout
 if (isset($_GET['logout'])) {
-    // Destroy all session data
     session_destroy();
-    // Redirect to login page
     header("Location: ../includes/login.php");
     exit();
 }
@@ -69,10 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
     
+    // SOFT DELETE - Set is_active to false instead of deleting
     if (isset($_POST['delete_student'])) {
         $student_id = $_POST['student_id'];
         
-        $sql = "DELETE FROM tblstudent WHERE student_id = ?";
+        $sql = "UPDATE tblstudent SET is_active = FALSE WHERE student_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $student_id);
         
@@ -88,14 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
     
-    // Handle bulk actions
+    // Handle bulk actions - SOFT DELETE
     if (isset($_POST['bulk_action']) && isset($_POST['selected_students'])) {
         $action = $_POST['bulk_action'];
         $selected_students = $_POST['selected_students'];
         $placeholders = str_repeat('?,', count($selected_students) - 1) . '?';
         
         if ($action === 'delete') {
-            $sql = "DELETE FROM tblstudent WHERE student_id IN ($placeholders)";
+            $sql = "UPDATE tblstudent SET is_active = FALSE WHERE student_id IN ($placeholders)";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param(str_repeat('i', count($selected_students)), ...$selected_students);
             
@@ -109,6 +108,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         header("Location: " . $_SERVER['PHP_SELF'] . "?page=students");
+        exit();
+    }
+    
+    // RESTORE STUDENT functionality
+    if (isset($_POST['restore_student'])) {
+        $student_id = $_POST['student_id'];
+        
+        $sql = "UPDATE tblstudent SET is_active = TRUE WHERE student_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $student_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Student restored successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error restoring student: " . $conn->error;
+            $_SESSION['message_type'] = "error";
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . "?page=students" . (isset($_GET['show_archived']) ? '&show_archived=true' : ''));
         exit();
     }
 }
@@ -139,27 +158,30 @@ if (isset($_GET['get_student']) && isset($_GET['student_id'])) {
     exit();
 }
 
-// Handle search
+// Handle search and show active/archived students
+$show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
+$status_condition = $show_archived ? "s.is_active = FALSE" : "s.is_active = TRUE";
+
 $search_condition = "";
 $program_condition = "";
 
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search_term = $conn->real_escape_string($_GET['search']);
-    $search_condition = "WHERE (s.student_no LIKE '%$search_term%' OR s.last_name LIKE '%$search_term%' OR s.first_name LIKE '%$search_term%' OR s.email LIKE '%$search_term%')";
+    $search_condition = "AND (s.student_no LIKE '%$search_term%' OR s.last_name LIKE '%$search_term%' OR s.first_name LIKE '%$search_term%' OR s.email LIKE '%$search_term%')";
 }
 
 if (isset($_GET['program']) && !empty($_GET['program'])) {
     $program_id = $conn->real_escape_string($_GET['program']);
-    $program_condition = $search_condition ? " AND s.program_id = '$program_id'" : "WHERE s.program_id = '$program_id'";
+    $program_condition = " AND s.program_id = '$program_id'";
 }
 
-// Get all students with program information
+// Get students based on active status - NEWEST FIRST
 $students = $conn->query("
     SELECT s.*, p.program_code, p.program_name 
     FROM tblstudent s 
     LEFT JOIN tblprogram p ON s.program_id = p.program_id
-    $search_condition $program_condition
-    ORDER BY s.last_name, s.first_name
+    WHERE $status_condition $search_condition $program_condition
+    ORDER BY s.student_id DESC, s.last_name, s.first_name
 ");
 
 // Get programs for dropdown
@@ -196,10 +218,6 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
-            <!-- <a href="dashboard.php" class="menu-item">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a> -->
             <div href="student.php" class="menu-item active" data-tab="students">
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
@@ -235,35 +253,55 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
             <a href="course_prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
                 <span>Prerequisite</span>
-			</a>
+            </a>
             <a href="term.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
-            <!-- Logout Item -->
-            <!-- <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div> -->
         </div>
     </div>
 
     <div class="main-content">
         <div class="page-header">
-            <h1>Student</h1>
+            <h1>Student Management</h1>
             <div class="header-actions">
+                <?php if (!$show_archived): ?>
                 <button class="btn" onclick="openModal('add-student-modal')">
                     Add New Student
                 </button>
+                <?php endif; ?>
+                
+                <!-- Export Buttons -->
+                <div class="export-buttons">
+                    <button class="btn btn-export" onclick="exportData('pdf')">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                    <button class="btn btn-export" onclick="exportData('excel')">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                </div>
             </div>
+        </div>
+
+        <!-- Student Status Toggle -->
+        <div class="student-status-toggle no-print">
+            <a href="?page=students" class="status-btn <?php echo !$show_archived ? 'active' : ''; ?>">
+                <i class="fas fa-user-check"></i>
+                Active Students (<?php echo $conn->query("SELECT COUNT(*) FROM tblstudent WHERE is_active = TRUE")->fetch_row()[0]; ?>)
+            </a>
+            <a href="?page=students&show_archived=true" class="status-btn <?php echo $show_archived ? 'active' : ''; ?>">
+                <i class="fas fa-archive"></i>
+                Archived Students (<?php echo $conn->query("SELECT COUNT(*) FROM tblstudent WHERE is_active = FALSE")->fetch_row()[0]; ?>)
+            </a>
         </div>
 
         <!-- Search Form -->
         <div class="search-container no-print">
             <form method="GET" class="search-form" id="searchForm">
                 <input type="hidden" name="page" value="students">
+                <?php if ($show_archived): ?>
+                    <input type="hidden" name="show_archived" value="true">
+                <?php endif; ?>
                 <div class="search-box">
                     <div class="search-group">
                         <label>Search Students</label>
@@ -289,7 +327,7 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                         <button type="submit" class="btn">
                             Search
                         </button>
-                        <a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=students" class="btn btn-outline">
+                        <a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=students<?php echo $show_archived ? '&show_archived=true' : ''; ?>" class="btn btn-outline">
                             Reset
                         </a>
                     </div>
@@ -297,7 +335,7 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
             </form>
         </div>
 
-        <!-- Bulk Actions -->
+        <!-- Bulk Actions
         <?php if ($students->num_rows > 0): ?>
         <div class="bulk-actions no-print">
             <form method="POST" id="bulkActionsForm">
@@ -307,16 +345,21 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                 </div>
                 <select name="bulk_action" id="bulkActionSelect" required>
                     <option value="">Bulk Actions</option>
-                    <option value="delete">Delete Selected</option>
+                    <?php if ($show_archived): ?>
+                        <option value="restore">Restore Selected</option>
+                    <?php else: ?>
+                        <option value="delete">Delete Selected</option>
+                    <?php endif; ?>
                 </select>
-                <button type="submit" class="btn btn-danger" name="bulk_submit">
-                    Apply
+                <button type="submit" class="btn <?php echo $show_archived ? 'btn-success' : 'btn-danger'; ?>" name="bulk_submit">
+                    <?php echo $show_archived ? 'Restore' : 'Delete'; ?>
                 </button>
             </form>
         </div>
-        <?php endif; ?>
+        <?php endif; ?> -->
 
         <!-- Add Student Modal -->
+        <?php if (!$show_archived): ?>
         <div id="add-student-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -397,10 +440,14 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                 </form>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Students Table -->
         <div class="table-container">
-            <h2>Student List (<?php echo $students->num_rows; ?> students)</h2>
+            <h2>
+                <?php echo $show_archived ? 'Archived Students' : 'Active Students'; ?> 
+                (<?php echo $students->num_rows; ?> students)
+            </h2>
             
             <?php if ($students->num_rows > 0): ?>
             <table id="students-table">
@@ -418,7 +465,7 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                 </thead>
                 <tbody>
                     <?php while($student = $students->fetch_assoc()): ?>
-                    <tr data-id="<?php echo $student['student_id']; ?>">
+                    <tr data-id="<?php echo $student['student_id']; ?>" class="<?php echo $show_archived ? 'archived-student' : ''; ?>">
                         <td class="no-print">
                             <input type="checkbox" class="row-select" name="selected_students[]" value="<?php echo $student['student_id']; ?>">
                         </td>
@@ -434,20 +481,31 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                         <td><?php echo htmlspecialchars($student['gender']); ?></td>
                         <td>
                             <span class="badge year-<?php echo $student['year_level']; ?>">
-                                Year <?php echo $student['year_level']; ?>
+                              <?php echo $student['year_level']; ?>
                             </span>
                         </td>
                         <td><?php echo htmlspecialchars($student['program_code'] ?? 'N/A'); ?></td>
                         <td class="actions no-print">
-                            <button type="button" class="btn btn-edit" onclick="editStudent(<?php echo $student['student_id']; ?>)">
-                                Edit
-                            </button>
-                            <button class="btn btn-danger delete-btn" 
-                                    data-student-id="<?php echo $student['student_id']; ?>"
-                                    data-student-no="<?php echo htmlspecialchars($student['student_no']); ?>"
-                                    data-student-name="<?php echo htmlspecialchars($student['last_name'] . ', ' . $student['first_name']); ?>">
-                                Delete
-                            </button>
+                            <?php if ($show_archived): ?>
+                                <!-- Only show Restore button for archived students -->
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="student_id" value="<?php echo $student['student_id']; ?>">
+                                    <button type="submit" name="restore_student" class="btn btn-success">
+                                        Restore
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <!-- Show Edit and Delete buttons for active students -->
+                                <button type="button" class="btn btn-edit" onclick="editStudent(<?php echo $student['student_id']; ?>)">
+                                    Edit
+                                </button>
+                                <button class="btn btn-danger delete-btn" 
+                                        data-student-id="<?php echo $student['student_id']; ?>"
+                                        data-student-no="<?php echo htmlspecialchars($student['student_no']); ?>"
+                                        data-student-name="<?php echo htmlspecialchars($student['last_name'] . ', ' . $student['first_name']); ?>">
+                                    Delete
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endwhile; ?>
@@ -456,7 +514,13 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
             
             <?php else: ?>
             <div class="no-records">
-                <p>No students found. <a href="javascript:void(0)" onclick="openModal('add-student-modal')">Add the first student</a></p>
+                <p>
+                    <?php if ($show_archived): ?>
+                        No archived students found.
+                    <?php else: ?>
+                        No students found. <a href="javascript:void(0)" onclick="openModal('add-student-modal')">Add the first student</a>
+                    <?php endif; ?>
+                </p>
             </div>
             <?php endif; ?>
         </div>
@@ -466,9 +530,9 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
     <div class="delete-confirmation" id="deleteConfirmation">
         <div class="confirmation-dialog">
             <h3>Delete Student</h3>
-            <p id="deleteMessage">Are you sure you want to delete this student? This action cannot be undone.</p>
+            <p id="deleteMessage">Are you sure you want to delete this student? This action will move the student to archived records.</p>
             <div class="confirmation-actions">
-                <button class="confirm-delete" id="confirmDelete">Yes</button>
+                <button class="confirm-delete" id="confirmDelete">Yes, Delete</button>
                 <button class="cancel-delete" id="cancelDelete">Cancel</button>
             </div>
         </div>

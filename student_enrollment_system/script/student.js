@@ -286,3 +286,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     }
 });
+
+// Update delete confirmation messages
+function setupDeleteButtons() {
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+    const deleteConfirmation = document.getElementById('deleteConfirmation');
+    const deleteMessage = document.getElementById('deleteMessage');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const cancelDelete = document.getElementById('cancelDelete');
+    const deleteStudentForm = document.getElementById('deleteStudentForm');
+    const deleteStudentId = document.getElementById('deleteStudentId');
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-student-id');
+            const studentNo = this.getAttribute('data-student-no');
+            const studentName = this.getAttribute('data-student-name');
+            
+            deleteMessage.textContent = `Are you sure you want to archive student ${studentNo} - ${studentName}? This student will be moved to archived records.`;
+            deleteStudentId.value = studentId;
+            deleteConfirmation.style.display = 'flex';
+        });
+    });
+
+    confirmDelete.addEventListener('click', function() {
+        deleteStudentForm.submit();
+    });
+
+    cancelDelete.addEventListener('click', function() {
+        deleteConfirmation.style.display = 'none';
+    });
+}
