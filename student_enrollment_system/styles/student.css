@@ -302,7 +302,7 @@ body {
 
 #students-table th {
     padding: 1rem;
-    text-align: left;
+    text-align: center;
     font-weight: 600;
     font-size: 0.9rem;
     text-transform: uppercase;

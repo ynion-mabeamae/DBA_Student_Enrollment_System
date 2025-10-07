@@ -87,30 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
     
-    // Handle bulk actions - SOFT DELETE
-    if (isset($_POST['bulk_action']) && isset($_POST['selected_students'])) {
-        $action = $_POST['bulk_action'];
-        $selected_students = $_POST['selected_students'];
-        $placeholders = str_repeat('?,', count($selected_students) - 1) . '?';
-        
-        if ($action === 'delete') {
-            $sql = "UPDATE tblstudent SET is_active = FALSE WHERE student_id IN ($placeholders)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param(str_repeat('i', count($selected_students)), ...$selected_students);
-            
-            if ($stmt->execute()) {
-                $_SESSION['message'] = $stmt->affected_rows . " students deleted successfully!";
-                $_SESSION['message_type'] = "success";
-            } else {
-                $_SESSION['message'] = "Error deleting students: " . $conn->error;
-                $_SESSION['message_type'] = "error";
-            }
-        }
-        
-        header("Location: " . $_SERVER['PHP_SELF'] . "?page=students");
-        exit();
-    }
-    
     // RESTORE STUDENT functionality
     if (isset($_POST['restore_student'])) {
         $student_id = $_POST['student_id'];
@@ -335,29 +311,6 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
             </form>
         </div>
 
-        <!-- Bulk Actions
-        <?php if ($students->num_rows > 0): ?>
-        <div class="bulk-actions no-print">
-            <form method="POST" id="bulkActionsForm">
-                <div class="checkbox-group">
-                    <input type="checkbox" class="select-all" id="select-all">
-                    <label for="select-all">Select All</label>
-                </div>
-                <select name="bulk_action" id="bulkActionSelect" required>
-                    <option value="">Bulk Actions</option>
-                    <?php if ($show_archived): ?>
-                        <option value="restore">Restore Selected</option>
-                    <?php else: ?>
-                        <option value="delete">Delete Selected</option>
-                    <?php endif; ?>
-                </select>
-                <button type="submit" class="btn <?php echo $show_archived ? 'btn-success' : 'btn-danger'; ?>" name="bulk_submit">
-                    <?php echo $show_archived ? 'Restore' : 'Delete'; ?>
-                </button>
-            </form>
-        </div>
-        <?php endif; ?> -->
-
         <!-- Add Student Modal -->
         <?php if (!$show_archived): ?>
         <div id="add-student-modal" class="modal">
@@ -453,7 +406,6 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
             <table id="students-table">
                 <thead>
                     <tr>
-                        <th class="no-print"><input type="checkbox" class="select-all" id="table-select-all"></th>
                         <th>Student No</th>
                         <th>Name</th>
                         <th>Email</th>
@@ -466,9 +418,6 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                 <tbody>
                     <?php while($student = $students->fetch_assoc()): ?>
                     <tr data-id="<?php echo $student['student_id']; ?>" class="<?php echo $show_archived ? 'archived-student' : ''; ?>">
-                        <td class="no-print">
-                            <input type="checkbox" class="row-select" name="selected_students[]" value="<?php echo $student['student_id']; ?>">
-                        </td>
                         <td><?php echo htmlspecialchars($student['student_no']); ?></td>
                         <td>
                             <div class="student-profile">
