@@ -355,10 +355,10 @@ body {
     letter-spacing: 0.5px;
 }
 
-.year-1 { background: var(--success); color: white; }
-.year-2 { background: var(--info); color: white; }
+.year-1 { color: black; }
+.year-2 { color: black; }
 .year-3 { color: black; }
-.year-4 { background: var(--primary); color: white; }
+.year-4 { color: black; }
 
 /* Actions */
 .actions {

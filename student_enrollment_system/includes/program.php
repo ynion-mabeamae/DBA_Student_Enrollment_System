@@ -192,12 +192,12 @@ $total_programs = $programs->num_rows;
                 <span>Terms</span>
             </a>
 						<!-- Logout Item -->
-            <div class="logout-item">
+            <!-- <div class="logout-item">
                 <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
-            </div>
+            </div> -->
         </div>
     </div>
 
