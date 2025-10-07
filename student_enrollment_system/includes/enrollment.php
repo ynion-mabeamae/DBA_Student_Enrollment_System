@@ -249,7 +249,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
             </a>
             <a href="course_prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
-                <span>Course Prerequisite</span>
+                <span>Prerequisite</span>
 						</a>
             <a href="term.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>

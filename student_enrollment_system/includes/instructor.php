@@ -190,7 +190,7 @@ $total_instructors = $instructors->num_rows;
             </a>
             <a href="course_prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
-                <span>Course Prerequisite</span>
+                <span>Prerequisite</span>
 						</a>
             <a href="term.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>

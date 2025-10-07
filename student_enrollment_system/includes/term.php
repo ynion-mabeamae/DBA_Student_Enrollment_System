@@ -170,7 +170,7 @@ $total_terms = $terms->num_rows;
             </a>
             <a href="course_prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
-                <span>Course Prerequisite</span>
+                <span>Prerequisite</span>
 			</a>
             <div href="term.php" class="menu-item active" data-tab="students">
                 <i class="fas fa-calendar-alt"></i>
