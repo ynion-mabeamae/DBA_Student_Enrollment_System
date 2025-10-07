@@ -139,10 +139,11 @@ body {
 .search-container {
   background: white;
   padding: 1.5rem;
-  margin: 0 2rem 2rem;
+  margin: 0;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   border: 1px solid var(--gray-200);
+  max-width: 1500px;
 }
 
 .search-box {
@@ -201,11 +202,12 @@ body {
 /* Table Container */
 .table-container {
   background: white;
-  margin: 0 2rem 2rem;
+  margin: 0;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   overflow: hidden;
   border: 1px solid var(--gray-200);
+  max-width: 1500px;
 }
 
 .table-container h2 {
@@ -243,15 +245,14 @@ body {
   transition: var(--transition);
 }
 
-#courses-table tbody tr:hover {
-  background: var(--gray-50);
-  transform: scale(1.01);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
+  /* #courses-table tbody tr:hover {
+    background: var(--gray-50);
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  } */
 
 #courses-table td {
   padding: 1rem;
-  vertical-align: middle;
 }
 
 .course-code {
