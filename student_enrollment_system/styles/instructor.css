@@ -255,11 +255,12 @@ body {
 /* Table Container */
 .table-container {
     background: white;
-    margin: 0 2rem 2rem;
+    margin: 0;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     overflow: hidden;
     border: 1px solid var(--gray-200);
+    max-width: 1500px;
 }
 
 .table-container h2 {
@@ -412,11 +413,11 @@ table thead {
 
 table th {
     padding: 1rem;
-    text-align: left;
+    text-align: center;
     font-weight: 600;
     font-size: 0.9rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
 }
 
 table tbody tr {
@@ -475,12 +476,15 @@ table td {
 .no-dept {
     color: var(--gray-500);
     font-style: italic;
+    text-align: center;
+    align-items: center;
 }
 
 /* Actions */
 .actions {
     display: flex;
     gap: 0.5rem;
+    justify-content: center;
 }
 
 .actions .btn {
