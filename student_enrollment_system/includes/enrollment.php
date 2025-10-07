@@ -157,10 +157,6 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       color: #2d3748;
       font-size: 0.9rem;
     }
-    .course-title {
-      color: #718096;
-      font-size: 0.8rem;
-    }
     .time-display {
       font-weight: 600;
       color: #2d3748;
