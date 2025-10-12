@@ -1,0 +1,332 @@
+<?php
+session_start();
+require_once 'config.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../includes/login.php");
+    exit();
+}
+
+// Get instructor data
+$instructors = $conn->query("
+    SELECT i.*, d.dept_name, d.dept_code
+    FROM tblinstructor i 
+    LEFT JOIN tbldepartment d ON i.dept_id = d.dept_id 
+    ORDER BY i.last_name, i.first_name
+");
+
+// Calculate total pages (assuming 25 rows per page for better PDF formatting)
+$total_instructors = $instructors->num_rows;
+$rows_per_page = 25;
+$total_pages = ceil($total_instructors / $rows_per_page);
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Instructor Report</title>
+    <style>
+        @media print {
+            body { 
+                margin: 0; 
+                padding: 20px; 
+                font-family: Arial, sans-serif; 
+                font-size: 12px; 
+                position: relative;
+            }
+            .no-print { display: none; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 20px; }
+            th, td { border: 1px solid #000; padding: 6px; text-align: left; }
+            th { background-color: #f0f0f0; font-weight: bold; }
+            .header { margin-bottom: 20px; }
+            
+            /* Page break for printing */
+            .page-break { page-break-after: always; }
+            
+            /* Page number styling */
+            .page-number {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                font-size: 10px;
+                color: #666;
+            }
+            
+            @page {
+                margin: 20mm;
+                size: A4 landscape;
+                
+                @bottom-right {
+                    content: "Page " counter(page) " of " counter(pages);
+                    font-size: 10px;
+                    color: #666;
+                }
+            }
+        }
+        
+        @media screen {
+            body { 
+                font-family: Arial, sans-serif; 
+                margin: 20px; 
+                position: relative;
+                min-height: 100vh;
+            }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 60px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            
+            .page-number {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                font-size: 12px;
+                color: #666;
+                background: white;
+                padding: 5px 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+        }
+        
+        /* University Header Styles */
+        .university-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #800000;
+            padding-bottom: 20px;
+        }
+        
+        .university-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #800000;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        
+        .campus-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #800000;
+            margin: 5px 0;
+            text-transform: uppercase;
+        }
+        
+        .report-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0 5px 0;
+            color: #333;
+        }
+        
+        .report-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            color: #666; 
+            border-top: 1px solid #ddd; 
+            padding-top: 20px; 
+            font-size: 11px;
+            position: relative;
+        }
+        
+        .print-btn { 
+            margin: 20px; 
+            padding: 10px 20px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 4px; 
+        }
+        
+        .print-btn:hover { 
+            background: #0056b3; 
+        }
+        
+        /* Instructor Data Styles */
+        .instructor-name {
+            font-weight: bold;
+            color: #800000;
+        }
+        
+        .summary-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #800000;
+        }
+        
+        .page-info {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .dept-badge {
+            color: black;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .email-link {
+            color: #1976d2;
+            text-decoration: none;
+        }
+        
+        .email-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page number for screen view -->
+    <div class="page-number no-print" id="pageNumber">Page 1 of <?php echo $total_pages; ?></div>
+
+    <!-- University Header -->
+    <div class="university-header">
+        <h1 class="university-name">Polytechnic University of the Philippines</h1>
+        <h2 class="campus-name">Taguig Campus</h2>
+        <div class="report-title">INSTRUCTOR MASTER LIST</div>
+        <div class="report-subtitle">Generated on: <?php echo date('F j, Y g:i A'); ?></div>
+    </div>
+
+    <!-- Summary Information -->
+    <div class="summary-info">
+        <strong>Report Summary:</strong><br>
+        Total Instructors: <?php echo $instructors->num_rows; ?><br>
+        Total Pages: <?php echo $total_pages; ?><br>
+        
+        <?php
+        // Count by department
+        $dept_count = $conn->query("
+            SELECT d.dept_name, COUNT(*) as count 
+            FROM tblinstructor i 
+            LEFT JOIN tbldepartment d ON i.dept_id = d.dept_id
+            GROUP BY d.dept_name
+            ORDER BY count DESC
+        ");
+        
+        if ($dept_count->num_rows > 0) {
+            echo 'Department Distribution: ';
+            $dept_stats = [];
+            while($row = $dept_count->fetch_assoc()) {
+                $dept_stats[] = $row['dept_name'] . ': ' . $row['count'];
+            }
+            echo implode(', ', $dept_stats);
+        }
+        ?>
+    </div>
+
+    <div style="text-align: center;" class="no-print">
+        <button class="print-btn" onclick="window.print()">🖨️ Print as PDF</button>
+        <button class="print-btn" onclick="window.history.back()" style="background: #6c757d;">← Back to Instructors</button>
+    </div>
+
+    <?php
+    // Reset pointer and paginate data
+    $instructors->data_seek(0);
+    $current_page = 1;
+    $row_count = 0;
+    
+    while($instructor = $instructors->fetch_assoc()): 
+        // Start new page after every 25 rows
+        if ($row_count % $rows_per_page == 0 && $row_count > 0) {
+            echo '</table></div><div class="page-break">';
+            $current_page++;
+        }
+        
+        // Start table if it's the first row or new page
+        if ($row_count % $rows_per_page == 0) {
+            echo '<div class="page-info">Page ' . $current_page . ' of ' . $total_pages . '</div>';
+            echo '<table>';
+            echo '<thead>';
+            echo '<tr>';
+            echo '<th>#</th>';
+            echo '<th>Last Name</th>';
+            echo '<th>First Name</th>';
+            echo '<th>Email</th>';
+            echo '<th>Department</th>';
+            echo '</tr>';
+            echo '</thead>';
+            echo '<tbody>';
+        }
+    ?>
+    <tr>
+        <td><?php echo $row_count + 1; ?></td>
+        <td><strong class="instructor-name"><?php echo htmlspecialchars($instructor['last_name']); ?></strong></td>
+        <td><strong><?php echo htmlspecialchars($instructor['first_name']); ?></strong></td>
+        <td>
+            <a href="mailto:<?php echo htmlspecialchars($instructor['email']); ?>" class="email-link">
+                <?php echo htmlspecialchars($instructor['email']); ?>
+            </a>
+        </td>
+        <td>
+            <?php if ($instructor['dept_code']): ?>
+                <span class="dept-badge"><?php echo htmlspecialchars($instructor['dept_code'] . ' - ' . $instructor['dept_name']); ?></span>
+            <?php else: ?>
+                <span style="color: #666;">Not Assigned</span>
+            <?php endif; ?>
+        </td>
+    </tr>
+    <?php 
+        $row_count++;
+        
+        // Close table if it's the last row or page is full
+        if ($row_count % $rows_per_page == 0 || $row_count == $total_instructors) {
+            echo '</tbody></table>';
+            
+            // Add footer for each page
+            echo '<div class="footer">';
+            echo '<p><strong>Page ' . $current_page . ' of ' . $total_pages . ' - Total Instructors: ' . $total_instructors . '</strong></p>';
+            echo '<p>Official Document - Polytechnic University of the Philippines Taguig Campus</p>';
+            echo '<p>Instructor Management System | ' . date('F j, Y') . '</p>';
+            echo '</div>';
+        }
+    endwhile; 
+    ?>
+
+    <script>
+        // Auto-print when page loads
+        window.onload = function() {
+            setTimeout(function() { 
+                window.print(); 
+            }, 1000);
+        };
+        
+        // Return to previous page after print
+        window.onafterprint = function() {
+            setTimeout(function() { 
+                window.history.back(); 
+            }, 1000);
+        };
+
+        // Add keyboard shortcut for printing (Ctrl+P)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+
+        // Update page number for screen view
+        document.addEventListener('scroll', function() {
+            const scrollPosition = window.scrollY;
+            const pageHeight = window.innerHeight;
+            const currentPage = Math.floor(scrollPosition / pageHeight) + 1;
+            document.getElementById('pageNumber').textContent = 'Page ' + currentPage + ' of <?php echo $total_pages; ?>';
+        });
+    </script>
+</body>
+</html>
+<?php exit(); ?>
