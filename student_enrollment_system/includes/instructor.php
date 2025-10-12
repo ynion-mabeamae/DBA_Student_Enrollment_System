@@ -100,7 +100,7 @@ $instructors = $conn->query("
     SELECT i.*, d.dept_name 
     FROM tblinstructor i 
     LEFT JOIN tbldepartment d ON i.dept_id = d.dept_id 
-    ORDER BY i.last_name, i.first_name
+    ORDER BY i.instructor_id DESC, i.last_name, i.first_name
 ");
 
 // Get departments for dropdown
