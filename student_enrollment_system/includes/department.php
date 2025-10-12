@@ -188,7 +188,21 @@ $total_departments = $departments->num_rows;
     <div class="main-content">
         <div class="page-header">
             <h1>Department</h1>
-            <button class="btn btn-primary" id="openDepartmentModal">Add New Department</button>
+            <div class="header-actions">
+              <button class="btn btn-primary" id="openDepartmentModal">
+                Add New Department
+              </button>
+            </div>
+            
+            <!-- Export Buttons -->
+            <div class="export-buttons">
+              <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+                <i class="fas fa-file-pdf"></i> Export PDF
+              </button>
+              <button class="btn btn-export-excel" onclick="exportData('excel')">
+                <i class="fas fa-file-excel"></i> Export Excel
+              </button>
+            </div>
         </div>
             <!-- Add/Edit Department Modal -->
         <div id="departmentModal" class="modal">
