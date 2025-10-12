@@ -549,7 +549,7 @@ table td {
 }
 
 .capacity-badge {
-    color: #065f46;
+    color: black;
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
     font-size: 0.9rem;
