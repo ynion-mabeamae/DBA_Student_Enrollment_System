@@ -95,7 +95,7 @@ $programs = $conn->query("
     SELECT p.*, d.dept_name 
     FROM tblprogram p 
     LEFT JOIN tbldepartment d ON p.dept_id = d.dept_id 
-    ORDER BY p.program_name
+    ORDER BY p.program_id DESC, p.program_name
 ");
 
 // Get departments for dropdown
