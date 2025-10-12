@@ -1,12 +1,12 @@
 <?php
 session_start();
-require_once '../includes/config.php';
+require_once 'config.php';
 
 // Check if student is logged in
-if (!isset($_SESSION['student_id'])) {
-    header("Location: login.php");
-    exit();
-}
+// if (!isset($_SESSION['student_id'])) {
+//     header("Location: login.php");
+//     exit();
+// }
 
 $student_id = $_SESSION['student_id'];
 
