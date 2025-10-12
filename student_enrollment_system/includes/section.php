@@ -24,10 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $room_id = $_POST['room_id'];
         $max_capacity = $_POST['max_capacity'];
         
-        $sql = "INSERT INTO tblsection (section_code, course_id, term_id, instruction_id, day_pattern, start_time, end_time, room_id, max_capacity) 
+        $sql = "INSERT INTO tblsection (section_code, course_id, term_id,
+                                        instructor_id, day_pattern, start_time,
+                                        end_time, room_id, max_capacity) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siiisssii", $section_code, $course_id, $term_id, $instructor_id, $day_pattern, $start_time, $end_time, $room_id, $max_capacity);
+        $stmt->bind_param("siiisssii", $section_code, $course_id, $term_id,
+                        $instructor_id, $day_pattern, $start_time, $end_time,
+                        $room_id, $max_capacity);
         
         if ($stmt->execute()) {
             $_SESSION['success_message'] = "Section added successfully!";
@@ -51,10 +55,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $room_id = $_POST['room_id'];
         $max_capacity = $_POST['max_capacity'];
         
-        $sql = "UPDATE tblsection SET section_code = ?, course_id = ?, term_id = ?, instruction_id = ?, day_pattern = ?, start_time = ?, end_time = ?, room_id = ?, max_capacity = ? 
+        $sql = "UPDATE tblsection
+                SET section_code = ?, course_id = ?, term_id = ?,
+                    instructor_id = ?, day_pattern = ?, start_time = ?,
+                    end_time = ?, room_id = ?, max_capacity = ? 
                 WHERE section_id = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siiisssiii", $section_code, $course_id, $term_id, $instructor_id, $day_pattern, $start_time, $end_time, $room_id, $max_capacity, $section_id);
+        $stmt->bind_param("siiisssiii", $section_code, $course_id, $term_id,
+                        $instructor_id, $day_pattern, $start_time, $end_time,
+                        $room_id, $max_capacity, $section_id);
         
         if ($stmt->execute()) {
             $_SESSION['success_message'] = "Section updated successfully!";
@@ -97,7 +106,7 @@ if (isset($_GET['edit_id'])) {
         FROM tblsection s
         LEFT JOIN tblcourse c ON s.course_id = c.course_id
         LEFT JOIN tblterm t ON s.term_id = t.term_id
-        LEFT JOIN tblinstructor i ON s.instruction_id = i.instructor_id
+        LEFT JOIN tblinstructor i ON s.instructor_id = i.instructor_id
         LEFT JOIN tblroom r ON s.room_id = r.room_id
         WHERE s.section_id = ?
     ");
