@@ -191,7 +191,7 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
     <div class="main-content">
       <div class="page-header">
         <h1>Room</h1>
-        <div>
+        <div class="header-actions">
           <button class="btn btn-primary" id="openRoomModal">
             Add New Room
           </button>
