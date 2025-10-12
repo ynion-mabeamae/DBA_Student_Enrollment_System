@@ -3,13 +3,13 @@ session_start();
 require_once '../includes/config.php';
 
 // Handle logout
-if (isset($_GET['logout'])) {
-    // Destroy all session data
-    session_destroy();
-    // Redirect to login page
-    header("Location: ../includes/login.php");
-    exit();
-}
+// if (isset($_GET['logout'])) {
+//     // Destroy all session data
+//     session_destroy();
+//     // Redirect to login page
+//     header("Location: ../includes/login.php");
+//     exit();
+// }
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'room';
 
@@ -189,10 +189,24 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
     </div>
 
     <div class="main-content">
-        <div class="page-header">
-            <h1>Room</h1>
-            <button class="btn btn-primary" id="openRoomModal">Add New Room</button>
+      <div class="page-header">
+        <h1>Room</h1>
+        <div>
+          <button class="btn btn-primary" id="openRoomModal">
+            Add New Room
+          </button>
         </div>
+
+        <!-- Export Buttons -->
+        <div class="export-buttons">
+          <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <button class="btn btn-export-excel" onclick="exportData('excel')">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+        </div>
+      </div>
 
         <!-- Add/Edit Room Modal -->
         <div id="roomModal" class="modal">
@@ -313,7 +327,7 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                         </td>
                         <td>
                             <div class="capacity-info">
-                                <span class="capacity-badge"><?php echo $room['capacity']; ?> seats</span>
+                                <span class="capacity-badge"><?php echo $room['capacity']; ?></span>
                             </div>
                         </td>
                         <td class="actions">
