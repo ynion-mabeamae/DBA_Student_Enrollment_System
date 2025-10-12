@@ -175,7 +175,19 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
         <button class="btn" onclick="openModal('add-course-modal')">
           Add New Course
         </button>
+
+        <!-- Export Buttons -->
+        <div class="export-buttons">
+          <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <button class="btn btn-export-excel" onclick="exportData('excel')">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+        </div>
       </div>
+
+      
     </div>
 
     <!-- Search Form -->

@@ -166,3 +166,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Export data function
+function exportData(type) {
+    // Get current filter parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const search = urlParams.get('search') || '';
+    const department = urlParams.get('department') || '';
+    
+    // Build export URL
+    let exportUrl = `course_export_${type}.php?`;
+    
+    if (search) {
+        exportUrl += `search=${encodeURIComponent(search)}&`;
+    }
+    
+    if (department) {
+        exportUrl += `department=${department}&`;
+    }
+    
+    // Remove trailing & or ?
+    exportUrl = exportUrl.replace(/[&?]$/, '');
+    
+    // Open export in new window
+    window.open(exportUrl, '_blank');
+}
