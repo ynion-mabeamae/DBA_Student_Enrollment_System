@@ -243,7 +243,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
             </a>
-            <a href="course_prerequisite.php" class="menu-item"">
+            <a href="prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
                 <span>Prerequisite</span>
 						</a>

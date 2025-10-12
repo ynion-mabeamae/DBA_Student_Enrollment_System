@@ -226,7 +226,7 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
             </a>
-            <a href="course_prerequisite.php" class="menu-item"">
+            <a href="prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
                 <span>Prerequisite</span>
             </a>

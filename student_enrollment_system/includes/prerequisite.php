@@ -236,7 +236,7 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
             </a>
-            <div href="course_prerequisite.php" class="menu-item active" data-tab="course_prerequisite">
+            <div href="prerequisite.php" class="menu-item active" data-tab="course_prerequisite">
                 <i class="fas fa-sitemap"></i>
                 <span>Prerequisites</span>
             </div>

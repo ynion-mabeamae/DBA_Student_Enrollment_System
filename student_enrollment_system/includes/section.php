@@ -216,7 +216,7 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
             <a href="room.php" class="menu-item">
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
-            <a href="course_prerequisite.php" class="menu-item"">
+            <a href="prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
                 <span>Prerequisite</span>
 			</a>
