@@ -281,7 +281,7 @@ body {
 }
 
 .course-code {
-  color: var(--primary);
+  color: var(--dark);
   font-weight: 700;
   font-size: 1.1rem;
 }
