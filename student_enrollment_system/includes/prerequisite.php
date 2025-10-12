@@ -145,8 +145,8 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Prerequisite</title>
-    <link rel="stylesheet" href="../styles/room.css">
+    <title>Prerequisite</title>
+    <link rel="stylesheet" href="../styles/prerequisite.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/dashboard.css">
     <style>
@@ -255,10 +255,24 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
     </div>
 
     <div class="main-content">
-        <div class="page-header">
-            <h1>Prerequisite</h1>
-            <button class="btn btn-primary" id="openPrerequisiteModal">Add New Prerequisite</button>
+      <div class="page-header">
+        <h1>Prerequisite</h1>
+        <div class="header-actions">
+          <button class="btn btn-primary" id="openPrerequisiteModal">
+            Add New Prerequisite
+          </button>
         </div>
+        
+        <!-- Export Buttons -->
+        <div class="export-buttons">
+          <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <button class="btn btn-export-excel" onclick="exportData('excel')">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+        </div>
+      </div>
 
         <!-- Add/Edit Prerequisite Modal -->
         <div id="prerequisiteModal" class="modal">
@@ -640,5 +654,6 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
             });
         });
     </script>
+    <script src="../script/prerequisite.js"></script>
 </body>
 </html>
