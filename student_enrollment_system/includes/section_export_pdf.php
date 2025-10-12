@@ -85,18 +85,6 @@ $total_pages = ceil($total_sections / $rows_per_page);
             table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 60px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; }
-            
-            .page-number {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                font-size: 12px;
-                color: #666;
-                background: white;
-                padding: 5px 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-            }
         }
         
         /* University Header Styles */
@@ -211,33 +199,6 @@ $total_pages = ceil($total_sections / $rows_per_page);
         <div class="report-subtitle">Generated on: <?php echo date('F j, Y g:i A'); ?></div>
     </div>
 
-    <!-- Summary Information -->
-    <div class="summary-info">
-        <strong>Report Summary:</strong><br>
-        Total Sections: <?php echo $sections->num_rows; ?><br>
-        Total Pages: <?php echo $total_pages; ?><br>
-        
-        <?php
-        // Count sections by term
-        $term_count = $conn->query("
-            SELECT t.term_code, COUNT(*) as count 
-            FROM tblsection s 
-            LEFT JOIN tblterm t ON s.term_id = t.term_id
-            GROUP BY t.term_code
-            ORDER BY t.term_code DESC
-        ");
-        
-        if ($term_count->num_rows > 0) {
-            echo 'Term Distribution: ';
-            $term_stats = [];
-            while($row = $term_count->fetch_assoc()) {
-                $term_stats[] = $row['term_code'] . ': ' . $row['count'];
-            }
-            echo implode(', ', $term_stats);
-        }
-        ?>
-    </div>
-
     <div style="text-align: center;" class="no-print">
         <button class="print-btn" onclick="window.print()">🖨️ Print as PDF</button>
         <button class="print-btn" onclick="window.history.back()" style="background: #6c757d;">← Back to Sections</button>
@@ -258,7 +219,6 @@ $total_pages = ceil($total_sections / $rows_per_page);
         
         // Start table if it's the first row or new page
         if ($row_count % $rows_per_page == 0) {
-            echo '<div class="page-info">Page ' . $current_page . ' of ' . $total_pages . '</div>';
             echo '<table>';
             echo '<thead>';
             echo '<tr>';
@@ -326,9 +286,7 @@ $total_pages = ceil($total_sections / $rows_per_page);
             
             // Add footer for each page
             echo '<div class="footer">';
-            echo '<p><strong>Page ' . $current_page . ' of ' . $total_pages . ' - Total Sections: ' . $total_sections . '</strong></p>';
-            echo '<p>Official Document - Polytechnic University of the Philippines Taguig Campus</p>';
-            echo '<p>Section Management System | ' . date('F j, Y') . '</p>';
+            echo '<p><strong>Page ' . $current_page . ' of ' . $total_pages . '</strong></p>';
             echo '</div>';
         }
     endwhile; 

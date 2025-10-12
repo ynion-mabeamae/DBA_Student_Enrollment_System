@@ -73,18 +73,6 @@ $total_pages = ceil($total_terms / $rows_per_page);
             table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 60px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; }
-            
-            .page-number {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                font-size: 12px;
-                color: #666;
-                background: white;
-                padding: 5px 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-            }
         }
         
         /* University Header Styles */
@@ -182,8 +170,7 @@ $total_pages = ceil($total_terms / $rows_per_page);
         }
         
         .current-term {
-            background-color: #f0fff4 !important;
-            border-left: 3px solid #38a169;
+            background-color: white !important;
         }
     </style>
 </head>
@@ -197,47 +184,6 @@ $total_pages = ceil($total_terms / $rows_per_page);
         <h2 class="campus-name">Taguig Campus</h2>
         <div class="report-title">TERM MASTER LIST</div>
         <div class="report-subtitle">Generated on: <?php echo date('F j, Y g:i A'); ?></div>
-    </div>
-
-    <!-- Summary Information -->
-    <div class="summary-info">
-        <strong>Report Summary:</strong><br>
-        Total Terms: <?php echo $terms->num_rows; ?><br>
-        Total Pages: <?php echo $total_pages; ?><br>
-        
-        <?php
-        // Get current term
-        $current_date = date('Y-m-d');
-        $current_term = $conn->query("
-            SELECT term_code 
-            FROM tblterm 
-            WHERE start_date <= '$current_date' AND end_date >= '$current_date'
-            LIMIT 1
-        ");
-        
-        if ($current_term && $current_term->num_rows > 0) {
-            $current_term_data = $current_term->fetch_assoc();
-            echo 'Current Term: ' . htmlspecialchars($current_term_data['term_code']) . '<br>';
-        }
-        
-        // Get upcoming terms
-        $upcoming_terms = $conn->query("
-            SELECT COUNT(*) as count 
-            FROM tblterm 
-            WHERE start_date > '$current_date'
-        ")->fetch_assoc();
-        
-        echo 'Upcoming Terms: ' . ($upcoming_terms['count'] ?? 0) . '<br>';
-        
-        // Get past terms
-        $past_terms = $conn->query("
-            SELECT COUNT(*) as count 
-            FROM tblterm 
-            WHERE end_date < '$current_date'
-        ")->fetch_assoc();
-        
-        echo 'Past Terms: ' . ($past_terms['count'] ?? 0);
-        ?>
     </div>
 
     <div style="text-align: center;" class="no-print">
@@ -260,7 +206,6 @@ $total_pages = ceil($total_terms / $rows_per_page);
         
         // Start table if it's the first row or new page
         if ($row_count % $rows_per_page == 0) {
-            echo '<div class="page-info">Page ' . $current_page . ' of ' . $total_pages . '</div>';
             echo '<table>';
             echo '<thead>';
             echo '<tr>';
@@ -310,9 +255,7 @@ $total_pages = ceil($total_terms / $rows_per_page);
             
             // Add footer for each page
             echo '<div class="footer">';
-            echo '<p><strong>Page ' . $current_page . ' of ' . $total_pages . ' - Total Terms: ' . $total_terms . '</strong></p>';
-            echo '<p>Official Document - Polytechnic University of the Philippines Taguig Campus</p>';
-            echo '<p>Term Management System | ' . date('F j, Y') . '</p>';
+            echo '<p><strong>Page ' . $current_page . ' of ' . $total_pages . '</strong></p>';
             echo '</div>';
         }
     endwhile; 

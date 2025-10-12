@@ -73,18 +73,6 @@ $total_pages = ceil($total_rooms / $rows_per_page);
             table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 60px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; }
-            
-            .page-number {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                font-size: 12px;
-                color: #666;
-                background: white;
-                padding: 5px 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-            }
         }
         
         /* University Header Styles */
@@ -170,11 +158,10 @@ $total_pages = ceil($total_rooms / $rows_per_page);
         }
         
         .capacity-badge {
-            background: #e3f2fd;
-            color: #1976d2;
+            color: black;
             padding: 2px 6px;
             border-radius: 3px;
-            font-size: 0.8em;
+            font-size: 0.9em;
             font-weight: bold;
         }
         
@@ -193,32 +180,6 @@ $total_pages = ceil($total_rooms / $rows_per_page);
         <h2 class="campus-name">Taguig Campus</h2>
         <div class="report-title">ROOM MASTER LIST</div>
         <div class="report-subtitle">Generated on: <?php echo date('F j, Y g:i A'); ?></div>
-    </div>
-
-    <!-- Summary Information -->
-    <div class="summary-info">
-        <strong>Report Summary:</strong><br>
-        Total Rooms: <?php echo $rooms->num_rows; ?><br>
-        Total Pages: <?php echo $total_pages; ?><br>
-        
-        <?php
-        // Count by building
-        $building_count = $conn->query("
-            SELECT building, COUNT(*) as count 
-            FROM tblroom 
-            GROUP BY building 
-            ORDER BY count DESC
-        ");
-        
-        if ($building_count->num_rows > 0) {
-            echo 'Building Distribution: ';
-            $building_stats = [];
-            while($row = $building_count->fetch_assoc()) {
-                $building_stats[] = $row['building'] . ': ' . $row['count'];
-            }
-            echo implode(', ', $building_stats);
-        }
-        ?>
     </div>
 
     <div style="text-align: center;" class="no-print">
@@ -241,7 +202,6 @@ $total_pages = ceil($total_rooms / $rows_per_page);
         
         // Start table if it's the first row or new page
         if ($row_count % $rows_per_page == 0) {
-            echo '<div class="page-info">Page ' . $current_page . ' of ' . $total_pages . '</div>';
             echo '<table>';
             echo '<thead>';
             echo '<tr>';
@@ -271,9 +231,7 @@ $total_pages = ceil($total_rooms / $rows_per_page);
             
             // Add footer for each page
             echo '<div class="footer">';
-            echo '<p><strong>Page ' . $current_page . ' of ' . $total_pages . ' - Total Rooms: ' . $total_rooms . '</strong></p>';
-            echo '<p>Official Document - Polytechnic University of the Philippines Taguig Campus</p>';
-            echo '<p>Room Management System | ' . date('F j, Y') . '</p>';
+            echo '<p><strong>Page ' . $current_page . ' of ' . $total_pages . '</strong></p>';
             echo '</div>';
         }
     endwhile; 
