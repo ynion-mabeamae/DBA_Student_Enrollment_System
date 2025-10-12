@@ -495,3 +495,14 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// Export data function
+function exportData(type) {
+    // Build export URL
+    let exportUrl = `program_export_${type}.php`;
+    
+    console.log('Export URL:', exportUrl); // Debug log
+    
+    // Open export in new window
+    window.open(exportUrl, '_blank');
+}

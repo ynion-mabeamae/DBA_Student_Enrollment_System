@@ -3,13 +3,13 @@ session_start();
 require_once '../includes/config.php';
 
 // Handle logout
-if (isset($_GET['logout'])) {
-    // Destroy all session data
-    session_destroy();
-    // Redirect to login page
-    header("Location: ../includes/login.php");
-    exit();
-}
+// if (isset($_GET['logout'])) {
+//     // Destroy all session data
+//     session_destroy();
+//     // Redirect to login page
+//     header("Location: ../includes/login.php");
+//     exit();
+// }
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'program';
 
@@ -204,157 +204,171 @@ $total_programs = $programs->num_rows;
     <div class="main-content">
       <div class="page-header">
 				<h1>Program</h1>
-				<button class="btn btn-primary" id="openProgramModal">Add New Program</button>
+        <div class="header-actions">
+          <button class="btn btn-primary" id="openProgramModal">
+            Add New Program
+          </button>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="export-buttons">
+          <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <button class="btn btn-export-excel" onclick="exportData('excel')">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+        </div>
     	</div>
 
 		  <!-- Add/Edit Program Modal -->
 			<div id="programModal" class="modal">
-					<div class="modal-content">
-							<div class="modal-header">
-									<h2 id="programModalTitle">Add New Program</h2>
-									<span class="close">&times;</span>
-							</div>
-							<div class="modal-body">
-									<form method="POST" id="programForm">
-											<input type="hidden" name="program_id" id="program_id">
-											
-											<div class="form-group">
-													<label for="program_code">Program Code *</label>
-													<input type="text" id="program_code" name="program_code" 
-																required maxlength="10" placeholder="Enter program code">
-													<small class="form-help">Unique code for the program (max 10 characters)</small>
-											</div>
-											
-											<div class="form-group">
-													<label for="program_name">Program Name *</label>
-													<input type="text" id="program_name" name="program_name" 
-																required maxlength="100" placeholder="Enter program name">
-													<small class="form-help">Full name of the program</small>
-											</div>
-											
-											<div class="form-group">
-													<label for="dept_id">Department</label>
-													<select id="dept_id" name="dept_id">
-															<option value="">Select Department</option>
-															<?php 
-															if ($departments) {
-																	$departments->data_seek(0);
-																	while($department = $departments->fetch_assoc()): 
-																	?>
-																			<option value="<?php echo $department['dept_id']; ?>">
-																					<?php echo htmlspecialchars($department['dept_name']); ?>
-																			</option>
-																	<?php endwhile;
-															}
-															?>
-													</select>
-													<small class="form-help">Select the department this program belongs to</small>
-											</div>
-											
-											<div class="form-actions">
-													<button type="submit" name="add_program" class="btn btn-success" id="addProgramBtn">Add Program</button>
-													<button type="submit" name="update_program" class="btn btn-success" id="updateProgramBtn" style="display: none;">Update Program</button>
-													<button type="button" class="btn btn-cancel" id="cancelProgram">Cancel</button>
-											</div>
-									</form>
-							</div>
-					</div>
+        <div class="modal-content">
+          <div class="modal-header">
+              <h2 id="programModalTitle">Add New Program</h2>
+              <span class="close">&times;</span>
+          </div>
+          <div class="modal-body">
+            <form method="POST" id="programForm">
+              <input type="hidden" name="program_id" id="program_id">
+              
+              <div class="form-group">
+                <label for="program_code">Program Code *</label>
+                <input type="text" id="program_code" name="program_code" 
+                      required maxlength="10" placeholder="Enter program code">
+                <small class="form-help">Unique code for the program (max 10 characters)</small>
+              </div>
+                
+              <div class="form-group">
+                <label for="program_name">Program Name *</label>
+                <input type="text" id="program_name" name="program_name" 
+                      required maxlength="100" placeholder="Enter program name">
+                <small class="form-help">Full name of the program</small>
+              </div>
+                
+              <div class="form-group">
+                <label for="dept_id">Department</label>
+                <select id="dept_id" name="dept_id">
+                  <option value="">Select Department</option>
+                  <?php 
+                  if ($departments) {
+                    $departments->data_seek(0);
+                    while($department = $departments->fetch_assoc()): 
+                    ?>
+                      <option value="<?php echo $department['dept_id']; ?>">
+                          <?php echo htmlspecialchars($department['dept_name']); ?>
+                      </option>
+                    <?php endwhile;
+                  }
+                  ?>
+                </select>
+                <small class="form-help">Select the department this program belongs to</small>
+              </div>
+                
+              <div class="form-actions">
+                <button type="submit" name="add_program" class="btn btn-success" id="addProgramBtn">Add Program</button>
+                <button type="submit" name="update_program" class="btn btn-success" id="updateProgramBtn" style="display: none;">Update Program</button>
+                <button type="button" class="btn btn-cancel" id="cancelProgram">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
 			</div>
 
 			<!-- Delete Confirmation Dialog -->
 			<div class="delete-confirmation" id="deleteConfirmation">
-					<div class="confirmation-dialog">
-							<h3>Delete Program</h3>
-							<p id="deleteMessage">Are you sure you want to delete this program? This action cannot be undone.</p>
-							<div class="confirmation-actions">
-									<button class="confirm-delete" id="confirmDelete">Yes</button>
-									<button class="cancel-delete" id="cancelDelete">Cancel</button>
-							</div>
-					</div>
+        <div class="confirmation-dialog">
+          <h3>Delete Program</h3>
+          <p id="deleteMessage">Are you sure you want to delete this program? This action cannot be undone.</p>
+          <div class="confirmation-actions">
+            <button class="confirm-delete" id="confirmDelete">Yes</button>
+            <button class="cancel-delete" id="cancelDelete">Cancel</button>
+          </div>
+        </div>
 			</div>
 
 			<!-- Hidden delete form -->
 			<form method="POST" id="deleteProgramForm" style="display: none;">
-					<input type="hidden" name="program_id" id="deleteProgramId">
-					<input type="hidden" name="delete_program" value="1">
+        <input type="hidden" name="program_id" id="deleteProgramId">
+        <input type="hidden" name="delete_program" value="1">
 			</form>
 
 			<!-- Programs Table -->
 			<div class="table-container">
-					<h2>Program List</h2>
+        <h2>Program List</h2>
 					
-					<!-- Search and Filters -->
-					<div class="search-container">
-							<div class="search-box">
-									<div class="search-icon">🔍</div>
-									<input type="text" id="searchPrograms" class="search-input" placeholder="Search programs by code, name, or department...">
-							</div>
-							
-							<div class="search-stats" id="searchStats">Showing <?php echo $total_programs; ?> of <?php echo $total_programs; ?> programs</div>
-							
-							<button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
-					</div>
+        <!-- Search and Filters -->
+        <div class="search-container">
+          <div class="search-box">
+            <div class="search-icon">🔍</div>
+            <input type="text" id="searchPrograms" class="search-input" placeholder="Search programs by code, name, or department...">
+          </div>
+          
+          <div class="search-stats" id="searchStats">Showing <?php echo $total_programs; ?> of <?php echo $total_programs; ?> programs</div>
+          
+          <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
+        </div>
 
-					<table>
-							<thead>
-									<tr>
-											<th>Program Code</th>
-											<th>Program Name</th>
-											<th>Department</th>
-											<th>Actions</th>
-									</tr>
-							</thead>
-							<tbody>
-									<?php 
-									if ($programs && $programs->num_rows > 0):
-											$programs->data_seek(0);
-											while($program = $programs->fetch_assoc()): 
-									?>
-									<tr>
-											<td>
-													<div class="program-info">
-															<div class="program-code"><?php echo htmlspecialchars($program['program_code']); ?></div>
-													</div>
-											</td>
-											<td>
-													<div class="program-name"><?php echo htmlspecialchars($program['program_name']); ?></div>
-											</td>
-											<td>
-													<?php if ($program['dept_name']): ?>
-															<span class="dept-badge"><?php echo htmlspecialchars($program['dept_name']); ?></span>
-													<?php else: ?>
-															<span class="no-dept">Not Assigned</span>
-													<?php endif; ?>
-											</td>
-											<td class="actions">
-													<button type="button" class="btn btn-edit edit-btn" 
-																	data-program-id="<?php echo $program['program_id']; ?>"
-																	data-program-code="<?php echo htmlspecialchars($program['program_code']); ?>"
-																	data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
-																	data-dept-id="<?php echo $program['dept_id']; ?>">
-															Edit
-													</button>
-													<button type="button" class="btn btn-danger delete-btn" 
-																	data-program-id="<?php echo $program['program_id']; ?>"
-																	data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>">
-															Delete
-													</button>
-											</td>
-									</tr>
-									<?php 
-											endwhile;
-									else: 
-									?>
-									<tr>
-											<td colspan="4" style="text-align: center; padding: 2rem;">
-													<div style="color: var(--gray-500); font-style: italic;">
-															No programs found. Click "Add New Program" to get started.
-													</div>
-											</td>
-									</tr>
-									<?php endif; ?>
-							</tbody>
-					</table>
+        <table>
+          <thead>
+            <tr>
+              <th>Program Code</th>
+              <th>Program Name</th>
+              <th>Department</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php 
+            if ($programs && $programs->num_rows > 0):
+                $programs->data_seek(0);
+                while($program = $programs->fetch_assoc()): 
+            ?>
+            <tr>
+              <td>
+                  <div class="program-info">
+                      <div class="program-code"><?php echo htmlspecialchars($program['program_code']); ?></div>
+                  </div>
+              </td>
+              <td>
+                  <div class="program-name"><?php echo htmlspecialchars($program['program_name']); ?></div>
+              </td>
+              <td>
+                <?php if ($program['dept_name']): ?>
+                    <span class="dept-badge"><?php echo htmlspecialchars($program['dept_name']); ?></span>
+                <?php else: ?>
+                    <span class="no-dept">Not Assigned</span>
+                <?php endif; ?>
+              </td>
+              <td class="actions">
+                <button type="button" class="btn btn-edit edit-btn" 
+                        data-program-id="<?php echo $program['program_id']; ?>"
+                        data-program-code="<?php echo htmlspecialchars($program['program_code']); ?>"
+                        data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                        data-dept-id="<?php echo $program['dept_id']; ?>">
+                    Edit
+                </button>
+                <button type="button" class="btn btn-danger delete-btn" 
+                        data-program-id="<?php echo $program['program_id']; ?>"
+                        data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>">
+                    Delete
+                </button>
+              </td>
+            </tr>
+            <?php 
+                endwhile;
+            else: 
+            ?>
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 2rem;">
+                <div style="color: var(--gray-500); font-style: italic;">
+                  No programs found. Click "Add New Program" to get started.
+                </div>
+              </td>
+            </tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
 			</div>
     </div>
 
