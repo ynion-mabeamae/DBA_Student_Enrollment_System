@@ -3,13 +3,13 @@ session_start();
 require_once '../includes/config.php';
 
 // Handle logout
-if (isset($_GET['logout'])) {
-    // Destroy all session data
-    session_destroy();
-    // Redirect to login page
-    header("Location: ../includes/login.php");
-    exit();
-}
+// if (isset($_GET['logout'])) {
+//     // Destroy all session data
+//     session_destroy();
+//     // Redirect to login page
+//     header("Location: ../includes/login.php");
+//     exit();
+// }
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'instructors';
 
@@ -209,7 +209,22 @@ $total_instructors = $instructors->num_rows;
   <div class="main-content">
     <div class="page-header">
       <h1>Instructor</h1>
-      <button class="btn btn-primary" id="openInstructorModal">Add New Instructor</button>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="openInstructorModal">
+          Add New Instructor
+        </button>
+      </div>
+        
+
+      <!-- Export Buttons -->
+      <div class="export-buttons">
+        <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+          <i class="fas fa-file-pdf"></i> Export PDF
+        </button>
+        <button class="btn btn-export-excel" onclick="exportData('excel')">
+          <i class="fas fa-file-excel"></i> Export Excel
+        </button>
+      </div>
     </div>
 
       <!-- Instructor Modal -->

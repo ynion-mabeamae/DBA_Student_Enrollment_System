@@ -66,11 +66,21 @@ body {
     font-weight: 700;
     margin-bottom: 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex: 1;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 /* Buttons */
 .btn {
     padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    color: white;
     border: none;
     border-radius: var(--border-radius);
     font-weight: 600;
@@ -107,10 +117,6 @@ body {
     color: white;
 }
 
-.btn-success:hover {
-    background: #3aa8d4;
-}
-
 .btn-danger {
     background: var(--danger);
     color: white;
@@ -120,22 +126,38 @@ body {
     background: #e01e69;
 }
 
-.btn-edit {
-    background: var(--info);
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+}
+
+.btn-outline:hover {
+    background: var(--primary);
     color: white;
 }
 
-.btn-edit:hover {
-    background: #3a7bd4;
-}
-
-.btn-cancel {
-    background: var(--gray-500);
-    color: white;
-}
-
-.btn-cancel:hover {
+.btn-print {
     background: var(--gray-600);
+    color: white;
+}
+
+.btn-export-pdf {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-export-pdf:hover {
+    background: #e01e69;
+}
+
+.btn-export-excel {
+    background: #28a745;
+    color: white;
+}
+
+.btn-export-excel:hover {
+    background: #218838;
 }
 
 /* Modal Styles */

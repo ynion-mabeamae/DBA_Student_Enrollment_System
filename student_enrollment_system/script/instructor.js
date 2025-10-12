@@ -461,3 +461,12 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// Export data function
+function exportData(type) {
+    // Build export URL
+    let exportUrl = `instructor_export_${type}.php`;
+    
+    // Open export in new window
+    window.open(exportUrl, '_blank');
+}
