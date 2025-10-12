@@ -139,6 +139,24 @@ body {
     color: white;
 }
 
+.btn-export-pdf {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-export-pdf:hover {
+    background: #e01e69;
+}
+
+.btn-export-excel {
+    background: #28a745;
+    color: white;
+}
+
+.btn-export-excel:hover {
+    background: #218838;
+}
+
 /* Search Container */
 .search-container {
     background: white;
@@ -659,6 +677,8 @@ body {
 .header-actions {
 	display: flex;
 	gap: 10px;
+    justify-content: right;
+    margin-top: 20px;
 }
 
 /* Print Styles */

@@ -317,3 +317,33 @@ function setupDeleteButtons() {
         deleteConfirmation.style.display = 'none';
     });
 }
+
+// Export data function
+function exportData(type) {
+    // Get current filter parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const showArchived = urlParams.get('show_archived') === 'true';
+    const search = urlParams.get('search') || '';
+    const program = urlParams.get('program') || '';
+    
+    // Build export URL
+    let exportUrl = `student_export_${type}.php?`;
+    
+    if (showArchived) {
+        exportUrl += 'show_archived=true&';
+    }
+    
+    if (search) {
+        exportUrl += `search=${encodeURIComponent(search)}&`;
+    }
+    
+    if (program) {
+        exportUrl += `program=${program}&`;
+    }
+    
+    // Remove trailing & or ?
+    exportUrl = exportUrl.replace(/[&?]$/, '');
+    
+    // Open export in new window
+    window.open(exportUrl, '_blank');
+}
