@@ -186,9 +186,6 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
           <i class="fas fa-file-excel"></i> Export Excel
         </button>
       </div>
-      </div>
-
-      
     </div>
 
     <!-- Search Form -->
