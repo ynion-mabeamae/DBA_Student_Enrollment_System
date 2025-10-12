@@ -677,8 +677,6 @@ body {
 .header-actions {
 	display: flex;
 	gap: 10px;
-    justify-content: right;
-    margin-top: 20px;
 }
 
 /* Print Styles */
