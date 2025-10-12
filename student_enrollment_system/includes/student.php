@@ -407,10 +407,6 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
 
         <!-- Students Table -->
         <div class="table-container">
-            <h2>
-                <?php echo $show_archived ? 'Archived Students' : 'Active Students'; ?> 
-                (<?php echo $students->num_rows; ?> students)
-            </h2>
             
             <?php if ($students->num_rows > 0): ?>
             <table id="students-table">
