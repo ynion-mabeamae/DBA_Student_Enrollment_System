@@ -188,8 +188,22 @@ $total_terms = $terms->num_rows;
 
     <div class="main-content">
         <div class="page-header">
-                <h1>Term</h1>
-                <button class="btn btn-primary" id="openTermModal">Add New Term</button>
+          <h1>Term</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary" id="openTermModal">
+              Add New Term
+            </button>
+          </div>
+          
+          <!-- Export Buttons -->
+          <div class="export-buttons">
+            <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+              <i class="fas fa-file-pdf"></i> Export PDF
+            </button>
+            <button class="btn btn-export-excel" onclick="exportData('excel')">
+              <i class="fas fa-file-excel"></i> Export Excel
+            </button>
+          </div>
         </div>
 
         <!-- Add/Edit Term Modal -->
