@@ -84,7 +84,7 @@ if (isset($_GET['edit_id'])) {
 }
 
 // Get all terms
-$terms = $conn->query("SELECT * FROM tblterm ORDER BY start_date DESC");
+$terms = $conn->query("SELECT * FROM tblterm ORDER BY term_id DESC, start_date DESC");
 
 // Count total terms
 $total_terms = $terms->num_rows;
