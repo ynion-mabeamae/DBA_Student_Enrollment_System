@@ -66,6 +66,14 @@ body {
     font-weight: 700;
     margin-bottom: 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex: 1;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 /* Delete Confirmation Modal */
@@ -433,13 +441,13 @@ body {
 
 /* Button styles */
 .btn {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.5rem;
     background: var(--primary);
     color: white;
     border: none;
     border-radius: var(--border-radius);
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: var(--transition);
     text-decoration: none;
@@ -447,8 +455,6 @@ body {
     align-items: center;
     gap: 0.5rem;
     box-shadow: var(--shadow);
-    min-width: 80px;
-    justify-content: center;
 }
 
 .btn:hover {
@@ -510,6 +516,24 @@ body {
 
 .btn-cancel:hover {
     background-color: #4b5563;
+}
+
+.btn-export-pdf {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-export-pdf:hover {
+    background: #e01e69;
+}
+
+.btn-export-excel {
+    background: #28a745;
+    color: white;
+}
+
+.btn-export-excel:hover {
+    background: #218838;
 }
 
 /* Table styles */

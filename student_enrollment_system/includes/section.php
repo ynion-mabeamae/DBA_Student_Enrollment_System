@@ -3,11 +3,11 @@ session_start();
 require_once '../includes/config.php';
 
 // Handle logout
-if (isset($_GET['logout'])) {
-    session_destroy();
-    header("Location: ../includes/login.php");
-    exit();
-}
+// if (isset($_GET['logout'])) {
+//     session_destroy();
+//     header("Location: ../includes/login.php");
+//     exit();
+// }
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'student';
 
@@ -144,7 +144,7 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Section Management</title>
+    <title>Section</title>
     <link rel="stylesheet" href="../styles/section.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/dashboard.css">
@@ -230,7 +230,21 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
     <div class="main-content">
         <div class="page-header">
             <h1>Section</h1>
-            <button class="btn btn-primary" id="openSectionModal">Add New Section</button>
+            <div class="header-actions">
+              <button class="btn btn-primary" id="openSectionModal">
+                Add New Section
+              </button>
+            </div>
+
+          <!-- Export Buttons -->
+          <div class="export-buttons">
+            <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+              <i class="fas fa-file-pdf"></i> Export PDF
+            </button>
+            <button class="btn btn-export-excel" onclick="exportData('excel')">
+              <i class="fas fa-file-excel"></i> Export Excel
+            </button>
+          </div>
         </div>
 
         <!-- Add/Edit Section Modal -->
