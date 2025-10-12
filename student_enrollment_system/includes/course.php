@@ -229,8 +229,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
 
     <!-- Courses Table -->
     <div class="table-container">
-      <h2>Course List (<?php echo $courses->num_rows; ?> courses)</h2>
-            
+
       <?php if ($courses->num_rows > 0): ?>
         <table id="courses-table">
           <thead>
