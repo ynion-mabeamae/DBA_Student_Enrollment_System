@@ -433,6 +433,12 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
                     </div>
                     <input type="text" id="searchPrerequisites" class="search-input" placeholder="Search prerequisites by course ID...">
                 </div>
+
+                <!-- ADD THIS SEARCH BUTTON -->
+                <button class="btn btn-primary" id="searchButton">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
                 
                 <div class="search-stats" id="searchStats">
                     Showing <?php echo $total_prerequisites; ?> of <?php echo $total_prerequisites; ?> 
