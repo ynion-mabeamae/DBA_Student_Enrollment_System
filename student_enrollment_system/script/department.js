@@ -442,6 +442,22 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// Auto-hide toast notifications after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach(toast => {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 5000);
+    });
+});
+
 // Export data function
 function exportData(type) {
     // Build export URL

@@ -13,7 +13,6 @@ if (isset($_GET['logout'])) {
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'department';
 
-
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_department'])) {
@@ -25,9 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ss", $dept_code, $dept_name);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Department added successfully!";
+            $_SESSION['message'] = "success::Department added successfully!";
         } else {
-            $_SESSION['error_message'] = "Error adding department: " . $conn->error;
+            $_SESSION['message'] = "error::Error adding department: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -44,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ssi", $dept_code, $dept_name, $dept_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Department updated successfully!";
+            $_SESSION['message'] = "success::Department updated successfully!";
         } else {
-            $_SESSION['error_message'] = "Error updating department: " . $conn->error;
+            $_SESSION['message'] = "error::Error updating department: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -61,9 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $dept_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Department deleted successfully!";
+            $_SESSION['message'] = "success::Department deleted successfully!";
         } else {
-            $_SESSION['error_message'] = "Error deleting department: " . $conn->error;
+            $_SESSION['message'] = "error::Error deleting department: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -99,30 +98,23 @@ $total_departments = $departments->num_rows;
     <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
-    <!-- Success/Error Notification -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="notification success" id="successNotification">
-            <div class="notification-content">
-                <span class="notification-icon">✓</span>
-                <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-                <button class="notification-close">&times;</button>
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer">
+        <?php if (isset($_SESSION['message'])): ?>
+            <?php 
+            $message = $_SESSION['message'];
+            list($type, $text) = explode('::', $message, 2);
+            unset($_SESSION['message']);
+            ?>
+            <div class="toast <?php echo $type; ?>">
+                <i class="fas fa-<?php echo $type === 'success' ? 
+                'check-circle' : ($type === 'error' ? 
+                'exclamation-circle' : ($type === 'warning' ? 
+                'exclamation-triangle' : 'info-circle')); ?>"></i>
+                <?php echo $text; ?>
             </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="notification error" id="errorNotification">
-            <div class="notification-content">
-                <span class="notification-icon">⚠</span>
-                <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
+        <?php endif; ?>
+    </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -265,10 +257,15 @@ $total_departments = $departments->num_rows;
                     <!-- Search and Filters -->
             <div class="search-container">
                 <div class="search-box">
-                    <div class="search-icon">🔍</div>
+                    <div class="search-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
                     <input type="text" id="searchDepartments" class="search-input" placeholder="Search departments by code or name...">
                 </div>
-                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+                <button class="btn btn-primary search-btn" id="searchButton">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
                 
                 <div class="search-stats" id="searchStats">Showing <?php echo $total_departments; ?> of <?php echo $total_departments; ?> departments</div>
                 
@@ -303,11 +300,13 @@ $total_departments = $departments->num_rows;
                                     data-dept-id="<?php echo $department['dept_id']; ?>"
                                     data-dept-code="<?php echo htmlspecialchars($department['dept_code']); ?>"
                                     data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
+                                <i class="fas fa-edit"></i>
                                 Edit
                             </button>
                             <button type="button" class="btn btn-danger delete-btn" 
                                     data-dept-id="<?php echo $department['dept_id']; ?>"
                                     data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
+                                <i class="fas fa-trash"></i>
                                 Delete
                             </button>
                         </td>
@@ -328,17 +327,6 @@ $total_departments = $departments->num_rows;
             </table>
         </div>
     </div>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
 
     <script src="../script/department.js"></script>
 </body>
