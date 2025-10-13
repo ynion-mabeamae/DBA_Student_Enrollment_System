@@ -318,6 +318,32 @@ function setupDeleteButtons() {
     });
 }
 
+// Auto-hide toast notifications after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach(toast => {
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('hiding');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 5000);
+        
+        // Also allow manual close on click
+        toast.addEventListener('click', function() {
+            this.classList.add('hiding');
+            setTimeout(() => {
+                if (this.parentNode) {
+                    this.parentNode.removeChild(this);
+                }
+            }, 300);
+        });
+    });
+});
+
 // Export data function
 function exportData(type) {
     // Get current filter parameters

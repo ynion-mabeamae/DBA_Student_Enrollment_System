@@ -2,13 +2,6 @@
 session_start();
 require_once 'config.php';
 
-// // Handle logout
-// if (isset($_GET['logout'])) {
-//     session_destroy();
-//     header("Location: ../includes/login.php");
-//     exit();
-// }
-
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'student';
 
 // Handle form submissions
@@ -110,25 +103,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 // Handle GET request for student data (for editing)
 if (isset($_GET['get_student']) && isset($_GET['student_id'])) {
-    $student_id = $_GET['student_id'];
+    $student_id = intval($_GET['student_id']);
+    
     $sql = "SELECT * FROM tblstudent WHERE student_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $student_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
     
-    if ($result->num_rows > 0) {
-        $student = $result->fetch_assoc();
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => true,
-            'student' => $student
-        ]);
+    if ($stmt) {
+        $stmt->bind_param("i", $student_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $student = $result->fetch_assoc();
+            
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'student' => $student
+            ]);
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Student not found'
+            ]);
+        }
+        $stmt->close();
     } else {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false,
-            'message' => 'Student not found'
+            'message' => 'Database error: ' . $conn->error
         ]);
     }
     exit();
@@ -178,14 +183,19 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer">
         <?php if (isset($_SESSION['message'])): ?>
-            <div class="toast <?php echo $_SESSION['message_type']; ?>">
-                <i class="fas fa-check-circle"></i>
-                <?php echo $_SESSION['message']; ?>
-            </div>
             <?php 
+            $message = $_SESSION['message'];
+            $type = $_SESSION['message_type'] ?? 'info';
             unset($_SESSION['message']);
             unset($_SESSION['message_type']);
             ?>
+            <div class="toast <?php echo $type; ?>">
+                <i class="fas fa-<?php echo $type === 'success' ? 
+                'check-circle' : ($type === 'error' ? 
+                'exclamation-circle' : ($type === 'warning' ? 
+                'exclamation-triangle' : 'info-circle')); ?>"></i>
+                <?php echo htmlspecialchars($message); ?>
+            </div>
         <?php endif; ?>
     </div>
 
@@ -235,14 +245,6 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
-
-            <!-- Logout Item -->
-            <!-- <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div> -->
         </div>
     </div>
 
@@ -311,15 +313,15 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                     </div>
                     <div class="search-actions">
                         <button type="submit" class="btn">
+                            <i class="fas fa-search"></i>
                             Search
                         </button>
                         <a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=students<?php echo $show_archived ? '&show_archived=true' : ''; ?>" class="btn btn-outline">
+                            <i class="fas fa-redo"></i>
                             Reset
                         </a>
                     </div>
                 </div>
-
-                
             </form>
         </div>
 
@@ -448,18 +450,21 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                                 <form method="POST" style="display: inline;">
                                     <input type="hidden" name="student_id" value="<?php echo $student['student_id']; ?>">
                                     <button type="submit" name="restore_student" class="btn btn-success">
+                                        <i class="fas fa-trash-restore"></i>
                                         Restore
                                     </button>
                                 </form>
                             <?php else: ?>
                                 <!-- Show Edit and Delete buttons for active students -->
                                 <button type="button" class="btn btn-edit" onclick="editStudent(<?php echo $student['student_id']; ?>)">
+                                    <i class="fas fa-edit"></i>
                                     Edit
                                 </button>
                                 <button class="btn btn-danger delete-btn" 
                                         data-student-id="<?php echo $student['student_id']; ?>"
                                         data-student-no="<?php echo htmlspecialchars($student['student_no']); ?>"
                                         data-student-name="<?php echo htmlspecialchars($student['last_name'] . ', ' . $student['first_name']); ?>">
+                                    <i class="fas fa-trash"></i>
                                     Delete
                                 </button>
                             <?php endif; ?>
