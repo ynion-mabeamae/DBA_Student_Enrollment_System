@@ -26,9 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ssi", $program_code, $program_name, $dept_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Program added successfully!";
+            $_SESSION['message'] = "success::Program added successfully!";
         } else {
-            $_SESSION['error_message'] = "Error adding program: " . $conn->error;
+            $_SESSION['message'] = "error::Error adding program: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -48,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ssii", $program_code, $program_name, $dept_id, $program_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Program updated successfully!";
+            $_SESSION['message'] = "success::Program updated successfully!";
         } else {
-            $_SESSION['error_message'] = "Error updating program: " . $conn->error;
+            $_SESSION['message'] = "error::Error updating program: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -65,9 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $program_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Program deleted successfully!";
+            $_SESSION['message'] = "success::Program deleted successfully!";
         } else {
-            $_SESSION['error_message'] = "Error deleting program: " . $conn->error;
+            $_SESSION['message'] = "error::Error deleting program: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -116,30 +116,23 @@ $total_programs = $programs->num_rows;
     <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
-    <!-- Success/Error Notification -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="notification success" id="successNotification">
-            <div class="notification-content">
-                <span class="notification-icon">✓</span>
-                <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="notification error" id="errorNotification">
-            <div class="notification-content">
-                <span class="notification-icon">⚠</span>
-                <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
+    <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer">
+      <?php if (isset($_SESSION['message'])): ?>
+          <?php 
+          $message = $_SESSION['message'];
+          list($type, $text) = explode('::', $message, 2);
+          unset($_SESSION['message']);
+          ?>
+          <div class="toast <?php echo $type; ?>">
+              <i class="fas fa-<?php echo $type === 'success' ? 
+              'check-circle' : ($type === 'error' ? 
+              'exclamation-circle' : ($type === 'warning' ? 
+              'exclamation-triangle' : 'info-circle')); ?>"></i>
+              <?php echo $text; ?>
+          </div>
+      <?php endif; ?>
+  </div>
 
 		<!-- Sidebar -->
     <div class="sidebar">
@@ -301,7 +294,9 @@ $total_programs = $programs->num_rows;
         <!-- Search and Filters -->
         <div class="search-container">
           <div class="search-box">
-            <div class="search-icon">🔍</div>
+            <div class="search-icon">
+              <i class="fas fa-search"></i>
+            </div>
             <input type="text" id="searchPrograms" class="search-input" placeholder="Search programs by code, name, or department...">
           </div>
           
@@ -347,11 +342,13 @@ $total_programs = $programs->num_rows;
                         data-program-code="<?php echo htmlspecialchars($program['program_code']); ?>"
                         data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>"
                         data-dept-id="<?php echo $program['dept_id']; ?>">
+                    <i class="fas fa-edit"></i>
                     Edit
                 </button>
                 <button type="button" class="btn btn-danger delete-btn" 
                         data-program-id="<?php echo $program['program_id']; ?>"
                         data-program-name="<?php echo htmlspecialchars($program['program_name']); ?>">
+                    <i class="fas fa-trash"></i>
                     Delete
                 </button>
               </td>
