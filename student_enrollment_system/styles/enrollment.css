@@ -859,6 +859,155 @@ table td {
   margin-top: 1.5rem;
 }
 
+/* Search Container Styles */
+.search-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+  max-width: 1500px;
+}
+
+.search-box {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.search-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.search-group label {
+  font-weight: 600;
+  color: var(--gray-700);
+  font-size: 0.9rem;
+}
+
+.search-input {
+  padding: 0.75rem;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  transition: var(--transition);
+  background: white;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.search-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.search-actions .btn {
+  background: var(--primary);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 100px;
+  height: 42px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 10px;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Student Info in Table */
+.student-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.student-name {
+  font-weight: 600;
+  color: var(--dark);
+  font-size: 1rem;
+}
+
+.student-id {
+  color: var(--gray-600);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.course-code {
+  font-weight: 600;
+  color: var(--dark);
+  font-size: 1rem;
+}
+
+/* Section and Term Badges */
+.section-badge {
+  color: black;
+  padding: 0.375rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.term-badge {
+  color: black;
+  padding: 0.375rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Grade Badges */
+.grade-badge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.grade-pending {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+/* Grade specific colors */
+.grade-10 { background: var(--success); color: white; }
+.grade-125 { background: var(--success); color: white; }
+.grade-150 { background: var(--info); color: white; }
+.grade-175 { background: var(--info); color: white; }
+.grade-20 { background: var(--warning); color: white; }
+.grade-225 { background: var(--warning); color: white; }
+.grade-250 { background: var(--warning); color: white; }
+.grade-275 { background: #ff6b6b; color: white; }
+.grade-30 { background: var(--danger); color: white; }
+
+/* No Records */
+.no-records {
+  text-align: center;
+  padding: 3rem;
+  color: var(--gray-600);
+}
+
+.no-records a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.no-records a:hover {
+  text-decoration: underline;
+}
+
 /* Toast Notifications */
 .toast-container {
     position: fixed;

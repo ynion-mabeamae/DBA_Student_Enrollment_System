@@ -89,6 +89,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
+// Handle search
+$search_condition = "";
+$search_params = [];
+
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+    $search_term = $conn->real_escape_string($_GET['search']);
+    $search_condition .= "WHERE (s.student_no LIKE '%$search_term%' OR 
+                                 s.first_name LIKE '%$search_term%' OR 
+                                 s.last_name LIKE '%$search_term%' OR 
+                                 c.course_code LIKE '%$search_term%' OR 
+                                 c.course_title LIKE '%$search_term%' OR 
+                                 sec.section_code LIKE '%$search_term%' OR
+                                 t.term_code LIKE '%$search_term%')";
+    $search_params['search'] = $search_term;
+}
+
+if (isset($_GET['student']) && !empty($_GET['student'])) {
+    $student_id = $conn->real_escape_string($_GET['student']);
+    if (empty($search_condition)) {
+        $search_condition .= "WHERE e.student_id = '$student_id'";
+    } else {
+        $search_condition .= " AND e.student_id = '$student_id'";
+    }
+    $search_params['student'] = $student_id;
+}
+
+if (isset($_GET['course']) && !empty($_GET['course'])) {
+    $course_id = $conn->real_escape_string($_GET['course']);
+    if (empty($search_condition)) {
+        $search_condition .= "WHERE c.course_id = '$course_id'";
+    } else {
+        $search_condition .= " AND c.course_id = '$course_id'";
+    }
+    $search_params['course'] = $course_id;
+}
+
+// Debug: Check if search is working
+error_log("Search Condition: " . $search_condition);
+error_log("Search Params: " . print_r($search_params, true));
+
 // Get enrollment data for editing if enrollment_id is provided
 $edit_enrollment = null;
 if (isset($_GET['edit_id'])) {
@@ -110,17 +150,27 @@ if (isset($_GET['edit_id'])) {
 }
 
 // Get all enrollments with student and course information
-$enrollments = $conn->query("
+$enrollments_query = "
     SELECT e.*, s.student_no, s.first_name, s.last_name, 
            c.course_code, c.course_title, sec.section_code,
-           t.term_code
+           t.term_code, c.course_id
     FROM tblenrollment e
     JOIN tblstudent s ON e.student_id = s.student_id
     JOIN tblsection sec ON e.section_id = sec.section_id
     JOIN tblcourse c ON sec.course_id = c.course_id
     JOIN tblterm t ON sec.term_id = t.term_id
+    $search_condition
     ORDER BY e.date_enrolled DESC
-");
+";
+
+error_log("Enrollment Query: " . $enrollments_query); // Debug line
+
+$enrollments = $conn->query($enrollments_query);
+
+if (!$enrollments) {
+    error_log("Database Error: " . $conn->error);
+    // Handle error appropriately
+}
 
 // Get students for dropdown
 $students = $conn->query("SELECT * FROM tblstudent ORDER BY last_name, first_name");
@@ -276,6 +326,62 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       </div>
     </div>
 
+    <!-- Search Form -->
+<div class="search-container no-print">
+  <form method="GET" class="search-form" id="searchForm">
+    <div class="search-box">
+      <div class="search-group">
+        <label>Search Enrollments</label>
+        <input type="text" name="search" class="search-input" placeholder="Search by student name, ID, course, section, or term..." 
+              value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+      </div>
+
+      <div class="search-group">
+        <label>Student</label>
+        <select name="student" class="search-input">
+          <option value="">All Students</option>
+          <?php 
+          $students_search = $conn->query("SELECT * FROM tblstudent ORDER BY last_name, first_name");
+          while($student = $students_search->fetch_assoc()): 
+          ?>
+            <option value="<?php echo $student['student_id']; ?>" 
+              <?php echo (isset($_GET['student']) && $_GET['student'] == $student['student_id']) ? 'selected' : ''; ?>>
+              <?php echo $student['last_name'] . ', ' . $student['first_name'] . ' (' . $student['student_no'] . ')'; ?>
+            </option>
+          <?php endwhile; ?>
+        </select>
+      </div>
+
+      <div class="search-group">
+        <label>Course</label>
+        <select name="course" class="search-input">
+          <option value="">All Courses</option>
+          <?php 
+          $courses_search = $conn->query("SELECT * FROM tblcourse ORDER BY course_code");
+          while($course = $courses_search->fetch_assoc()): 
+          ?>
+            <option value="<?php echo $course['course_id']; ?>" 
+              <?php echo (isset($_GET['course']) && $_GET['course'] == $course['course_id']) ? 'selected' : ''; ?>>
+              <?php echo $course['course_code'] . ' - ' . $course['course_title']; ?>
+            </option>
+          <?php endwhile; ?>
+        </select>
+      </div>
+
+      <div class="search-actions">
+        <button type="submit" class="btn">
+          <i class="fas fa-search"></i>
+          Search
+        </button>
+        <a href="?" class="btn btn-outline">
+          <i class="fas fa-redo"></i>
+          Reset
+        </a>
+      </div>
+    </div>
+  </form>
+</div>
+
         <!-- Enrollment Modal -->
     <div id="enrollmentModal" class="modal">
       <div class="modal-content">
@@ -386,7 +492,6 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       </div>
     </div>
 
-        <!-- Enrollments Table -->
    <!-- Enrollments Table -->
     <div class="table-container">
       <?php

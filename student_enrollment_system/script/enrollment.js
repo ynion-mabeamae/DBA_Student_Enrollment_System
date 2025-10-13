@@ -4,6 +4,7 @@ const EnrollmentManager = {
   // Initialize the enrollment management system
   init: function(isEditing = false) {
       this.initializeModal();
+      this.initializeSearch();
       
       if (isEditing) {
           this.openEditModal();
@@ -19,6 +20,77 @@ const EnrollmentManager = {
       this.gradeField = document.querySelector('.grade-field');
 
       this.setupModalEvents();
+  },
+
+  // Search functionality
+  initializeSearch: function() {
+      this.setupSearchEvents();
+  },
+
+  setupSearchEvents: function() {
+      // Auto-submit form when student or course select changes
+      const studentSelect = document.querySelector('select[name="student"]');
+      const courseSelect = document.querySelector('select[name="course"]');
+      
+      if (studentSelect) {
+          studentSelect.addEventListener('change', () => {
+              this.submitSearchForm();
+          });
+      }
+      
+      if (courseSelect) {
+          courseSelect.addEventListener('change', () => {
+              this.submitSearchForm();
+          });
+      }
+      
+      // Clear search when reset button is clicked
+      const resetBtn = document.querySelector('.btn-outline');
+      if (resetBtn) {
+          resetBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              this.clearSearch();
+          });
+      }
+      
+      // Focus on search input when page loads if there's a search term
+      const searchInput = document.querySelector('input[name="search"]');
+      if (searchInput && searchInput.value) {
+          searchInput.focus();
+          searchInput.select();
+      }
+
+      // Add keyboard shortcut for search (Ctrl/Cmd + F)
+      document.addEventListener('keydown', (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+              e.preventDefault();
+              if (searchInput) {
+                  searchInput.focus();
+                  searchInput.select();
+              }
+          }
+      });
+
+      // Auto-submit search on Enter key in search input
+      if (searchInput) {
+          searchInput.addEventListener('keypress', (e) => {
+              if (e.key === 'Enter') {
+                  e.preventDefault();
+                  this.submitSearchForm();
+              }
+          });
+      }
+  },
+
+  submitSearchForm: function() {
+      const searchForm = document.getElementById('searchForm');
+      if (searchForm) {
+          searchForm.submit();
+      }
+  },
+
+  clearSearch: function() {
+      window.location.href = '?';
   },
 
   setupModalEvents: function() {
@@ -146,7 +218,7 @@ const EnrollmentManager = {
       }
   },
 
-  // Utility functions for toast notifications (if needed elsewhere in the code)
+  // Utility functions for toast notifications
   showSuccessMessage: function(message) {
       this.showToast(message, 'success');
   },
@@ -203,6 +275,21 @@ const EnrollmentManager = {
       if (studentField) {
           studentField.style.display = 'none';
       }
+  },
+
+  // Search utility functions
+  getSearchParams: function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return {
+          search: urlParams.get('search') || '',
+          student: urlParams.get('student') || '',
+          course: urlParams.get('course') || ''
+      };
+  },
+
+  hasActiveSearch: function() {
+      const params = this.getSearchParams();
+      return params.search || params.student || params.course;
   }
 };
 
@@ -227,6 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         }, 5000);
     });
+
+    // Initialize search result highlighting
+    highlightSearchResults();
 });
 
 // Add event listener for student selection in modal
@@ -342,3 +432,168 @@ function showToast(message, type = 'success') {
         }, 300);
     }, 5000);
 }
+
+// Function to open enrollment modal (for the no-records link)
+function openEnrollmentModal() {
+    document.getElementById('openEnrollmentModal').click();
+}
+
+// Search result highlighting function
+function highlightSearchResults() {
+    const searchParams = new URLSearchParams(window.location.search);
+    const searchTerm = searchParams.get('search');
+    
+    if (!searchTerm) return;
+    
+    const table = document.getElementById('enrollments-table');
+    if (!table) return;
+    
+    const rows = table.querySelectorAll('tbody tr');
+    const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 2);
+    
+    if (searchTerms.length === 0) return;
+    
+    rows.forEach(row => {
+        let rowText = '';
+        const cells = row.querySelectorAll('td');
+        
+        cells.forEach(cell => {
+            rowText += ' ' + cell.textContent.toLowerCase();
+        });
+        
+        let hasMatch = false;
+        searchTerms.forEach(term => {
+            if (rowText.includes(term)) {
+                hasMatch = true;
+            }
+        });
+        
+        if (hasMatch) {
+            row.style.backgroundColor = 'rgba(67, 97, 238, 0.1)';
+            row.style.borderLeft = '4px solid var(--primary)';
+            
+            // Add highlight to matching text in cells
+            cells.forEach(cell => {
+                const originalText = cell.innerHTML;
+                let highlightedText = originalText;
+                
+                searchTerms.forEach(term => {
+                    const regex = new RegExp(`(${term})`, 'gi');
+                    highlightedText = highlightedText.replace(regex, '<mark class="search-highlight">$1</mark>');
+                });
+                
+                cell.innerHTML = highlightedText;
+            });
+        }
+    });
+}
+
+// Add CSS for search highlighting
+const searchHighlightStyle = document.createElement('style');
+searchHighlightStyle.textContent = `
+    .search-highlight {
+        background-color: #ffeb3b;
+        padding: 0.1rem 0.2rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+    
+    .search-active-row {
+        background-color: rgba(67, 97, 238, 0.1) !important;
+        border-left: 4px solid var(--primary) !important;
+    }
+`;
+document.head.appendChild(searchHighlightStyle);
+
+// Quick search function (can be called from browser console for testing)
+function quickSearch(term) {
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        searchInput.value = term;
+        document.getElementById('searchForm').submit();
+    }
+}
+
+// Export search data function
+function exportSearchData(format) {
+    const searchParams = new URLSearchParams(window.location.search);
+    let exportUrl = `enrollment_export_${format}.php?`;
+    
+    if (searchParams.get('search')) {
+        exportUrl += `search=${encodeURIComponent(searchParams.get('search'))}&`;
+    }
+    
+    if (searchParams.get('student')) {
+        exportUrl += `student=${searchParams.get('student')}&`;
+    }
+    
+    if (searchParams.get('course')) {
+        exportUrl += `course=${searchParams.get('course')}&`;
+    }
+    
+    // Remove trailing & or ?
+    exportUrl = exportUrl.replace(/[&?]$/, '');
+    
+    window.open(exportUrl, '_blank');
+}
+
+// Display search info
+function displaySearchInfo() {
+    const searchParams = EnrollmentManager.getSearchParams();
+    const hasSearch = EnrollmentManager.hasActiveSearch();
+    
+    if (hasSearch) {
+        console.log('Active Search Filters:', searchParams);
+        
+        // You could display this info in a small badge near the search form
+        const searchInfo = document.createElement('div');
+        searchInfo.className = 'search-info';
+        searchInfo.style.cssText = `
+            background: var(--info);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            margin: 0 2rem 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        
+        let infoText = 'Active filters: ';
+        const filters = [];
+        
+        if (searchParams.search) filters.push(`Search: "${searchParams.search}"`);
+        if (searchParams.student) {
+            const studentSelect = document.querySelector('select[name="student"]');
+            const selectedOption = studentSelect?.options[studentSelect.selectedIndex];
+            if (selectedOption) {
+                filters.push(`Student: ${selectedOption.textContent.split(' (')[0]}`);
+            }
+        }
+        if (searchParams.course) {
+            const courseSelect = document.querySelector('select[name="course"]');
+            const selectedOption = courseSelect?.options[courseSelect.selectedIndex];
+            if (selectedOption) {
+                filters.push(`Course: ${selectedOption.textContent}`);
+            }
+        }
+        
+        infoText += filters.join(', ');
+        
+        searchInfo.innerHTML = `
+            <span>${infoText}</span>
+            <button onclick="EnrollmentManager.clearSearch()" style="background: none; border: none; color: white; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        const searchContainer = document.querySelector('.search-container');
+        if (searchContainer) {
+            searchContainer.parentNode.insertBefore(searchInfo, searchContainer.nextSibling);
+        }
+    }
+}
+
+// Call this function to display search info
+// displaySearchInfo();
