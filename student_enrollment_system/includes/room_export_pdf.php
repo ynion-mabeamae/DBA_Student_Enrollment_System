@@ -3,9 +3,9 @@ session_start();
 require_once 'config.php';
 
 // Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    die("Error: User not logged in. Please login first.");
-}
+// if (!isset($_SESSION['user_id'])) {
+//     die("Error: User not logged in. Please login first.");
+// }
 
 // Get room data
 $rooms = $conn->query("SELECT * FROM tblroom ORDER BY building, room_code");

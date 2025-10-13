@@ -3,9 +3,9 @@ session_start();
 require_once 'config.php';
 
 // Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    die("Error: User not logged in");
-}
+// if (!isset($_SESSION['user_id'])) {
+//     die("Error: User not logged in");
+// }
 
 // First, let's check the structure of tblcourse to see available columns
 $course_columns = $conn->query("SHOW COLUMNS FROM tblcourse");

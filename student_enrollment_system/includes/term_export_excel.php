@@ -3,9 +3,9 @@ session_start();
 require_once 'config.php';
 
 // Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    die("Error: User not logged in");
-}
+// if (!isset($_SESSION['user_id'])) {
+//     die("Error: User not logged in");
+// }
 
 // Get term data
 $terms = $conn->query("SELECT * FROM tblterm ORDER BY start_date DESC");
