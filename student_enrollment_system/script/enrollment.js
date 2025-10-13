@@ -213,6 +213,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const isEditing = urlParams.has('edit_id');
     
     EnrollmentManager.init(isEditing);
+    
+    // Auto-hide existing toasts after 5 seconds
+    const existingToasts = document.querySelectorAll('.toast');
+    existingToasts.forEach(toast => {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 5000);
+    });
 });
 
 // Add event listener for student selection in modal
@@ -295,3 +309,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     }
 });
+
+// Global toast notification function with 5-second timeout
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // Set icon based on type
+    let icon = 'check-circle';
+    if (type === 'error') icon = 'exclamation-circle';
+    if (type === 'warning') icon = 'exclamation-triangle';
+    if (type === 'info') icon = 'info-circle';
+    
+    toast.innerHTML = `
+        <i class="fas fa-${icon}"></i>
+        ${message}
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto-hide toast after 5 seconds with smooth animation
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
