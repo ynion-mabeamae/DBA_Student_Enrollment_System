@@ -620,42 +620,44 @@ form {
 
 /* Toast Notifications */
 .toast-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1100;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+    position: fixed;
+    top: 10%;
+    left: 40%;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .toast {
-  padding: 1rem 1.5rem;
-  border-radius: var(--border-radius);
-  color: white;
-  font-weight: 600;
-  box-shadow: var(--shadow-lg);
-  animation: slideInRight 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 300px;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    color: white;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    animation: slideInRight 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-width: 300px;
+    text-align: center;
 }
 
 .toast.success {
-  background: var(--success);
+    background: #28a745;
 }
 
 .toast.error {
-  background: var(--danger);
+    background: var(--danger);
 }
 
 .toast.warning {
-  background: var(--warning);
+    background: var(--warning);
 }
 
 .toast.info {
-  background: var(--info);
+    background: var(--info);
 }
 
 /* Print Styles */

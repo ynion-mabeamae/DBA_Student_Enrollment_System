@@ -166,7 +166,24 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
   </div>
 
   <!-- Toast Notification Container -->
-  <div class="toast-container" id="toastContainer"></div>
+  <div class="toast-container" id="toastContainer">
+    <?php if (isset($_SESSION['message'])): ?>
+        <?php 
+        $message = $_SESSION['message'];
+        list($type, $text) = explode('::', $message, 2);
+        ?>
+        <div class="toast <?php echo $type; ?>">
+            <i class="fas fa-<?php echo $type === 'success' ? 
+              'check-circle' : ($type === 'error' ? 
+              'exclamation-circle' : ($type === 'warning' ? 
+              'exclamation-triangle' : 'info-circle')); ?>"></i>
+            <?php echo $text; ?>
+        </div>
+        <?php 
+        unset($_SESSION['message']);
+        ?>
+    <?php endif; ?>
+</div>
 
   <div class="main-content">
     <div class="page-header">
@@ -218,9 +235,11 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
 
           <div class="search-actions">
             <button type="submit" class="btn">
+              <i class="fas fa-search"></i>
               Search
             </button>
             <a href="?" class="btn btn-outline">
+              <i class="fas fa-redo"></i>
               Reset
             </a>
           </div>
@@ -273,12 +292,14 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
               </td>
               <td class="actions no-print">
                 <button class="btn btn-edit" onclick="editCourse(<?php echo $course['course_id']; ?>)">
+                  <i class="fas fa-edit"></i>
                   Edit
                 </button>
                 <button class="btn btn-danger delete-btn" 
                         data-course-id="<?php echo $course['course_id']; ?>"
                         data-course-code="<?php echo htmlspecialchars($course['course_code']); ?>"
                         data-course-title="<?php echo htmlspecialchars($course['course_title']); ?>">
+                  <i class="fas fa-trash"></i>
                   Delete
                 </button>
               </td>
@@ -446,6 +467,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
 
   <script src="../script/course.js"></script>
   <script>
+    <script>
     // Check for session messages on page load
     <?php if (isset($_SESSION['message'])): ?>
         <?php 
@@ -455,6 +477,32 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
         ?>
         showToast('<?php echo addslashes($text); ?>', '<?php echo $type; ?>');
     <?php endif; ?>
+
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        // Set icon based on type
+        let icon = 'check-circle';
+        if (type === 'error') icon = 'exclamation-circle';
+        if (type === 'warning') icon = 'exclamation-triangle';
+        if (type === 'info') icon = 'info-circle';
+        
+        toast.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            ${message}
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Remove toast after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+</script>
   </script>
 </body>
 </html>
