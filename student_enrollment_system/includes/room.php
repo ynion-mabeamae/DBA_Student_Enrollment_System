@@ -25,9 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ssi", $building, $room_code, $capacity);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Room added successfully!";
+            $_SESSION['message'] = "success::Room added successfully!";
         } else {
-            $_SESSION['error_message'] = "Error adding room: " . $conn->error;
+            $_SESSION['message'] = "error::Error adding room: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -45,9 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ssii", $building, $room_code, $capacity, $room_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Room updated successfully!";
+            $_SESSION['message'] = "success::Room updated successfully!";
         } else {
-            $_SESSION['error_message'] = "Error updating room: " . $conn->error;
+            $_SESSION['message'] = "error::Error updating room: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -62,15 +62,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $room_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Room deleted successfully!";
+            $_SESSION['message'] = "success::Room deleted successfully!";
         } else {
-            $_SESSION['error_message'] = "Error deleting room: " . $conn->error;
+            $_SESSION['message'] = "error::Error deleting room: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
-}
+}   
 
 // Get room data for editing if room_id is provided
 $edit_room = null;
@@ -103,30 +103,20 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
     <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
-    <!-- Success/Error Notification -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="notification success" id="successNotification">
-            <div class="notification-content">
-                <span class="notification-icon">✓</span>
-                <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-                <button class="notification-close">&times;</button>
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer">
+        <?php if (isset($_SESSION['message'])): ?>
+            <?php 
+            $message = $_SESSION['message'];
+            list($type, $text) = explode('::', $message, 2);
+            unset($_SESSION['message']);
+            ?>
+            <div class="toast <?php echo $type; ?>">
+                <i class="fas fa-<?php echo $type === 'success' ? 'check-circle' : ($type === 'error' ? 'exclamation-circle' : ($type === 'warning' ? 'exclamation-triangle' : 'info-circle')); ?>"></i>
+                <?php echo $text; ?>
             </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="notification error" id="errorNotification">
-            <div class="notification-content">
-                <span class="notification-icon">⚠</span>
-                <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
+        <?php endif; ?>
+    </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -276,10 +266,15 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
             <!-- Search and Filters -->
             <div class="search-container">
                 <div class="search-box">
-                    <div class="search-icon">🔍</div>
+                    <div class="search-icon">
+                      <i class="fas fa-search"></i>
+                    </div>
                     <input type="text" id="searchRooms" class="search-input" placeholder="Search rooms by building, code, or capacity...">
                 </div>
-                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+                <button class="btn btn-primary search-btn" id="searchButton">
+                  <i class="fas fa-search"></i>
+                  Search
+                </button>
                 
                 <!-- <div class="quick-actions">
                     <button class="filter-btn active" data-filter="all">All</button>
@@ -337,11 +332,13 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                                     data-building="<?php echo htmlspecialchars($room['building']); ?>"
                                     data-room-code="<?php echo htmlspecialchars($room['room_code']); ?>"
                                     data-capacity="<?php echo $room['capacity']; ?>">
+                                <i class="fas fa-edit"></i>
                                 Edit
                             </button>
                             <button type="button" class="btn btn-danger delete-btn" 
                                     data-room-id="<?php echo $room['room_id']; ?>"
                                     data-room-code="<?php echo htmlspecialchars($room['room_code']); ?>">
+                                <i class="fas fa-trash"></i>
                                 Delete
                             </button>
                         </td>
