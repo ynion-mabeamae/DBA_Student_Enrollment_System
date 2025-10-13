@@ -75,6 +75,114 @@ body {
     flex-wrap: wrap;
 }
 
+/* Prerequisite Status Toggle */
+.prerequisite-status-toggle {
+    display: flex;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    max-width: 1500px;
+}
+
+.status-btn {
+    flex: 1;
+    padding: 12px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    color: #6c757d;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.status-btn:hover {
+    background: #e9ecef;
+}
+
+.status-btn.active {
+    background: #007bff;
+    color: white;
+}
+
+.status-btn i {
+    margin-right: 8px;
+}
+
+/* Style for archived prerequisites */
+.archived-prerequisite {
+    background-color: #f8f9fa;
+    opacity: 0.7;
+}
+
+.archived-prerequisite td {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Ensure the table container has proper spacing */
+.table-container {
+    margin-top: 0;
+}
+
+/* Search container adjustments */
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    min-width: 300px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-stats {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.clear-search {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: underline;
+}
+
+.clear-search:hover {
+    color: #2563eb;
+}
+
 /* Toast Notifications */
 .toast-container {
     position: fixed;

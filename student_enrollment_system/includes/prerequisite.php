@@ -11,6 +11,9 @@ if (isset($_GET['logout'])) {
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'course_prerequisite';
 
+// Handle show archived toggle
+$show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
+
 // Handle form submissions for Course Prerequisite
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_prerequisite'])) {
@@ -18,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $prereq_course_id = $_POST['prereq_course_id'];
         
         // Check if prerequisite already exists
-        $check_sql = "SELECT * FROM tblcourse_prerequisite WHERE course_id = ? AND prereq_course_id = ?";
+        $check_sql = "SELECT * FROM tblcourse_prerequisite WHERE course_id = ? AND prereq_course_id = ? AND is_active = TRUE";
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("ii", $course_id, $prereq_course_id);
         $check_stmt->execute();
@@ -27,9 +30,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($check_stmt->num_rows > 0) {
             $_SESSION['message'] = "error::This prerequisite relationship already exists!";
         } else {
-            $sql = "INSERT INTO tblcourse_prerequisite (course_id, prereq_course_id) VALUES (?, ?)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ii", $course_id, $prereq_course_id);
+            // Check if there's an archived record to restore
+            $check_archived_sql = "SELECT * FROM tblcourse_prerequisite WHERE course_id = ? AND prereq_course_id = ? AND is_active = FALSE";
+            $check_archived_stmt = $conn->prepare($check_archived_sql);
+            $check_archived_stmt->bind_param("ii", $course_id, $prereq_course_id);
+            $check_archived_stmt->execute();
+            $check_archived_stmt->store_result();
+            
+            if ($check_archived_stmt->num_rows > 0) {
+                // Restore the archived record
+                $sql = "UPDATE tblcourse_prerequisite SET is_active = TRUE WHERE course_id = ? AND prereq_course_id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("ii", $course_id, $prereq_course_id);
+            } else {
+                // Insert new record
+                $sql = "INSERT INTO tblcourse_prerequisite (course_id, prereq_course_id) VALUES (?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("ii", $course_id, $prereq_course_id);
+            }
             
             if ($stmt->execute()) {
                 $_SESSION['message'] = "success::Course prerequisite added successfully!";
@@ -38,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
         
-        header("Location: " . $_SERVER['PHP_SELF'] . "?tab=course_prerequisite");
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
         exit();
     }
     
@@ -49,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $prereq_course_id_new = $_POST['prereq_course_id'];
         
         // Check if the new prerequisite already exists (excluding current one)
-        $check_sql = "SELECT * FROM tblcourse_prerequisite WHERE course_id = ? AND prereq_course_id = ? AND (course_id != ? OR prereq_course_id != ?)";
+        $check_sql = "SELECT * FROM tblcourse_prerequisite WHERE course_id = ? AND prereq_course_id = ? AND is_active = TRUE AND (course_id != ? OR prereq_course_id != ?)";
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("iiii", $course_id_new, $prereq_course_id_new, $course_id_old, $prereq_course_id_old);
         $check_stmt->execute();
@@ -69,15 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
         
-        header("Location: " . $_SERVER['PHP_SELF'] . "?tab=course_prerequisite");
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
         exit();
     }
     
+    // SOFT DELETE - Set is_active to false instead of deleting
     if (isset($_POST['delete_prerequisite'])) {
         $course_id = $_POST['course_id'];
         $prereq_course_id = $_POST['prereq_course_id'];
         
-        $sql = "DELETE FROM tblcourse_prerequisite WHERE course_id = ? AND prereq_course_id = ?";
+        $sql = "UPDATE tblcourse_prerequisite SET is_active = FALSE WHERE course_id = ? AND prereq_course_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("ii", $course_id, $prereq_course_id);
         
@@ -87,7 +106,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['message'] = "error::Error deleting course prerequisite: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF'] . "?tab=course_prerequisite");
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+        exit();
+    }
+    
+    // RESTORE PREREQUISITE functionality
+    if (isset($_POST['restore_prerequisite'])) {
+        $course_id = $_POST['course_id'];
+        $prereq_course_id = $_POST['prereq_course_id'];
+        
+        $sql = "UPDATE tblcourse_prerequisite SET is_active = TRUE WHERE course_id = ? AND prereq_course_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ii", $course_id, $prereq_course_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Course prerequisite restored successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error restoring course prerequisite: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . '?show_archived=true');
         exit();
     }
 }
@@ -101,7 +139,8 @@ if ($course_columns && $course_columns->num_rows > 0) {
     }
 }
 
-// Build the query based on available columns
+// Build the query based on available columns - filter by active status
+$status_condition = $show_archived ? "cp.is_active = FALSE" : "cp.is_active = TRUE";
 $select_fields = "cp.course_id, cp.prereq_course_id";
 $join_conditions = "";
 
@@ -115,18 +154,21 @@ if (in_array('course_code', $course_columns_array)) {
                         LEFT JOIN tblcourse c2 ON cp.prereq_course_id = c2.course_id";
 }
 
-// Get all course prerequisites
+// Get all course prerequisites with status filter
 $prerequisites_query = "
     SELECT $select_fields 
     FROM tblcourse_prerequisite cp
     $join_conditions
+    WHERE $status_condition
     ORDER BY cp.course_id, cp.prereq_course_id
 ";
 
 $prerequisites = $conn->query($prerequisites_query);
 
-// Count total prerequisites
-$total_prerequisites = $prerequisites ? $prerequisites->num_rows : 0;
+// Count prerequisites
+$active_prerequisites_count = $conn->query("SELECT COUNT(*) FROM tblcourse_prerequisite WHERE is_active = TRUE")->fetch_row()[0];
+$archived_prerequisites_count = $conn->query("SELECT COUNT(*) FROM tblcourse_prerequisite WHERE is_active = FALSE")->fetch_row()[0];
+$total_prerequisites = $show_archived ? $archived_prerequisites_count : $active_prerequisites_count;
 
 // Get all courses for dropdown - adjust based on available columns
 $course_select_field = "course_id";
@@ -166,6 +208,14 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
             font-weight: 600;
             color: #1f2937;
         }
+        .archived-prerequisite {
+            background-color: #f8f9fa;
+            opacity: 0.7;
+        }
+        .archived-prerequisite td {
+            color: #6c757d;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -190,10 +240,6 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
-            <!-- <a href="dashboard.php" class="menu-item">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a> -->
             <a href="student.php" class="menu-item">
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
@@ -234,13 +280,6 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
-            <!-- Logout Item -->
-            <!-- <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div> -->
         </div>
     </div>
 
@@ -248,21 +287,35 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
       <div class="page-header">
         <h1>Prerequisite</h1>
         <div class="header-actions">
+          <?php if (!$show_archived): ?>
           <button class="btn btn-primary" id="openPrerequisiteModal">
             <i class="fas fa-plus"></i>
             Add New Prerequisite
           </button>
+          <?php endif; ?>
+          
+          <!-- Export Buttons -->
+          <div class="export-buttons">
+            <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+              <i class="fas fa-file-pdf"></i> Export PDF
+            </button>
+            <button class="btn btn-export-excel" onclick="exportData('excel')">
+              <i class="fas fa-file-excel"></i> Export Excel
+            </button>
+          </div>
         </div>
-        
-        <!-- Export Buttons -->
-        <div class="export-buttons">
-          <button class="btn btn-export-pdf" onclick="exportData('pdf')">
-            <i class="fas fa-file-pdf"></i> Export PDF
-          </button>
-          <button class="btn btn-export-excel" onclick="exportData('excel')">
-            <i class="fas fa-file-excel"></i> Export Excel
-          </button>
-        </div>
+      </div>
+
+      <!-- Prerequisite Status Toggle -->
+      <div class="prerequisite-status-toggle no-print">
+          <a href="?page=prerequisites" class="status-btn <?php echo !$show_archived ? 'active' : ''; ?>">
+              <i class="fas fa-user-check"></i>
+              Active Prerequisites (<?php echo $active_prerequisites_count; ?>)
+          </a>
+          <a href="?page=prerequisites&show_archived=true" class="status-btn <?php echo $show_archived ? 'active' : ''; ?>">
+              <i class="fas fa-archive"></i>
+              Archived Prerequisites (<?php echo $archived_prerequisites_count; ?>)
+          </a>
       </div>
 
         <!-- Add/Edit Prerequisite Modal -->
@@ -347,9 +400,9 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
         <div class="delete-confirmation" id="deleteConfirmation">
             <div class="confirmation-dialog">
                 <h3>Delete Prerequisite</h3>
-                <p id="deleteMessage">Are you sure you want to delete this prerequisite relationship? This action cannot be undone.</p>
+                <p id="deleteMessage">Are you sure you want to delete this prerequisite relationship? This action will move the prerequisite to archived records.</p>
                 <div class="confirmation-actions">
-                    <button class="confirm-delete" id="confirmDelete">Yes</button>
+                    <button class="confirm-delete" id="confirmDelete">Yes, Delete</button>
                     <button class="cancel-delete" id="cancelDelete">Cancel</button>
                 </div>
             </div>
@@ -360,6 +413,13 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
             <input type="hidden" name="course_id" id="deleteCourseId">
             <input type="hidden" name="prereq_course_id" id="deletePrereqCourseId">
             <input type="hidden" name="delete_prerequisite" value="1">
+        </form>
+
+        <!-- Hidden restore form -->
+        <form method="POST" id="restorePrerequisiteForm" style="display: none;">
+            <input type="hidden" name="course_id" id="restoreCourseId">
+            <input type="hidden" name="prereq_course_id" id="restorePrereqCourseId">
+            <input type="hidden" name="restore_prerequisite" value="1">
         </form>
 
         <!-- Prerequisites Table -->
@@ -374,12 +434,11 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
                     </div>
                     <input type="text" id="searchPrerequisites" class="search-input" placeholder="Search prerequisites by course ID...">
                 </div>
-                <button class="btn btn-primary search-btn" id="searchButton">
-                  <i class="fas fa-search"></i>
-                  Search
-                </button>
                 
-                <div class="search-stats" id="searchStats">Showing <?php echo $total_prerequisites; ?> of <?php echo $total_prerequisites; ?> prerequisites</div>
+                <div class="search-stats" id="searchStats">
+                    Showing <?php echo $total_prerequisites; ?> of <?php echo $total_prerequisites; ?> 
+                    <?php echo $show_archived ? 'archived' : 'active'; ?> prerequisites
+                </div>
                 
                 <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
             </div>
@@ -415,34 +474,45 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
                                 $prereq_display = $prereq['prereq_course_name'];
                             }
                     ?>
-                    <tr>
+                    <tr class="<?php echo $show_archived ? 'archived-prerequisite' : ''; ?>">
                         <td>
                             <div class="course-info">
                                 <div class="course-name"><?php echo htmlspecialchars($course_display); ?></div>
-                                <!-- <div class="course-id">ID: <?php echo $prereq['course_id']; ?></div> -->
                             </div>
                         </td>
                         <td>
                             <div class="course-info">
                                 <div class="course-name"><?php echo htmlspecialchars($prereq_display); ?></div>
-                                <!-- <div class="course-id">ID: <?php echo $prereq['prereq_course_id']; ?></div> -->
                             </div>
                         </td>
                         <td class="actions">
-                            <button type="button" class="btn btn-edit edit-btn" 
-                                    data-course-id="<?php echo $prereq['course_id']; ?>"
-                                    data-prereq-course-id="<?php echo $prereq['prereq_course_id']; ?>">
-                                <i class="fas fa-edit"></i>
-                                Edit
-                            </button>
-                            <button type="button" class="btn btn-danger delete-btn" 
-                                    data-course-id="<?php echo $prereq['course_id']; ?>"
-                                    data-prereq-course-id="<?php echo $prereq['prereq_course_id']; ?>"
-                                    data-course-name="<?php echo htmlspecialchars($course_display); ?>"
-                                    data-prereq-course-name="<?php echo htmlspecialchars($prereq_display); ?>">
-                                <i class="fas fa-trash"></i>
-                                Delete
-                            </button>
+                            <?php if ($show_archived): ?>
+                                <!-- Only show Restore button for archived prerequisites -->
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="course_id" value="<?php echo $prereq['course_id']; ?>">
+                                    <input type="hidden" name="prereq_course_id" value="<?php echo $prereq['prereq_course_id']; ?>">
+                                    <button type="submit" name="restore_prerequisite" class="btn btn-success">
+                                        <i class="fas fa-trash-restore"></i>
+                                        Restore
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <!-- Show Edit and Delete buttons for active prerequisites -->
+                                <button type="button" class="btn btn-edit edit-btn" 
+                                        data-course-id="<?php echo $prereq['course_id']; ?>"
+                                        data-prereq-course-id="<?php echo $prereq['prereq_course_id']; ?>">
+                                    <i class="fas fa-edit"></i>
+                                    Edit
+                                </button>
+                                <button type="button" class="btn btn-danger delete-btn" 
+                                        data-course-id="<?php echo $prereq['course_id']; ?>"
+                                        data-prereq-course-id="<?php echo $prereq['prereq_course_id']; ?>"
+                                        data-course-name="<?php echo htmlspecialchars($course_display); ?>"
+                                        data-prereq-course-name="<?php echo htmlspecialchars($prereq_display); ?>">
+                                    <i class="fas fa-trash"></i>
+                                    Delete
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php 
@@ -452,7 +522,11 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
                     <tr>
                         <td colspan="3" style="text-align: center; padding: 2rem;">
                             <div style="color: var(--gray-500); font-style: italic;">
-                                No course prerequisites found. Click "Add New Prerequisite" to get started.
+                                <?php if ($show_archived): ?>
+                                    No archived prerequisites found.
+                                <?php else: ?>
+                                    No course prerequisites found. Click "Add New Prerequisite" to get started.
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
