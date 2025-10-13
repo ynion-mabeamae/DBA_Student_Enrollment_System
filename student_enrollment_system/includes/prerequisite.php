@@ -25,16 +25,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $check_stmt->store_result();
         
         if ($check_stmt->num_rows > 0) {
-            $_SESSION['error_message'] = "This prerequisite relationship already exists!";
+            $_SESSION['message'] = "error::This prerequisite relationship already exists!";
         } else {
             $sql = "INSERT INTO tblcourse_prerequisite (course_id, prereq_course_id) VALUES (?, ?)";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("ii", $course_id, $prereq_course_id);
             
             if ($stmt->execute()) {
-                $_SESSION['success_message'] = "Course prerequisite added successfully!";
+                $_SESSION['message'] = "success::Course prerequisite added successfully!";
             } else {
-                $_SESSION['error_message'] = "Error adding course prerequisite: " . $conn->error;
+                $_SESSION['message'] = "error::Error adding course prerequisite: " . $conn->error;
             }
         }
         
@@ -56,16 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $check_stmt->store_result();
         
         if ($check_stmt->num_rows > 0) {
-            $_SESSION['error_message'] = "This prerequisite relationship already exists!";
+            $_SESSION['message'] = "error::This prerequisite relationship already exists!";
         } else {
             $sql = "UPDATE tblcourse_prerequisite SET course_id = ?, prereq_course_id = ? WHERE course_id = ? AND prereq_course_id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("iiii", $course_id_new, $prereq_course_id_new, $course_id_old, $prereq_course_id_old);
             
             if ($stmt->execute()) {
-                $_SESSION['success_message'] = "Course prerequisite updated successfully!";
+                $_SESSION['message'] = "success::Course prerequisite updated successfully!";
             } else {
-                $_SESSION['error_message'] = "Error updating course prerequisite: " . $conn->error;
+                $_SESSION['message'] = "error::Error updating course prerequisite: " . $conn->error;
             }
         }
         
@@ -82,9 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ii", $course_id, $prereq_course_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Course prerequisite deleted successfully!";
+            $_SESSION['message'] = "success::Course prerequisite deleted successfully!";
         } else {
-            $_SESSION['error_message'] = "Error deleting course prerequisite: " . $conn->error;
+            $_SESSION['message'] = "error::Error deleting course prerequisite: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF'] . "?tab=course_prerequisite");
@@ -169,30 +169,20 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
     </style>
 </head>
 <body>
-    <!-- Success/Error Notification -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="notification success" id="successNotification">
-            <div class="notification-content">
-                <span class="notification-icon">✓</span>
-                <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-                <button class="notification-close">&times;</button>
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer">
+        <?php if (isset($_SESSION['message'])): ?>
+            <?php 
+            $message = $_SESSION['message'];
+            list($type, $text) = explode('::', $message, 2);
+            unset($_SESSION['message']);
+            ?>
+            <div class="toast <?php echo $type; ?>">
+                <i class="fas fa-<?php echo $type === 'success' ? 'check-circle' : ($type === 'error' ? 'exclamation-circle' : ($type === 'warning' ? 'exclamation-triangle' : 'info-circle')); ?>"></i>
+                <?php echo $text; ?>
             </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="notification error" id="errorNotification">
-            <div class="notification-content">
-                <span class="notification-icon">⚠</span>
-                <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
+        <?php endif; ?>
+    </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -379,10 +369,15 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
             <!-- Search and Filters -->
             <div class="search-container">
                 <div class="search-box">
-                    <div class="search-icon">🔍</div>
+                    <div class="search-icon">
+                      <i class="fas fa-search"></i>
+                    </div>
                     <input type="text" id="searchPrerequisites" class="search-input" placeholder="Search prerequisites by course ID...">
                 </div>
-                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+                <button class="btn btn-primary search-btn" id="searchButton">
+                  <i class="fas fa-search"></i>
+                  Search
+                </button>
                 
                 <div class="search-stats" id="searchStats">Showing <?php echo $total_prerequisites; ?> of <?php echo $total_prerequisites; ?> prerequisites</div>
                 
@@ -437,6 +432,7 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
                             <button type="button" class="btn btn-edit edit-btn" 
                                     data-course-id="<?php echo $prereq['course_id']; ?>"
                                     data-prereq-course-id="<?php echo $prereq['prereq_course_id']; ?>">
+                                <i class="fas fa-edit"></i>
                                 Edit
                             </button>
                             <button type="button" class="btn btn-danger delete-btn" 
@@ -444,6 +440,7 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
                                     data-prereq-course-id="<?php echo $prereq['prereq_course_id']; ?>"
                                     data-course-name="<?php echo htmlspecialchars($course_display); ?>"
                                     data-prereq-course-name="<?php echo htmlspecialchars($prereq_display); ?>">
+                                <i class="fas fa-trash"></i>
                                 Delete
                             </button>
                         </td>
