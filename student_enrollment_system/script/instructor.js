@@ -2,7 +2,8 @@
 
 const InstructorManager = {
     // Initialize the instructor management system
-    init: function(isEditing = false) {
+    init: function(isEditing = false, showArchived = false) {
+        this.showArchived = showArchived;
         this.initializeModal();
         this.initializeNotifications();
         this.initializeSearch();
@@ -121,7 +122,9 @@ const InstructorManager = {
             
             // Remove edit parameters from URL
             if (window.location.search.includes('edit_id')) {
-                window.history.replaceState({}, document.title, window.location.pathname);
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.delete('edit_id');
+                window.history.replaceState({}, document.title, window.location.pathname + '?' + urlParams.toString());
             }
         }
     },
@@ -332,8 +335,19 @@ const InstructorManager = {
         this.deleteInstructorName = instructorName;
         
         const message = document.getElementById('deleteMessage');
+        const title = document.querySelector('#deleteConfirmation h3');
+        
         if (message) {
-            message.textContent = `Are you sure you want to delete "${instructorName}"? This action cannot be undone.`;
+            const action = this.showArchived ? 'restore' : 'delete';
+            message.textContent = `Are you sure you want to ${action} "${instructorName}"? ${this.showArchived ? 'This instructor will be moved back to active records.' : 'This action will move the instructor to archived records.'}`;
+        }
+        
+        if (title) {
+            title.textContent = this.showArchived ? 'Restore Instructor' : 'Delete Instructor';
+        }
+        
+        if (this.confirmDeleteBtn) {
+            this.confirmDeleteBtn.textContent = this.showArchived ? 'Yes, Restore' : 'Yes, Delete';
         }
 
         if (this.deleteConfirmation) {
@@ -423,9 +437,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if we're in editing mode
     const urlParams = new URLSearchParams(window.location.search);
     const isEditing = urlParams.has('edit_id');
+    const showArchived = urlParams.get('show_archived') === 'true';
     
     if (typeof InstructorManager !== 'undefined') {
-        InstructorManager.init(isEditing);
+        InstructorManager.init(isEditing, showArchived);
     }
 });
 
@@ -452,12 +467,16 @@ document.addEventListener('keydown', function(e) {
         }
     }
     
-    // Ctrl/Cmd + N to open new instructor modal
+    // Ctrl/Cmd + N to open new instructor modal (only when not in archived view)
     if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
-        const openBtn = document.getElementById('openInstructorModal');
-        if (openBtn) {
-            openBtn.click();
+        const urlParams = new URLSearchParams(window.location.search);
+        const showArchived = urlParams.get('show_archived');
+        if (!showArchived) {
+            const openBtn = document.getElementById('openInstructorModal');
+            if (openBtn) {
+                openBtn.click();
+            }
         }
     }
 });
@@ -477,12 +496,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 });
-
-// Export data function
-function exportData(type) {
-    // Build export URL
-    let exportUrl = `instructor_export_${type}.php`;
-    
-    // Open export in new window
-    window.open(exportUrl, '_blank');
-}

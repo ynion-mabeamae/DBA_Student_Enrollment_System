@@ -15,81 +15,104 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'instructors';
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-  if (isset($_POST['add_instructor'])) {
-    $last_name = $_POST['last_name'];
-    $first_name = $_POST['first_name'];
-    $email = $_POST['email'];
-    $dept_id = $_POST['dept_id'] ?? null;
-    
-    $sql = "INSERT INTO tblinstructor (last_name, first_name, email, dept_id) 
-            VALUES (?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssi", $last_name, $first_name, $email, $dept_id);
-    
-    if ($stmt->execute()) {
-      $_SESSION['message'] = "success::Instructor added successfully!";
-    } else {
-      $_SESSION['message'] = "error::Error adding instructor: " . $conn->error;
+    if (isset($_POST['add_instructor'])) {
+        $last_name = $_POST['last_name'];
+        $first_name = $_POST['first_name'];
+        $email = $_POST['email'];
+        $dept_id = $_POST['dept_id'] ?? null;
+        
+        $sql = "INSERT INTO tblinstructor (last_name, first_name, email, dept_id) 
+                VALUES (?, ?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sssi", $last_name, $first_name, $email, $dept_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Instructor added successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error adding instructor: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
     }
     
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit();
-  }
-    
-  if (isset($_POST['update_instructor'])) {
-    $instructor_id = $_POST['instructor_id'];
-    $last_name = $_POST['last_name'];
-    $first_name = $_POST['first_name'];
-    $email = $_POST['email'];
-    $dept_id = $_POST['dept_id'] ?? null;
-    
-    $sql = "UPDATE tblinstructor 
-            SET last_name = ?, first_name = ?, email = ?, dept_id = ?
-            WHERE instructor_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssii", $last_name, $first_name, $email, $dept_id, $instructor_id);
-    
-    if ($stmt->execute()) {
-      $_SESSION['message'] = "success::Instructor updated successfully!";
-    } else {
-      $_SESSION['message'] = "error::Error updating instructor: " . $conn->error;
+    if (isset($_POST['update_instructor'])) {
+        $instructor_id = $_POST['instructor_id'];
+        $last_name = $_POST['last_name'];
+        $first_name = $_POST['first_name'];
+        $email = $_POST['email'];
+        $dept_id = $_POST['dept_id'] ?? null;
+        
+        $sql = "UPDATE tblinstructor 
+                SET last_name = ?, first_name = ?, email = ?, dept_id = ?
+                WHERE instructor_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sssii", $last_name, $first_name, $email, $dept_id, $instructor_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Instructor updated successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error updating instructor: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
     }
     
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit();
-  }
-    
-  if (isset($_POST['delete_instructor'])) {
-    $instructor_id = $_POST['instructor_id'];
-    
-    $sql = "DELETE FROM tblinstructor WHERE instructor_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $instructor_id);
-      
-    if ($stmt->execute()) {
-      $_SESSION['message'] = "success::Instructor deleted successfully!";
-    } else {
-      $_SESSION['message'] = "error::Error deleting instructor: " . $conn->error;
+    // SOFT DELETE - Set is_active to false instead of deleting
+    if (isset($_POST['delete_instructor'])) {
+        $instructor_id = $_POST['instructor_id'];
+        
+        $sql = "UPDATE tblinstructor SET is_active = FALSE WHERE instructor_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $instructor_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Instructor archived successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error archiving instructor: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . "?page=instructors");
+        exit();
     }
-      
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit();
-  }
+    
+    // RESTORE INSTRUCTOR functionality
+    if (isset($_POST['restore_instructor'])) {
+        $instructor_id = $_POST['instructor_id'];
+        
+        $sql = "UPDATE tblinstructor SET is_active = TRUE WHERE instructor_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $instructor_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Instructor restored successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error restoring instructor: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . "?page=instructors" . (isset($_GET['show_archived']) ? '&show_archived=true' : ''));
+        exit();
+    }
 }
+
+// Handle search and show active/archived instructors
+$show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
+$status_condition = $show_archived ? "i.is_active = FALSE" : "i.is_active = TRUE";
 
 // Get instructor data for editing if instructor_id is provided
 $edit_instructor = null;
 if (isset($_GET['edit_id'])) {
-  $edit_id = $_GET['edit_id'];
-  $stmt = $conn->prepare("
-      SELECT i.*, d.dept_name 
-      FROM tblinstructor i 
-      LEFT JOIN tbldepartment d ON i.dept_id = d.dept_id 
-      WHERE i.instructor_id = ?
-  ");
-  $stmt->bind_param("i", $edit_id);
-  $stmt->execute();
-  $edit_instructor = $stmt->get_result()->fetch_assoc();
+    $edit_id = $_GET['edit_id'];
+    $stmt = $conn->prepare("
+        SELECT i.*, d.dept_name 
+        FROM tblinstructor i 
+        LEFT JOIN tbldepartment d ON i.dept_id = d.dept_id 
+        WHERE i.instructor_id = ?
+    ");
+    $stmt->bind_param("i", $edit_id);
+    $stmt->execute();
+    $edit_instructor = $stmt->get_result()->fetch_assoc();
 }
 
 // Get all instructors with department information
@@ -97,6 +120,7 @@ $instructors = $conn->query("
     SELECT i.*, d.dept_name 
     FROM tblinstructor i 
     LEFT JOIN tbldepartment d ON i.dept_id = d.dept_id 
+    WHERE $status_condition
     ORDER BY i.instructor_id DESC, i.last_name, i.first_name
 ");
 
@@ -105,6 +129,10 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
 
 // Count total instructors
 $total_instructors = $instructors->num_rows;
+
+// Count active and archived instructors
+$active_count = $conn->query("SELECT COUNT(*) FROM tblinstructor WHERE is_active = TRUE")->fetch_row()[0];
+$archived_count = $conn->query("SELECT COUNT(*) FROM tblinstructor WHERE is_active = FALSE")->fetch_row()[0];
 ?>
 
 <!DOCTYPE html>
@@ -142,10 +170,6 @@ $total_instructors = $instructors->num_rows;
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
-            <!-- <a href="dashboard.php" class="menu-item">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a> -->
             <a href="student.php" class="menu-item" >
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
@@ -186,13 +210,6 @@ $total_instructors = $instructors->num_rows;
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
-            <!-- Logout Item -->
-            <!-- <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div> -->
         </div>
     </div>
 
@@ -200,25 +217,39 @@ $total_instructors = $instructors->num_rows;
     <div class="page-header">
       <h1>Instructor</h1>
       <div class="header-actions">
+        <?php if (!$show_archived): ?>
         <button class="btn btn-primary" id="openInstructorModal">
           <i class="fas fa-plus"></i>
           Add New Instructor
         </button>
-      </div>
+        <?php endif; ?>
         
-
-      <!-- Export Buttons -->
-      <div class="export-buttons">
-        <button class="btn btn-export-pdf" onclick="exportData('pdf')">
-          <i class="fas fa-file-pdf"></i> Export PDF
-        </button>
-        <button class="btn btn-export-excel" onclick="exportData('excel')">
-          <i class="fas fa-file-excel"></i> Export Excel
-        </button>
+        <!-- Export Buttons -->
+        <div class="export-buttons">
+          <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <button class="btn btn-export-excel" onclick="exportData('excel')">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+        </div>
       </div>
     </div>
 
+    <!-- Instructor Status Toggle -->
+    <div class="instructor-status-toggle no-print">
+        <a href="?page=instructors" class="status-btn <?php echo !$show_archived ? 'active' : ''; ?>">
+            <i class="fas fa-chalkboard-teacher"></i>
+            Active Instructors (<?php echo $active_count; ?>)
+        </a>
+        <a href="?page=instructors&show_archived=true" class="status-btn <?php echo $show_archived ? 'active' : ''; ?>">
+            <i class="fas fa-archive"></i>
+            Archived Instructors (<?php echo $archived_count; ?>)
+        </a>
+    </div>
+
       <!-- Instructor Modal -->
+    <?php if (!$show_archived): ?>
     <div id="instructorModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
@@ -282,10 +313,10 @@ $total_instructors = $instructors->num_rows;
         </div>
       </div>
     </div>
+    <?php endif; ?>
 
     <!-- Instructors Table -->
     <div class="table-container">
-      <h2>Instructor List</h2>
         
       <!-- Search and Filters -->
       <div class="search-container">
@@ -304,10 +335,10 @@ $total_instructors = $instructors->num_rows;
       <!-- Delete Confirmation Dialog -->
       <div class="delete-confirmation" id="deleteConfirmation">
         <div class="confirmation-dialog">
-          <h3>Delete Instructor</h3>
-          <p id="deleteMessage">Are you sure you want to delete this instructor? This action cannot be undone.</p>
+          <h3><?php echo $show_archived ? 'Restore Instructor' : 'Delete Instructor'; ?></h3>
+          <p id="deleteMessage">Are you sure you want to <?php echo $show_archived ? 'restore' : 'delete'; ?> this instructor?</p>
           <div class="confirmation-actions">
-            <button class="confirm-delete" id="confirmDelete">Yes</button>
+            <button class="confirm-delete" id="confirmDelete">Yes, <?php echo $show_archived ? 'Restore' : 'Delete'; ?></button>
             <button class="cancel-delete" id="cancelDelete">Cancel</button>
           </div>
         </div>
@@ -316,7 +347,7 @@ $total_instructors = $instructors->num_rows;
       <!-- Hidden delete form -->
       <form method="POST" id="deleteInstructorForm" style="display: none;">
         <input type="hidden" name="instructor_id" id="deleteInstructorId">
-        <input type="hidden" name="delete_instructor" value="1">
+        <input type="hidden" name="<?php echo $show_archived ? 'restore_instructor' : 'delete_instructor'; ?>" value="1">
       </form>
 
       <table>
@@ -325,7 +356,7 @@ $total_instructors = $instructors->num_rows;
             <th>Name</th>
             <th>Email</th>
             <th>Department</th>
-            <th>Actions</th>
+            <th class="no-print">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -334,7 +365,7 @@ $total_instructors = $instructors->num_rows;
               $instructors->data_seek(0);
               while($instructor = $instructors->fetch_assoc()): 
           ?>
-          <tr>
+          <tr data-instructor-id="<?php echo $instructor['instructor_id']; ?>" class="<?php echo $show_archived ? 'archived-instructor' : ''; ?>">
             <td>
               <div class="instructor-info">
                 <div class="instructor-name"><?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?></div>
@@ -354,17 +385,29 @@ $total_instructors = $instructors->num_rows;
                   <span class="no-dept">Not Assigned</span>
               <?php endif; ?>
             </td>
-            <td class="actions">
-              <a href="?edit_id=<?php echo $instructor['instructor_id']; ?>" class="btn btn-edit">
-                <i class="fas fa-edit"></i>
-                Edit
-              </a>
-              <button type="button" class="btn btn-danger delete-btn" 
-                      data-instructor-id="<?php echo $instructor['instructor_id']; ?>"
-                      data-instructor-name="<?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>">
-                <i class="fas fa-trash"></i>
-                Delete
-              </button>
+            <td class="actions no-print">
+                <?php if ($show_archived): ?>
+                    <!-- Only show Restore button for archived instructors -->
+                    <form method="POST" style="display: inline;">
+                        <input type="hidden" name="instructor_id" value="<?php echo $instructor['instructor_id']; ?>">
+                        <button type="submit" name="restore_instructor" class="btn btn-success">
+                            <i class="fas fa-trash-restore"></i>
+                            Restore
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <!-- Show Edit and Delete buttons for active instructors -->
+                    <a href="?edit_id=<?php echo $instructor['instructor_id']; ?>" class="btn btn-edit">
+                        <i class="fas fa-edit"></i>
+                        Edit
+                    </a>
+                    <button type="button" class="btn btn-danger delete-btn" 
+                            data-instructor-id="<?php echo $instructor['instructor_id']; ?>"
+                            data-instructor-name="<?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>">
+                        <i class="fas fa-trash"></i>
+                        Delete
+                    </button>
+                <?php endif; ?>
             </td>
           </tr>
             <?php 
@@ -374,7 +417,11 @@ $total_instructors = $instructors->num_rows;
             <tr>
               <td colspan="4" style="text-align: center; padding: 2rem;">
                 <div style="color: var(--gray-500); font-style: italic;">
-                  No instructors found. Click "Add New Instructor" to get started.
+                  <?php if ($show_archived): ?>
+                    No archived instructors found.
+                  <?php else: ?>
+                    No instructors found. Click "Add New Instructor" to get started.
+                  <?php endif; ?>
                 </div>
               </td>
             </tr>
@@ -383,10 +430,39 @@ $total_instructors = $instructors->num_rows;
       </table>
     </div>
   </div>
-  
-
-  
 
     <script src="../script/instructor.js"></script>
+    <script>
+        // Pass PHP data to JavaScript
+        const isEditing = <?php echo $edit_instructor ? 'true' : 'false'; ?>;
+        const showArchived = <?php echo $show_archived ? 'true' : 'false'; ?>;
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof InstructorManager !== 'undefined') {
+                InstructorManager.init(isEditing, showArchived);
+            }
+        });
+
+        // Export data function
+        function exportData(type) {
+            // Get current filter parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const showArchived = urlParams.get('show_archived') === 'true';
+            
+            // Build export URL
+            let exportUrl = `instructor_export_${type}.php?`;
+            
+            if (showArchived) {
+                exportUrl += 'show_archived=true&';
+            }
+            
+            // Remove trailing & or ?
+            exportUrl = exportUrl.replace(/[&?]$/, '');
+            
+            // Open export in new window
+            window.open(exportUrl, '_blank');
+        }
+    </script>
 </body>
 </html>
