@@ -3,13 +3,13 @@ session_start();
 require_once '../includes/config.php';
 
 // Handle logout
-if (isset($_GET['logout'])) {
-    // Destroy all session data
-    session_destroy();
-    // Redirect to login page
-    header("Location: ../includes/login.php");
-    exit();
-}
+// if (isset($_GET['logout'])) {
+//     // Destroy all session data
+//     session_destroy();
+//     // Redirect to login page
+//     header("Location: ../includes/login.php");
+//     exit();
+// }
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'enrollment';
 
@@ -60,20 +60,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
     
+    // SOFT DELETE - Set is_active to false instead of deleting
     if (isset($_POST['delete_enrollment'])) {
         $enrollment_id = $_POST['enrollment_id'];
         
-        $sql = "DELETE FROM tblenrollment WHERE enrollment_id = ?";
+        $sql = "UPDATE tblenrollment SET is_active = FALSE WHERE enrollment_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $enrollment_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Enrollment deleted successfully!";
+            $_SESSION['message'] = "success::Enrollment archived successfully!";
         } else {
-            $_SESSION['message'] = "error::Error deleting enrollment: " . $conn->error;
+            $_SESSION['message'] = "error::Error archiving enrollment: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . "?page=enrollments");
+        exit();
+    }
+    
+    // RESTORE ENROLLMENT functionality
+    if (isset($_POST['restore_enrollment'])) {
+        $enrollment_id = $_POST['enrollment_id'];
+        
+        $sql = "UPDATE tblenrollment SET is_active = TRUE WHERE enrollment_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $enrollment_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Enrollment restored successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error restoring enrollment: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . "?page=enrollments" . (isset($_GET['show_archived']) ? '&show_archived=true' : ''));
         exit();
     }
     
@@ -89,13 +108,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Handle search
+// Handle search and show active/archived enrollments
+$show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
+$status_condition = $show_archived ? "e.is_active = FALSE" : "e.is_active = TRUE";
+
 $search_condition = "";
 $search_params = [];
 
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search_term = $conn->real_escape_string($_GET['search']);
-    $search_condition .= "WHERE (s.student_no LIKE '%$search_term%' OR 
+    $search_condition .= "AND (s.student_no LIKE '%$search_term%' OR 
                                  s.first_name LIKE '%$search_term%' OR 
                                  s.last_name LIKE '%$search_term%' OR 
                                  c.course_code LIKE '%$search_term%' OR 
@@ -107,21 +129,13 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
 
 if (isset($_GET['student']) && !empty($_GET['student'])) {
     $student_id = $conn->real_escape_string($_GET['student']);
-    if (empty($search_condition)) {
-        $search_condition .= "WHERE e.student_id = '$student_id'";
-    } else {
-        $search_condition .= " AND e.student_id = '$student_id'";
-    }
+    $search_condition .= " AND e.student_id = '$student_id'";
     $search_params['student'] = $student_id;
 }
 
 if (isset($_GET['course']) && !empty($_GET['course'])) {
     $course_id = $conn->real_escape_string($_GET['course']);
-    if (empty($search_condition)) {
-        $search_condition .= "WHERE c.course_id = '$course_id'";
-    } else {
-        $search_condition .= " AND c.course_id = '$course_id'";
-    }
+    $search_condition .= " AND c.course_id = '$course_id'";
     $search_params['course'] = $course_id;
 }
 
@@ -159,7 +173,7 @@ $enrollments_query = "
     JOIN tblsection sec ON e.section_id = sec.section_id
     JOIN tblcourse c ON sec.course_id = c.course_id
     JOIN tblterm t ON sec.term_id = t.term_id
-    $search_condition
+    WHERE $status_condition $search_condition
     ORDER BY e.date_enrolled DESC
 ";
 
@@ -172,10 +186,10 @@ if (!$enrollments) {
     // Handle error appropriately
 }
 
-// Get students for dropdown
-$students = $conn->query("SELECT * FROM tblstudent ORDER BY last_name, first_name");
+// Get students for dropdown - only active students
+$students = $conn->query("SELECT * FROM tblstudent WHERE is_active = TRUE ORDER BY last_name, first_name");
 
-// Get sections for dropdown
+// Get sections for dropdown - removed is_active check for sections
 $sections = $conn->query("
     SELECT sec.section_id, sec.section_code, c.course_code, c.course_title, t.term_code
     FROM tblsection sec
@@ -248,10 +262,6 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
-            <!-- <a href="dashboard.php" class="menu-item">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a> -->
             <a href="student.php" class="menu-item" >
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
@@ -292,14 +302,6 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
-
-            <!-- Logout Item -->
-            <!-- <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div> -->
         </div>
     </div>
 
@@ -307,10 +309,13 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
     <div class="page-header">
       <h1>Enrollment</h1>
       <div class="header-actions">
+        <?php if (!$show_archived): ?>
         <button class="btn btn-primary" id="openEnrollmentModal">
           <i class="fas fa-plus"></i>
           Add New Enrollment
         </button>
+        <?php endif; ?>
+        
         <div class="export-buttons">
           <form method="POST" style="display: inline;">
             <button type="submit" name="export_pdf" class="btn btn-pdf">
@@ -326,9 +331,25 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       </div>
     </div>
 
+    <!-- Enrollment Status Toggle -->
+    <div class="enrollment-status-toggle no-print">
+        <a href="?page=enrollments" class="status-btn <?php echo !$show_archived ? 'active' : ''; ?>">
+            <i class="fas fa-clipboard-check"></i>
+            Active Enrollments (<?php echo $conn->query("SELECT COUNT(*) FROM tblenrollment WHERE is_active = TRUE")->fetch_row()[0]; ?>)
+        </a>
+        <a href="?page=enrollments&show_archived=true" class="status-btn <?php echo $show_archived ? 'active' : ''; ?>">
+            <i class="fas fa-archive"></i>
+            Archived Enrollments (<?php echo $conn->query("SELECT COUNT(*) FROM tblenrollment WHERE is_active = FALSE")->fetch_row()[0]; ?>)
+        </a>
+    </div>
+
     <!-- Search Form -->
 <div class="search-container no-print">
   <form method="GET" class="search-form" id="searchForm">
+    <input type="hidden" name="page" value="enrollments">
+    <?php if ($show_archived): ?>
+        <input type="hidden" name="show_archived" value="true">
+    <?php endif; ?>
     <div class="search-box">
       <div class="search-group">
         <label>Search Enrollments</label>
@@ -341,7 +362,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
         <select name="student" class="search-input">
           <option value="">All Students</option>
           <?php 
-          $students_search = $conn->query("SELECT * FROM tblstudent ORDER BY last_name, first_name");
+          $students_search = $conn->query("SELECT * FROM tblstudent WHERE is_active = TRUE ORDER BY last_name, first_name");
           while($student = $students_search->fetch_assoc()): 
           ?>
             <option value="<?php echo $student['student_id']; ?>" 
@@ -357,7 +378,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
         <select name="course" class="search-input">
           <option value="">All Courses</option>
           <?php 
-          $courses_search = $conn->query("SELECT * FROM tblcourse ORDER BY course_code");
+          $courses_search = $conn->query("SELECT * FROM tblcourse WHERE is_active = TRUE ORDER BY course_code");
           while($course = $courses_search->fetch_assoc()): 
           ?>
             <option value="<?php echo $course['course_id']; ?>" 
@@ -373,7 +394,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
           <i class="fas fa-search"></i>
           Search
         </button>
-        <a href="?" class="btn btn-outline">
+        <a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=enrollments<?php echo $show_archived ? '&show_archived=true' : ''; ?>" class="btn btn-outline">
           <i class="fas fa-redo"></i>
           Reset
         </a>
@@ -383,6 +404,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
 </div>
 
         <!-- Enrollment Modal -->
+    <?php if (!$show_archived): ?>
     <div id="enrollmentModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
@@ -491,6 +513,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
         </div>
       </div>
     </div>
+    <?php endif; ?>
 
    <!-- Enrollments Table -->
     <div class="table-container">
@@ -521,7 +544,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
             <th>Date Enrolled</th>
             <th>Start Time</th>
             <th>Grade</th>
-            <th>Actions</th>
+            <th class="no-print">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -547,7 +570,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
                   $time_period = 'AM';
               }
           ?>
-          <tr>
+          <tr data-enrollment-id="<?php echo $enrollment['enrollment_id']; ?>" class="<?php echo $show_archived ? 'archived-enrollment' : ''; ?>">
             <td>
               <div class="course-code"><?php echo $enrollment['course_code']; ?></div>
             </td>
@@ -570,19 +593,31 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
                 <span class="grade-pending">Not Graded</span>
               <?php endif; ?>
             </td>
-            <td class="actions">
-                <a href="?edit_id=<?php echo $enrollment['enrollment_id']; ?>" class="btn btn-edit">
-                  <i class="fas fa-edit"></i>
-                  Edit
-                </a>
-                <button class="btn btn-danger delete-btn" 
-                        data-enrollment-id="<?php echo $enrollment['enrollment_id']; ?>"
-                        data-course-code="<?php echo htmlspecialchars($enrollment['course_code']); ?>"
-                        data-course-title="<?php echo htmlspecialchars($enrollment['course_title']); ?>"
-                        data-student-name="<?php echo htmlspecialchars($enrollment['last_name'] . ', ' . $enrollment['first_name']); ?>">
-                    <i class="fas fa-trash"></i>
-                    Delete
-                </button>
+            <td class="actions no-print">
+                <?php if ($show_archived): ?>
+                    <!-- Only show Restore button for archived enrollments -->
+                    <form method="POST" style="display: inline;">
+                        <input type="hidden" name="enrollment_id" value="<?php echo $enrollment['enrollment_id']; ?>">
+                        <button type="submit" name="restore_enrollment" class="btn btn-success">
+                            <i class="fas fa-trash-restore"></i>
+                            Restore
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <!-- Show Edit and Delete buttons for active enrollments -->
+                    <a href="?edit_id=<?php echo $enrollment['enrollment_id']; ?>" class="btn btn-edit">
+                      <i class="fas fa-edit"></i>
+                      Edit
+                    </a>
+                    <button class="btn btn-danger delete-btn" 
+                            data-enrollment-id="<?php echo $enrollment['enrollment_id']; ?>"
+                            data-course-code="<?php echo htmlspecialchars($enrollment['course_code']); ?>"
+                            data-course-title="<?php echo htmlspecialchars($enrollment['course_title']); ?>"
+                            data-student-name="<?php echo htmlspecialchars($enrollment['last_name'] . ', ' . $enrollment['first_name']); ?>">
+                        <i class="fas fa-trash"></i>
+                        Delete
+                    </button>
+                <?php endif; ?>
             </td>
           </tr>
           <?php endwhile; ?>
@@ -593,9 +628,9 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       <div class="delete-confirmation" id="deleteConfirmation">
           <div class="confirmation-dialog">
               <h3>Delete Enrollment</h3>
-              <p id="deleteMessage">Are you sure you want to delete this enrollment? This action cannot be undone.</p>
+              <p id="deleteMessage">Are you sure you want to delete this enrollment? This action will move the enrollment to archived records.</p>
               <div class="confirmation-actions">
-                  <button class="confirm-delete" id="confirmDelete">Yes</button>
+                  <button class="confirm-delete" id="confirmDelete">Yes, Delete</button>
                   <button class="cancel-delete" id="cancelDelete">Cancel</button>
               </div>
           </div>
@@ -609,7 +644,13 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       
       <?php else: ?>
       <div class="no-records">
-          <p>No enrollments found. <a href="javascript:void(0)" onclick="openModal('enrollmentModal')">Add the first enrollment</a></p>
+          <p>
+            <?php if ($show_archived): ?>
+                No archived enrollments found.
+            <?php else: ?>
+                No enrollments found. <a href="javascript:void(0)" onclick="openModal('enrollmentModal')">Add the first enrollment</a>
+            <?php endif; ?>
+          </p>
       </div>
       <?php endif; ?>
     </div>
@@ -621,11 +662,12 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
   <script>
     // Pass PHP data to JavaScript
     const isEditing = <?php echo $edit_enrollment ? 'true' : 'false'; ?>;
+    const showArchived = <?php echo $show_archived ? 'true' : 'false'; ?>;
     
     // Initialize the application
     document.addEventListener('DOMContentLoaded', function() {
       if (typeof EnrollmentManager !== 'undefined') {
-        EnrollmentManager.init(isEditing);
+        EnrollmentManager.init(isEditing, showArchived);
       }
     });
   </script>

@@ -2,9 +2,10 @@
 
 const EnrollmentManager = {
   // Initialize the enrollment management system
-  init: function(isEditing = false) {
+  init: function(isEditing = false, showArchived = false) {
       this.initializeModal();
       this.initializeSearch();
+      this.initializeDeleteConfirmation();
       
       if (isEditing) {
           this.openEditModal();
@@ -25,6 +26,79 @@ const EnrollmentManager = {
   // Search functionality
   initializeSearch: function() {
       this.setupSearchEvents();
+  },
+
+  // Delete confirmation functionality
+  initializeDeleteConfirmation: function() {
+      this.deleteModal = document.getElementById("deleteConfirmation");
+      this.confirmDeleteBtn = document.getElementById("confirmDelete");
+      this.cancelDeleteBtn = document.getElementById("cancelDelete");
+      this.deleteForm = document.getElementById("deleteEnrollmentForm");
+      this.deleteMessage = document.getElementById("deleteMessage");
+
+      this.setupDeleteEvents();
+  },
+
+  setupDeleteEvents: function() {
+      // Delete button functionality
+      document.addEventListener('click', (e) => {
+          if (e.target.classList.contains('delete-btn')) {
+              const enrollmentId = e.target.getAttribute('data-enrollment-id');
+              const courseCode = e.target.getAttribute('data-course-code');
+              const courseTitle = e.target.getAttribute('data-course-title');
+              const studentName = e.target.getAttribute('data-student-name');
+              
+              // Set delete message
+              this.deleteMessage.textContent = `Are you sure you want to delete the enrollment for "${courseCode} - ${courseTitle}" for student "${studentName}"? This action will move the enrollment to archived records.`;
+              
+              // Set delete form values
+              document.getElementById('deleteEnrollmentId').value = enrollmentId;
+              
+              // Show delete confirmation modal
+              this.showDeleteModal();
+          }
+      });
+
+      // Delete confirmation
+      if (this.confirmDeleteBtn) {
+          this.confirmDeleteBtn.addEventListener('click', () => {
+              this.deleteForm.submit();
+          });
+      }
+
+      // Cancel delete
+      if (this.cancelDeleteBtn) {
+          this.cancelDeleteBtn.addEventListener('click', () => {
+              this.hideDeleteModal();
+          });
+      }
+
+      // Close modal when clicking outside
+      if (this.deleteModal) {
+          this.deleteModal.addEventListener('click', (event) => {
+              if (event.target === this.deleteModal) {
+                  this.hideDeleteModal();
+              }
+          });
+      }
+  },
+
+  showDeleteModal: function() {
+      if (this.deleteModal) {
+          this.deleteModal.style.display = 'flex';
+          setTimeout(() => {
+              this.deleteModal.style.opacity = '1';
+          }, 10);
+      }
+  },
+
+  hideDeleteModal: function() {
+      if (this.deleteModal) {
+          this.deleteModal.style.opacity = '0';
+          setTimeout(() => {
+              this.deleteModal.style.display = 'none';
+          }, 300);
+      }
   },
 
   setupSearchEvents: function() {
@@ -90,7 +164,14 @@ const EnrollmentManager = {
   },
 
   clearSearch: function() {
-      window.location.href = '?';
+      const urlParams = new URLSearchParams(window.location.search);
+      const showArchived = urlParams.get('show_archived');
+      
+      if (showArchived) {
+          window.location.href = '?page=enrollments&show_archived=true';
+      } else {
+          window.location.href = '?page=enrollments';
+      }
   },
 
   setupModalEvents: function() {
@@ -213,7 +294,9 @@ const EnrollmentManager = {
           
           // Remove edit parameters from URL
           if (window.location.search.includes('edit_id')) {
-              window.history.replaceState({}, document.title, window.location.pathname);
+              const urlParams = new URLSearchParams(window.location.search);
+              urlParams.delete('edit_id');
+              window.history.replaceState({}, document.title, window.location.pathname + '?' + urlParams.toString());
           }
       }
   },
@@ -283,7 +366,8 @@ const EnrollmentManager = {
       return {
           search: urlParams.get('search') || '',
           student: urlParams.get('student') || '',
-          course: urlParams.get('course') || ''
+          course: urlParams.get('course') || '',
+          show_archived: urlParams.get('show_archived') || ''
       };
   },
 
@@ -298,8 +382,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if we're in editing mode
     const urlParams = new URLSearchParams(window.location.search);
     const isEditing = urlParams.has('edit_id');
+    const showArchived = urlParams.get('show_archived') === 'true';
     
-    EnrollmentManager.init(isEditing);
+    EnrollmentManager.init(isEditing, showArchived);
     
     // Auto-hide existing toasts after 5 seconds
     const existingToasts = document.querySelectorAll('.toast');
@@ -341,65 +426,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Delete Confirmation Modal Functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const deleteModal = document.getElementById('deleteConfirmation');
-    const confirmDeleteBtn = document.getElementById('confirmDelete');
-    const cancelDeleteBtn = document.getElementById('cancelDelete');
-    const deleteForm = document.getElementById('deleteEnrollmentForm');
-    const deleteMessage = document.getElementById('deleteMessage');
-
-    // Delete button functionality
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('delete-btn')) {
-            const enrollmentId = e.target.getAttribute('data-enrollment-id');
-            const courseCode = e.target.getAttribute('data-course-code');
-            const courseTitle = e.target.getAttribute('data-course-title');
-            const studentName = e.target.getAttribute('data-student-name');
-            
-            // Set delete message
-            deleteMessage.textContent = `Are you sure you want to delete the enrollment for "${courseCode} - ${courseTitle}" for student "${studentName}"? This action cannot be undone.`;
-            
-            // Set delete form values
-            document.getElementById('deleteEnrollmentId').value = enrollmentId;
-            
-            // Show delete confirmation modal
-            showDeleteModal();
-        }
-    });
-
-    // Delete confirmation
-    confirmDeleteBtn.addEventListener('click', function() {
-        deleteForm.submit();
-    });
-
-    // Cancel delete
-    cancelDeleteBtn.addEventListener('click', function() {
-        hideDeleteModal();
-    });
-
-    // Close modal when clicking outside
-    deleteModal.addEventListener('click', function(event) {
-        if (event.target === deleteModal) {
-            hideDeleteModal();
-        }
-    });
-
-    function showDeleteModal() {
-        deleteModal.style.display = 'flex';
-        setTimeout(() => {
-            deleteModal.style.opacity = '1';
-        }, 10);
-    }
-
-    function hideDeleteModal() {
-        deleteModal.style.opacity = '0';
-        setTimeout(() => {
-            deleteModal.style.display = 'none';
-        }, 300);
-    }
-});
-
 // Global toast notification function with 5-second timeout
 function showToast(message, type = 'success') {
     const toastContainer = document.getElementById('toastContainer');
@@ -435,7 +461,10 @@ function showToast(message, type = 'success') {
 
 // Function to open enrollment modal (for the no-records link)
 function openEnrollmentModal() {
-    document.getElementById('openEnrollmentModal').click();
+    const openBtn = document.getElementById('openEnrollmentModal');
+    if (openBtn) {
+        openBtn.click();
+    }
 }
 
 // Search result highlighting function
@@ -445,7 +474,7 @@ function highlightSearchResults() {
     
     if (!searchTerm) return;
     
-    const table = document.getElementById('enrollments-table');
+    const table = document.querySelector('table');
     if (!table) return;
     
     const rows = table.querySelectorAll('tbody tr');
@@ -514,6 +543,218 @@ function quickSearch(term) {
     }
 }
 
+// Export search data function
+function exportSearchData(format) {
+    const searchParams = new URLSearchParams(window.location.search);
+    let exportUrl = `enrollment_export_${format}.php?`;
+    
+    if (searchParams.get('search')) {
+        exportUrl += `search=${encodeURIComponent(searchParams.get('search'))}&`;
+    }
+    
+    if (searchParams.get('student')) {
+        exportUrl += `student=${searchParams.get('student')}&`;
+    }
+    
+    if (searchParams.get('course')) {
+        exportUrl += `course=${searchParams.get('course')}&`;
+    }
+    
+    if (searchParams.get('show_archived')) {
+        exportUrl += `show_archived=${searchParams.get('show_archived')}&`;
+    }
+    
+    // Remove trailing & or ?
+    exportUrl = exportUrl.replace(/[&?]$/, '');
+    
+    window.open(exportUrl, '_blank');
+}
+
+// Display search info
+function displaySearchInfo() {
+    const searchParams = EnrollmentManager.getSearchParams();
+    const hasSearch = EnrollmentManager.hasActiveSearch();
+    
+    if (hasSearch) {
+        console.log('Active Search Filters:', searchParams);
+        
+        // You could display this info in a small badge near the search form
+        const searchInfo = document.createElement('div');
+        searchInfo.className = 'search-info';
+        searchInfo.style.cssText = `
+            background: var(--info);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            margin: 0 2rem 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        
+        let infoText = 'Active filters: ';
+        const filters = [];
+        
+        if (searchParams.search) filters.push(`Search: "${searchParams.search}"`);
+        if (searchParams.student) {
+            const studentSelect = document.querySelector('select[name="student"]');
+            const selectedOption = studentSelect?.options[studentSelect.selectedIndex];
+            if (selectedOption) {
+                filters.push(`Student: ${selectedOption.textContent.split(' (')[0]}`);
+            }
+        }
+        if (searchParams.course) {
+            const courseSelect = document.querySelector('select[name="course"]');
+            const selectedOption = courseSelect?.options[courseSelect.selectedIndex];
+            if (selectedOption) {
+                filters.push(`Course: ${selectedOption.textContent}`);
+            }
+        }
+        if (searchParams.show_archived) {
+            filters.push('View: Archived');
+        }
+        
+        infoText += filters.join(', ');
+        
+        searchInfo.innerHTML = `
+            <span>${infoText}</span>
+            <button onclick="EnrollmentManager.clearSearch()" style="background: none; border: none; color: white; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        const searchContainer = document.querySelector('.search-container');
+        if (searchContainer) {
+            searchContainer.parentNode.insertBefore(searchInfo, searchContainer.nextSibling);
+        }
+    }
+}
+
+// Enhanced keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Escape key to close modals
+    if (e.key === 'Escape') {
+        // Close enrollment modal
+        const enrollmentModal = document.getElementById('enrollmentModal');
+        if (enrollmentModal && enrollmentModal.style.display === 'block') {
+            EnrollmentManager.closeModal();
+        }
+        
+        // Close delete confirmation modal
+        const deleteModal = document.getElementById('deleteConfirmation');
+        if (deleteModal && deleteModal.style.display === 'flex') {
+            EnrollmentManager.hideDeleteModal();
+        }
+    }
+    
+    // Ctrl/Cmd + N to open new enrollment modal (only when not in archived view)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        const urlParams = new URLSearchParams(window.location.search);
+        const showArchived = urlParams.get('show_archived');
+        if (!showArchived) {
+            const openBtn = document.getElementById('openEnrollmentModal');
+            if (openBtn) {
+                openBtn.click();
+            }
+        }
+    }
+});
+
+// Auto-refresh functionality (optional)
+function autoRefresh(interval = 30000) {
+    setInterval(() => {
+        // Only refresh if no modal is open and user is not actively interacting
+        const enrollmentModal = document.getElementById('enrollmentModal');
+        const deleteModal = document.getElementById('deleteConfirmation');
+        
+        if ((!enrollmentModal || enrollmentModal.style.display === 'none') && 
+            (!deleteModal || deleteModal.style.display === 'none')) {
+            window.location.reload();
+        }
+    }, interval);
+}
+
+// Uncomment the line below to enable auto-refresh every 30 seconds
+// autoRefresh(30000);
+
+// Utility function to format dates
+function formatDate(dateString) {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+}
+
+// Utility function to format time
+function formatTime(timeString) {
+    if (!timeString) return 'N/A';
+    
+    const time = new Date(`2000-01-01T${timeString}`);
+    return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Initialize tooltips for better UX
+function initializeTooltips() {
+    const tooltipElements = document.querySelectorAll('[data-tooltip]');
+    
+    tooltipElements.forEach(element => {
+        element.addEventListener('mouseenter', function(e) {
+            const tooltipText = this.getAttribute('data-tooltip');
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = tooltipText;
+            tooltip.style.cssText = `
+                position: absolute;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 0.5rem;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                z-index: 10000;
+                white-space: nowrap;
+                pointer-events: none;
+            `;
+            
+            document.body.appendChild(tooltip);
+            
+            const rect = this.getBoundingClientRect();
+            tooltip.style.left = rect.left + 'px';
+            tooltip.style.top = (rect.top - tooltip.offsetHeight - 5) + 'px';
+            
+            this._tooltip = tooltip;
+        });
+        
+        element.addEventListener('mouseleave', function() {
+            if (this._tooltip) {
+                this._tooltip.remove();
+                this._tooltip = null;
+            }
+        });
+    });
+}
+
+// Call this function to initialize tooltips
+// initializeTooltips();
+
+// Enhanced error handling
+window.addEventListener('error', function(e) {
+    console.error('JavaScript Error:', e.error);
+    showToast('An error occurred. Please check the console for details.', 'error');
+});
+
+// Performance monitoring
+function logPerformance() {
+    if (window.performance) {
+        const navigation = performance.getEntriesByType('navigation')[0];
+        if (navigation) {
+            console.log('Page Load Time:', navigation.loadEventEnd - navigation.loadEventStart, 'ms');
+            console.log('DOM Content Loaded:', navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart, 'ms');
+        }
+    }
+}
+
+// Call this function to log performance metrics
+// logPerformance();
 // Export search data function
 function exportSearchData(format) {
     const searchParams = new URLSearchParams(window.location.search);
