@@ -44,6 +44,9 @@ function editCourse(courseId) {
         // Get lab hours
         const labBadge = cells[4].querySelector('.hours-badge');
         document.getElementById('edit_lab_hours').value = labBadge ? parseInt(labBadge.textContent) : 0;
+        
+        // Get department - this might need AJAX call if not available in table
+        // For now, we'll keep the current selection
     }
 
     // Hide loading overlay after a short delay
@@ -104,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const courseTitle = e.target.getAttribute('data-course-title');
             
             // Set delete message
-            deleteMessage.textContent = `Are you sure you want to delete the course "${courseCode} - ${courseTitle}"? This action cannot be undone.`;
+            deleteMessage.textContent = `Are you sure you want to archive the course "${courseCode} - ${courseTitle}"? This course will be moved to archived records.`;
             
             // Set delete form values
             document.getElementById('deleteCourseId').value = courseId;
@@ -187,11 +190,16 @@ document.addEventListener('DOMContentLoaded', function() {
 function exportData(type) {
     // Get current filter parameters
     const urlParams = new URLSearchParams(window.location.search);
+    const showArchived = urlParams.get('show_archived') === 'true';
     const search = urlParams.get('search') || '';
     const department = urlParams.get('department') || '';
     
     // Build export URL
     let exportUrl = `course_export_${type}.php?`;
+    
+    if (showArchived) {
+        exportUrl += 'show_archived=true&';
+    }
     
     if (search) {
         exportUrl += `search=${encodeURIComponent(search)}&`;
