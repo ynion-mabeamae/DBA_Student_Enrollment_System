@@ -2,6 +2,9 @@
 session_start();
 require_once '../includes/config.php';
 
+// Handle show archived toggle
+$show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
+
 // Handle logout
 // if (isset($_GET['logout'])) {
 //     // Destroy all session data
@@ -30,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['message'] = "error::Error adding room: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
         exit();
     }
     
@@ -50,24 +53,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['message'] = "error::Error updating room: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
         exit();
     }
     
+    // SOFT DELETE - Set is_active to false instead of deleting
     if (isset($_POST['delete_room'])) {
         $room_id = $_POST['room_id'];
         
-        $sql = "DELETE FROM tblroom WHERE room_id = ?";
+        $sql = "UPDATE tblroom SET is_active = FALSE WHERE room_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $room_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Room deleted successfully!";
+            $_SESSION['message'] = "success::Room archived successfully!";
         } else {
-            $_SESSION['message'] = "error::Error deleting room: " . $conn->error;
+            $_SESSION['message'] = "error::Error archiving room: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+        exit();
+    }
+    
+    // RESTORE ROOM functionality
+    if (isset($_POST['restore_room'])) {
+        $room_id = $_POST['room_id'];
+        
+        $sql = "UPDATE tblroom SET is_active = TRUE WHERE room_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $room_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Room restored successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error restoring room: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . '?show_archived=true');
         exit();
     }
 }   
@@ -82,11 +104,18 @@ if (isset($_GET['edit_id'])) {
     $edit_room = $stmt->get_result()->fetch_assoc();
 }
 
-// Get all rooms
-$rooms = $conn->query("SELECT * FROM tblroom ORDER BY building, room_code");
+// Get all rooms - filter by active status
+$status_condition = $show_archived ? "is_active = FALSE" : "is_active = TRUE";
+$rooms = $conn->query("
+    SELECT * FROM tblroom 
+    WHERE $status_condition
+    ORDER BY building, room_code
+");
 
 // Count total rooms
-$total_rooms = $rooms->num_rows;
+$active_rooms_count = $conn->query("SELECT COUNT(*) FROM tblroom WHERE is_active = TRUE")->fetch_row()[0];
+$archived_rooms_count = $conn->query("SELECT COUNT(*) FROM tblroom WHERE is_active = FALSE")->fetch_row()[0];
+$total_rooms = $show_archived ? $archived_rooms_count : $active_rooms_count;
 
 // Get unique buildings for filter
 $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY building");
@@ -182,10 +211,12 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
       <div class="page-header">
         <h1>Room</h1>
         <div class="header-actions">
+          <?php if (!$show_archived): ?>
           <button class="btn btn-primary" id="openRoomModal">
             <i class="fas fa-plus"></i>
             Add New Room
           </button>
+          <?php endif; ?>
         </div>
 
         <!-- Export Buttons -->
@@ -198,6 +229,18 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
           </button>
         </div>
       </div>
+
+        <!-- Room Status Toggle -->
+        <div class="room-status-toggle no-print">
+            <a href="?page=rooms" class="status-btn <?php echo !$show_archived ? 'active' : ''; ?>">
+                <i class="fas fa-user-check"></i>
+                Active Rooms (<?php echo $active_rooms_count; ?>)
+            </a>
+            <a href="?page=rooms&show_archived=true" class="status-btn <?php echo $show_archived ? 'active' : ''; ?>">
+                <i class="fas fa-archive"></i>
+                Archived Rooms (<?php echo $archived_rooms_count; ?>)
+            </a>
+        </div>
 
         <!-- Add/Edit Room Modal -->
         <div id="roomModal" class="modal">
@@ -245,9 +288,9 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
         <div class="delete-confirmation" id="deleteConfirmation">
             <div class="confirmation-dialog">
                 <h3>Delete Room</h3>
-                <p id="deleteMessage">Are you sure you want to delete this room? This action cannot be undone.</p>
+                <p id="deleteMessage">Are you sure you want to delete this room? This action will move the room to archived records.</p>
                 <div class="confirmation-actions">
-                    <button class="confirm-delete" id="confirmDelete">Yes</button>
+                    <button class="confirm-delete" id="confirmDelete">Yes, Delete</button>
                     <button class="cancel-delete" id="cancelDelete">Cancel</button>
                 </div>
             </div>
@@ -292,7 +335,10 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                     ?>
                 </div> -->
                 
-                <div class="search-stats" id="searchStats">Showing <?php echo $total_rooms; ?> of <?php echo $total_rooms; ?> rooms</div>
+                <div class="search-stats" id="searchStats">
+                    Showing <?php echo $total_rooms; ?> of <?php echo $total_rooms; ?> 
+                    <?php echo $show_archived ? 'archived' : 'active'; ?> rooms
+                </div>
                 
                 <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
             </div>
@@ -312,7 +358,7 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                         $rooms->data_seek(0);
                         while($room = $rooms->fetch_assoc()): 
                     ?>
-                    <tr>
+                    <tr class="<?php echo $show_archived ? 'archived-room' : ''; ?>">
                         <td>
                             <div class="room-info">
                                 <div class="building-name"><?php echo htmlspecialchars($room['building']); ?></div>
@@ -327,20 +373,32 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                             </div>
                         </td>
                         <td class="actions">
-                            <button type="button" class="btn btn-edit edit-btn" 
-                                    data-room-id="<?php echo $room['room_id']; ?>"
-                                    data-building="<?php echo htmlspecialchars($room['building']); ?>"
-                                    data-room-code="<?php echo htmlspecialchars($room['room_code']); ?>"
-                                    data-capacity="<?php echo $room['capacity']; ?>">
-                                <i class="fas fa-edit"></i>
-                                Edit
-                            </button>
-                            <button type="button" class="btn btn-danger delete-btn" 
-                                    data-room-id="<?php echo $room['room_id']; ?>"
-                                    data-room-code="<?php echo htmlspecialchars($room['room_code']); ?>">
-                                <i class="fas fa-trash"></i>
-                                Delete
-                            </button>
+                            <?php if ($show_archived): ?>
+                                <!-- Only show Restore button for archived rooms -->
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="room_id" value="<?php echo $room['room_id']; ?>">
+                                    <button type="submit" name="restore_room" class="btn btn-success">
+                                        <i class="fas fa-trash-restore"></i>
+                                        Restore
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <!-- Show Edit and Delete buttons for active rooms -->
+                                <button type="button" class="btn btn-edit edit-btn" 
+                                        data-room-id="<?php echo $room['room_id']; ?>"
+                                        data-building="<?php echo htmlspecialchars($room['building']); ?>"
+                                        data-room-code="<?php echo htmlspecialchars($room['room_code']); ?>"
+                                        data-capacity="<?php echo $room['capacity']; ?>">
+                                    <i class="fas fa-edit"></i>
+                                    Edit
+                                </button>
+                                <button type="button" class="btn btn-danger delete-btn" 
+                                        data-room-id="<?php echo $room['room_id']; ?>"
+                                        data-room-code="<?php echo htmlspecialchars($room['room_code']); ?>">
+                                    <i class="fas fa-trash"></i>
+                                    Delete
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php 
@@ -350,7 +408,11 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                     <tr>
                         <td colspan="4" style="text-align: center; padding: 2rem;">
                             <div style="color: var(--gray-500); font-style: italic;">
-                                No rooms found. Click "Add New Room" to get started.
+                                <?php if ($show_archived): ?>
+                                    No archived rooms found.
+                                <?php else: ?>
+                                    No rooms found. Click "Add New Room" to get started.
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
