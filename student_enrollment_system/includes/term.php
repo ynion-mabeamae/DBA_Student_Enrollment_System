@@ -3,13 +3,13 @@ session_start();
 require_once '../includes/config.php';
 
 // Handle logout
-if (isset($_GET['logout'])) {
-    // Destroy all session data
-    session_destroy();
-    // Redirect to login page
-    header("Location: ../includes/login.php");
-    exit();
-}
+// if (isset($_GET['logout'])) {
+//     // Destroy all session data
+//     session_destroy();
+//     // Redirect to login page
+//     header("Location: ../includes/login.php");
+//     exit();
+// }
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'term';
 
@@ -26,9 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("sss", $term_code, $start_date, $end_date);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Term added successfully!";
+            $_SESSION['message'] = "success::Term added successfully!";
         } else {
-            $_SESSION['error_message'] = "Error adding term: " . $conn->error;
+            $_SESSION['message'] = "error::Error adding term: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -46,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("sssi", $term_code, $start_date, $end_date, $term_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Term updated successfully!";
+            $_SESSION['message'] = "success::Term updated successfully!";
         } else {
-            $_SESSION['error_message'] = "Error updating term: " . $conn->error;
+            $_SESSION['message'] = "error::Error updating term: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -63,9 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $term_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Term deleted successfully!";
+            $_SESSION['message'] = "success::Term deleted successfully!";
         } else {
-            $_SESSION['error_message'] = "Error deleting term: " . $conn->error;
+            $_SESSION['message'] = "error::Error deleting term: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -101,30 +101,23 @@ $total_terms = $terms->num_rows;
     <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
-    <!-- Success/Error Notification -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="notification success" id="successNotification">
-            <div class="notification-content">
-                <span class="notification-icon">✓</span>
-                <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-                <button class="notification-close">&times;</button>
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer">
+        <?php if (isset($_SESSION['message'])): ?>
+            <?php 
+            $message = $_SESSION['message'];
+            list($type, $text) = explode('::', $message, 2);
+            unset($_SESSION['message']);
+            ?>
+            <div class="toast <?php echo $type; ?>">
+                <i class="fas fa-<?php echo $type === 'success' ? 
+                'check-circle' : ($type === 'error' ? 
+                'exclamation-circle' : ($type === 'warning' ? 
+                'exclamation-triangle' : 'info-circle')); ?>"></i>
+                <?php echo $text; ?>
             </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="notification error" id="errorNotification">
-            <div class="notification-content">
-                <span class="notification-icon">⚠</span>
-                <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
+        <?php endif; ?>
+    </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -274,10 +267,15 @@ $total_terms = $terms->num_rows;
             <!-- Search and Filters -->
             <div class="search-container">
                 <div class="search-box">
-                    <div class="search-icon">🔍</div>
+                    <div class="search-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
                     <input type="text" id="searchTerms" class="search-input" placeholder="Search terms by code or date...">
                 </div>
-                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+                <button class="btn btn-primary search-btn" id="searchButton">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
                 
                 <div class="search-stats" id="searchStats">Showing <?php echo $total_terms; ?> of <?php echo $total_terms; ?> terms</div>
                 
@@ -324,11 +322,13 @@ $total_terms = $terms->num_rows;
                                     data-term-code="<?php echo htmlspecialchars($term['term_code']); ?>"
                                     data-start-date="<?php echo $term['start_date']; ?>"
                                     data-end-date="<?php echo $term['end_date']; ?>">
+                                <i class="fas fa-edit"></i>
                                 Edit
                             </button>
                             <button type="button" class="btn btn-danger delete-btn" 
                                     data-term-id="<?php echo $term['term_id']; ?>"
                                     data-term-code="<?php echo htmlspecialchars($term['term_code']); ?>">
+                                <i class="fas fa-trash"></i>
                                 Delete
                             </button>
                         </td>
