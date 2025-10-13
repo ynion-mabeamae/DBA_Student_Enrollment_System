@@ -63,7 +63,7 @@ body {
 
 .sidebar-menu a.menu-item {
     text-decoration: none !important;
-    color: rgb(164, 161, 161);
+    color: rgb(255, 255, 255);
 }
 
 .sidebar-menu .menu-item {
@@ -289,7 +289,7 @@ th, td {
     text-align: left;
 }
 
-th {
+/* th {
     background-color: #f8f9fa;
     font-weight: 600;
     color: var(--dark);
@@ -297,7 +297,7 @@ th {
 
 tr:hover {
     background-color: #f8f9fa;
-}
+} */
 
 /* Quick Actions */
 .quick-actions {
