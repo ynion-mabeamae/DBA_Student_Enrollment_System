@@ -2,13 +2,18 @@
 
 const DepartmentManager = {
     // Initialize the department management system
-    init: function() {
+    init: function(isEditing = false, showArchived = false) {
+        this.showArchived = showArchived;
         this.initializeModals();
         this.initializeNotifications();
         this.initializeSearch();
         this.initializeDeleteConfirmation();
         this.setupEventListeners();
         this.showNotifications();
+        
+        if (isEditing) {
+            this.openEditModal();
+        }
     },
 
     // Modal functionality
@@ -63,16 +68,18 @@ const DepartmentManager = {
 
         // Edit button events
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('edit-btn')) {
-                this.openEditDepartmentModal(e.target);
+            if (e.target.classList.contains('edit-btn') || e.target.closest('.edit-btn')) {
+                const editBtn = e.target.classList.contains('edit-btn') ? e.target : e.target.closest('.edit-btn');
+                this.openEditDepartmentModal(editBtn);
             }
         });
 
         // Delete button events
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-btn')) {
-                const deptId = e.target.getAttribute('data-dept-id');
-                const deptName = e.target.getAttribute('data-dept-name');
+            if (e.target.classList.contains('delete-btn') || e.target.closest('.delete-btn')) {
+                const deleteBtn = e.target.classList.contains('delete-btn') ? e.target : e.target.closest('.delete-btn');
+                const deptId = deleteBtn.getAttribute('data-dept-id');
+                const deptName = deleteBtn.getAttribute('data-dept-name');
                 this.showDeleteConfirmation(deptId, deptName);
             }
         });
@@ -129,14 +136,16 @@ const DepartmentManager = {
             departmentForm.reset();
         }
         
-        // Update modal title and buttons
+        // Update modal title
         document.getElementById('departmentModalTitle').textContent = 'Add New Department';
-        document.getElementById('addDepartmentBtn').style.display = 'block';
-        document.getElementById('updateDepartmentBtn').style.display = 'none';
         
         // Clear hidden dept_id
         document.getElementById('dept_id').value = '';
         
+        this.showModal(this.departmentModal);
+    },
+
+    openEditModal: function() {
         this.showModal(this.departmentModal);
     },
 
@@ -151,10 +160,8 @@ const DepartmentManager = {
         document.getElementById('dept_code').value = deptCode;
         document.getElementById('dept_name').value = deptName;
 
-        // Update modal title and buttons
+        // Update modal title
         document.getElementById('departmentModalTitle').textContent = 'Edit Department';
-        document.getElementById('addDepartmentBtn').style.display = 'none';
-        document.getElementById('updateDepartmentBtn').style.display = 'block';
         
         this.showModal(this.departmentModal);
     },
@@ -164,8 +171,19 @@ const DepartmentManager = {
         this.deleteDeptName = deptName;
         
         const message = document.getElementById('deleteMessage');
+        const title = document.querySelector('#deleteConfirmation h3');
+        
         if (message) {
-            message.textContent = `Are you sure you want to delete "${deptName}"? This action cannot be undone.`;
+            const action = this.showArchived ? 'restore' : 'delete';
+            message.textContent = `Are you sure you want to ${action} "${deptName}"? ${this.showArchived ? 'This department will be moved back to active records.' : 'This action will move the department to archived records.'}`;
+        }
+        
+        if (title) {
+            title.textContent = this.showArchived ? 'Restore Department' : 'Delete Department';
+        }
+        
+        if (this.confirmDeleteBtn) {
+            this.confirmDeleteBtn.textContent = this.showArchived ? 'Yes, Restore' : 'Yes, Delete';
         }
 
         if (this.deleteConfirmation) {
@@ -216,6 +234,13 @@ const DepartmentManager = {
         
         // Also close delete confirmation
         this.hideDeleteConfirmation();
+        
+        // Remove edit parameters from URL
+        if (window.location.search.includes('edit_id')) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.delete('edit_id');
+            window.history.replaceState({}, document.title, window.location.pathname + '?' + urlParams.toString());
+        }
     },
 
     // Search functionality
@@ -404,8 +429,13 @@ const DepartmentManager = {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're in editing mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const isEditing = urlParams.has('edit_id');
+    const showArchived = urlParams.get('show_archived') === 'true';
+    
     if (typeof DepartmentManager !== 'undefined') {
-        DepartmentManager.init();
+        DepartmentManager.init(isEditing, showArchived);
     }
 });
 
@@ -432,12 +462,16 @@ document.addEventListener('keydown', function(e) {
         }
     }
     
-    // Ctrl/Cmd + N to open new department modal
+    // Ctrl/Cmd + N to open new department modal (only when not in archived view)
     if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
-        const openBtn = document.getElementById('openDepartmentModal');
-        if (openBtn) {
-            openBtn.click();
+        const urlParams = new URLSearchParams(window.location.search);
+        const showArchived = urlParams.get('show_archived');
+        if (!showArchived) {
+            const openBtn = document.getElementById('openDepartmentModal');
+            if (openBtn) {
+                openBtn.click();
+            }
         }
     }
 });
@@ -457,14 +491,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 });
-
-// Export data function
-function exportData(type) {
-    // Build export URL
-    let exportUrl = `department_export_${type}.php`;
-    
-    console.log('Export URL:', exportUrl); // Debug log
-    
-    // Open export in new window
-    window.open(exportUrl, '_blank');
-}

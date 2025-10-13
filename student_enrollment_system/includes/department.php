@@ -3,13 +3,13 @@ session_start();
 require_once '../includes/config.php';
 
 // Handle logout
-if (isset($_GET['logout'])) {
-    // Destroy all session data
-    session_destroy();
-    // Redirect to login page
-    header("Location: ../includes/login.php");
-    exit();
-}
+// if (isset($_GET['logout'])) {
+//     // Destroy all session data
+//     session_destroy();
+//     // Redirect to login page
+//     header("Location: ../includes/login.php");
+//     exit();
+// }
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'department';
 
@@ -52,23 +52,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
     
+    // SOFT DELETE - Set is_active to false instead of deleting
     if (isset($_POST['delete_department'])) {
         $dept_id = $_POST['dept_id'];
         
-        $sql = "DELETE FROM tbldepartment WHERE dept_id = ?";
+        $sql = "UPDATE tbldepartment SET is_active = FALSE WHERE dept_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $dept_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Department deleted successfully!";
+            $_SESSION['message'] = "success::Department archived successfully!";
         } else {
-            $_SESSION['message'] = "error::Error deleting department: " . $conn->error;
+            $_SESSION['message'] = "error::Error archiving department: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . "?page=departments");
+        exit();
+    }
+    
+    // RESTORE DEPARTMENT functionality
+    if (isset($_POST['restore_department'])) {
+        $dept_id = $_POST['dept_id'];
+        
+        $sql = "UPDATE tbldepartment SET is_active = TRUE WHERE dept_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $dept_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Department restored successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error restoring department: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . "?page=departments" . (isset($_GET['show_archived']) ? '&show_archived=true' : ''));
         exit();
     }
 }
+
+// Handle search and show active/archived departments
+$show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
+$status_condition = $show_archived ? "is_active = FALSE" : "is_active = TRUE";
 
 // Get department data for editing if dept_id is provided
 $edit_department = null;
@@ -81,10 +104,14 @@ if (isset($_GET['edit_id'])) {
 }
 
 // Get all departments
-$departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
+$departments = $conn->query("SELECT * FROM tbldepartment WHERE $status_condition ORDER BY dept_name");
 
 // Count total departments
 $total_departments = $departments->num_rows;
+
+// Count active and archived departments
+$active_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_active = TRUE")->fetch_row()[0];
+$archived_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_active = FALSE")->fetch_row()[0];
 ?>
 
 <!DOCTYPE html>
@@ -122,10 +149,6 @@ $total_departments = $departments->num_rows;
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
-            <!-- <a href="dashboard.php" class="menu-item">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a> -->
             <a href="student.php" class="menu-item" >
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
@@ -134,7 +157,7 @@ $total_departments = $departments->num_rows;
                 <i class="fas fa-book"></i>
                 <span>Courses</span>
             </a>
-            <a href=".enrollment.php" class="menu-item">
+            <a href="enrollment.php" class="menu-item">
                 <i class="fas fa-clipboard-list"></i>
                 <span>Enrollments</span>
             </a>
@@ -166,14 +189,6 @@ $total_departments = $departments->num_rows;
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
-
-            <!-- Logout Item -->
-            <!-- <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div> -->
         </div>
     </div>
 
@@ -181,23 +196,39 @@ $total_departments = $departments->num_rows;
         <div class="page-header">
             <h1>Department</h1>
             <div class="header-actions">
-              <button class="btn btn-primary" id="openDepartmentModal">
-                <i class="fas fa-plus"></i>
-                Add New Department
-              </button>
-            </div>
-            
-            <!-- Export Buttons -->
-            <div class="export-buttons">
-              <button class="btn btn-export-pdf" onclick="exportData('pdf')">
-                <i class="fas fa-file-pdf"></i> Export PDF
-              </button>
-              <button class="btn btn-export-excel" onclick="exportData('excel')">
-                <i class="fas fa-file-excel"></i> Export Excel
-              </button>
+                <?php if (!$show_archived): ?>
+                <button class="btn btn-primary" id="openDepartmentModal">
+                    <i class="fas fa-plus"></i>
+                    Add New Department
+                </button>
+                <?php endif; ?>
+                
+                <!-- Export Buttons -->
+                <div class="export-buttons">
+                    <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                    <button class="btn btn-export-excel" onclick="exportData('excel')">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                </div>
             </div>
         </div>
-            <!-- Add/Edit Department Modal -->
+
+        <!-- Department Status Toggle -->
+        <div class="department-status-toggle no-print">
+            <a href="?page=departments" class="status-btn <?php echo !$show_archived ? 'active' : ''; ?>">
+                <i class="fas fa-building"></i>
+                Active Departments (<?php echo $active_count; ?>)
+            </a>
+            <a href="?page=departments&show_archived=true" class="status-btn <?php echo $show_archived ? 'active' : ''; ?>">
+                <i class="fas fa-archive"></i>
+                Archived Departments (<?php echo $archived_count; ?>)
+            </a>
+        </div>
+
+        <!-- Add/Edit Department Modal -->
+        <?php if (!$show_archived): ?>
         <div id="departmentModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -211,34 +242,40 @@ $total_departments = $departments->num_rows;
                         <div class="form-group">
                             <label for="dept_code">Department Code *</label>
                             <input type="text" id="dept_code" name="dept_code" 
-                                required maxlength="10" placeholder="Enter department code">
+                                required maxlength="10" placeholder="Enter department code"
+                                value="<?php echo $edit_department ? htmlspecialchars($edit_department['dept_code']) : ''; ?>">
                             <small class="form-help">Unique code for the department (max 10 characters)</small>
                         </div>
                         
                         <div class="form-group">
                             <label for="dept_name">Department Name *</label>
                             <input type="text" id="dept_name" name="dept_name" 
-                                required maxlength="100" placeholder="Enter department name">
+                                required maxlength="100" placeholder="Enter department name"
+                                value="<?php echo $edit_department ? htmlspecialchars($edit_department['dept_name']) : ''; ?>">
                             <small class="form-help">Full name of the department</small>
                         </div>
                         
                         <div class="form-actions">
-                            <button type="submit" name="add_department" class="btn btn-success" id="addDepartmentBtn">Add Department</button>
-                            <button type="submit" name="update_department" class="btn btn-success" id="updateDepartmentBtn" style="display: none;">Update Department</button>
+                            <?php if ($edit_department): ?>
+                                <button type="submit" name="update_department" class="btn btn-success">Update Department</button>
+                            <?php else: ?>
+                                <button type="submit" name="add_department" class="btn btn-success">Add Department</button>
+                            <?php endif; ?>
                             <button type="button" class="btn btn-cancel" id="cancelDepartment">Cancel</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Delete Confirmation Dialog -->
         <div class="delete-confirmation" id="deleteConfirmation">
             <div class="confirmation-dialog">
-                <h3>Delete Department</h3>
-                <p id="deleteMessage">Are you sure you want to delete this department? This action cannot be undone.</p>
+                <h3><?php echo $show_archived ? 'Restore Department' : 'Delete Department'; ?></h3>
+                <p id="deleteMessage">Are you sure you want to <?php echo $show_archived ? 'restore' : 'delete'; ?> this department?</p>
                 <div class="confirmation-actions">
-                    <button class="confirm-delete" id="confirmDelete">Yes</button>
+                    <button class="confirm-delete" id="confirmDelete">Yes, <?php echo $show_archived ? 'Restore' : 'Delete'; ?></button>
                     <button class="cancel-delete" id="cancelDelete">Cancel</button>
                 </div>
             </div>
@@ -247,14 +284,13 @@ $total_departments = $departments->num_rows;
         <!-- Hidden delete form -->
         <form method="POST" id="deleteDepartmentForm" style="display: none;">
             <input type="hidden" name="dept_id" id="deleteDeptId">
-            <input type="hidden" name="delete_department" value="1">
+            <input type="hidden" name="<?php echo $show_archived ? 'restore_department' : 'delete_department'; ?>" value="1">
         </form>
 
-            <!-- Departments Table -->
+        <!-- Departments Table -->
         <div class="table-container">
-            <h2>Department List</h2>
             
-                    <!-- Search and Filters -->
+            <!-- Search and Filters -->
             <div class="search-container">
                 <div class="search-box">
                     <div class="search-icon">
@@ -277,7 +313,7 @@ $total_departments = $departments->num_rows;
                     <tr>
                         <th>Department Code</th>
                         <th>Department Name</th>
-                        <th>Actions</th>
+                        <th class="no-print">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -286,7 +322,7 @@ $total_departments = $departments->num_rows;
                         $departments->data_seek(0);
                         while($department = $departments->fetch_assoc()): 
                     ?>
-                    <tr>
+                    <tr data-dept-id="<?php echo $department['dept_id']; ?>" class="<?php echo $show_archived ? 'archived-department' : ''; ?>">
                         <td>
                             <div class="department-info">
                                 <div class="department-code"><?php echo htmlspecialchars($department['dept_code']); ?></div>
@@ -295,20 +331,29 @@ $total_departments = $departments->num_rows;
                         <td>
                             <div class="department-name"><?php echo htmlspecialchars($department['dept_name']); ?></div>
                         </td>
-                        <td class="actions">
-                            <button type="button" class="btn btn-edit edit-btn" 
-                                    data-dept-id="<?php echo $department['dept_id']; ?>"
-                                    data-dept-code="<?php echo htmlspecialchars($department['dept_code']); ?>"
-                                    data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
-                                <i class="fas fa-edit"></i>
-                                Edit
-                            </button>
-                            <button type="button" class="btn btn-danger delete-btn" 
-                                    data-dept-id="<?php echo $department['dept_id']; ?>"
-                                    data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
-                                <i class="fas fa-trash"></i>
-                                Delete
-                            </button>
+                        <td class="actions no-print">
+                            <?php if ($show_archived): ?>
+                                <!-- Only show Restore button for archived departments -->
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="dept_id" value="<?php echo $department['dept_id']; ?>">
+                                    <button type="submit" name="restore_department" class="btn btn-success">
+                                        <i class="fas fa-trash-restore"></i>
+                                        Restore
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <!-- Show Edit and Delete buttons for active departments -->
+                                <a href="?edit_id=<?php echo $department['dept_id']; ?>" class="btn btn-edit">
+                                    <i class="fas fa-edit"></i>
+                                    Edit
+                                </a>
+                                <button type="button" class="btn btn-danger delete-btn" 
+                                        data-dept-id="<?php echo $department['dept_id']; ?>"
+                                        data-dept-name="<?php echo htmlspecialchars($department['dept_name']); ?>">
+                                    <i class="fas fa-trash"></i>
+                                    Delete
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php 
@@ -318,7 +363,11 @@ $total_departments = $departments->num_rows;
                     <tr>
                         <td colspan="3" style="text-align: center; padding: 2rem;">
                             <div style="color: var(--gray-500); font-style: italic;">
-                                No departments found. Click "Add New Department" to get started.
+                                <?php if ($show_archived): ?>
+                                    No archived departments found.
+                                <?php else: ?>
+                                    No departments found. Click "Add New Department" to get started.
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
@@ -329,5 +378,39 @@ $total_departments = $departments->num_rows;
     </div>
 
     <script src="../script/department.js"></script>
+    <script>
+        // Pass PHP data to JavaScript
+        const showArchived = <?php echo $show_archived ? 'true' : 'false'; ?>;
+        const isEditing = <?php echo $edit_department ? 'true' : 'false'; ?>;
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof DepartmentManager !== 'undefined') {
+                DepartmentManager.init(isEditing, showArchived);
+            }
+        });
+
+        // Export data function
+        function exportData(type) {
+            // Get current filter parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const showArchived = urlParams.get('show_archived') === 'true';
+            
+            // Build export URL
+            let exportUrl = `department_export_${type}.php?`;
+            
+            if (showArchived) {
+                exportUrl += 'show_archived=true&';
+            }
+            
+            // Remove trailing & or ?
+            exportUrl = exportUrl.replace(/[&?]$/, '');
+            
+            console.log('Export URL:', exportUrl); // Debug log
+            
+            // Open export in new window
+            window.open(exportUrl, '_blank');
+        }
+    </script>
 </body>
 </html>
