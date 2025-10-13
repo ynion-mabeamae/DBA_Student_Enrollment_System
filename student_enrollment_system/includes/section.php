@@ -34,9 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $room_id, $max_capacity);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Section added successfully!";
+            $_SESSION['message'] = "success::Section added successfully!";
         } else {
-            $_SESSION['error_message'] = "Error adding section: " . $conn->error;
+            $_SESSION['message'] = "error::Error adding section: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -66,9 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $room_id, $max_capacity, $section_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Section updated successfully!";
+            $_SESSION['message'] = "success::Section updated successfully!";
         } else {
-            $_SESSION['error_message'] = "Error updating section: " . $conn->error;
+            $_SESSION['message'] = "error::Error updating section: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -83,9 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $section_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Section deleted successfully!";
+            $_SESSION['message'] = "success::Section deleted successfully!";
         } else {
-            $_SESSION['error_message'] = "Error deleting section: " . $conn->error;
+            $_SESSION['message'] = "error::Error deleting section: " . $conn->error;
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -145,7 +145,7 @@ $rooms = $conn->query("SELECT * FROM tblroom ORDER BY building, room_code");
 $total_sections = $sections->num_rows;
 
 // Day patterns for dropdown
-$day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
+$day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
 ?>
 
 <!DOCTYPE html>
@@ -159,30 +159,20 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
     <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
-    <!-- Success/Error Notification -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="notification success" id="successNotification">
-            <div class="notification-content">
-                <span class="notification-icon">✓</span>
-                <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-                <button class="notification-close">&times;</button>
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer">
+        <?php if (isset($_SESSION['message'])): ?>
+            <?php 
+            $message = $_SESSION['message'];
+            list($type, $text) = explode('::', $message, 2);
+            unset($_SESSION['message']);
+            ?>
+            <div class="toast <?php echo $type; ?>">
+                <i class="fas fa-<?php echo $type === 'success' ? 'check-circle' : ($type === 'error' ? 'exclamation-circle' : ($type === 'warning' ? 'exclamation-triangle' : 'info-circle')); ?>"></i>
+                <?php echo $text; ?>
             </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="notification error" id="errorNotification">
-            <div class="notification-content">
-                <span class="notification-icon">⚠</span>
-                <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-                <button class="notification-close">&times;</button>
-            </div>
-            <div class="notification-progress"></div>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
+        <?php endif; ?>
+    </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -429,10 +419,15 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
             <!-- Search and Filters -->
             <div class="search-container">
                 <div class="search-box">
-                    <div class="search-icon">🔍</div>
+                    <div class="search-icon">
+                      <i class="fas fa-search"></i>
+                    </div>
                     <input type="text" id="searchSections" class="search-input" placeholder="Search sections by code, course, instructor...">
                 </div>
-                <button class="btn btn-primary search-btn" id="searchButton">Search</button>
+                <button class="btn btn-primary search-btn" id="searchButton">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
                 
                 <div class="search-stats" id="searchStats">Showing <?php echo $total_sections; ?> of <?php echo $total_sections; ?> sections</div>
                 
@@ -518,12 +513,23 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
                         </td>
                         <td class="actions">
                             <button type="button" class="btn btn-edit edit-btn" 
-                                    >
+                                    data-section-id="<?php echo $section['section_id']; ?>"
+                                    data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>"
+                                    data-course-id="<?php echo $section['course_id']; ?>"
+                                    data-term-id="<?php echo $section['term_id']; ?>"
+                                    data-instructor-id="<?php echo $section['instructor_id']; ?>"
+                                    data-day-pattern="<?php echo htmlspecialchars($section['day_pattern']); ?>"
+                                    data-start-time="<?php echo htmlspecialchars($section['start_time']); ?>"
+                                    data-end-time="<?php echo htmlspecialchars($section['end_time']); ?>"
+                                    data-room-id="<?php echo $section['room_id']; ?>"
+                                    data-max-capacity="<?php echo $section['max_capacity']; ?>">
+                                <i class="fas fa-edit"></i>
                                 Edit
                             </button>
                             <button type="button" class="btn btn-danger delete-btn" 
                                     data-section-id="<?php echo $section['section_id']; ?>"
                                     data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>">
+                                <i class="fas fa-trash"></i>
                                 Delete
                             </button>
                         </td>
