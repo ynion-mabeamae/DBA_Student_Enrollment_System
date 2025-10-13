@@ -2,14 +2,8 @@
 session_start();
 require_once '../includes/config.php';
 
-// Handle logout
-// if (isset($_GET['logout'])) {
-//     session_destroy();
-//     header("Location: ../includes/login.php");
-//     exit();
-// }
-
-$active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'student';
+// Handle show archived toggle
+$show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -39,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['message'] = "error::Error adding section: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
         exit();
     }
     
@@ -71,24 +65,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['message'] = "error::Error updating section: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
         exit();
     }
     
+    // SOFT DELETE - Set is_active to false instead of deleting
     if (isset($_POST['delete_section'])) {
         $section_id = $_POST['section_id'];
         
-        $sql = "DELETE FROM tblsection WHERE section_id = ?";
+        $sql = "UPDATE tblsection SET is_active = FALSE WHERE section_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $section_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Section deleted successfully!";
+            $_SESSION['message'] = "success::Section archived successfully!";
         } else {
-            $_SESSION['message'] = "error::Error deleting section: " . $conn->error;
+            $_SESSION['message'] = "error::Error archiving section: " . $conn->error;
         }
         
-        header("Location: " . $_SERVER['PHP_SELF']);
+        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+        exit();
+    }
+    
+    // RESTORE SECTION functionality
+    if (isset($_POST['restore_section'])) {
+        $section_id = $_POST['section_id'];
+        
+        $sql = "UPDATE tblsection SET is_active = TRUE WHERE section_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $section_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "success::Section restored successfully!";
+        } else {
+            $_SESSION['message'] = "error::Error restoring section: " . $conn->error;
+        }
+        
+        header("Location: " . $_SERVER['PHP_SELF'] . '?show_archived=true');
         exit();
     }
 }
@@ -115,7 +128,8 @@ if (isset($_GET['edit_id'])) {
     $edit_section = $stmt->get_result()->fetch_assoc();
 }
 
-// Get all sections with related data - FIXED: Removed course_name
+// Get all sections with related data - filter by active status
+$status_condition = $show_archived ? "s.is_active = FALSE" : "s.is_active = TRUE";
 $sections = $conn->query("
     SELECT s.*, 
            c.course_code,
@@ -127,6 +141,7 @@ $sections = $conn->query("
     LEFT JOIN tblterm t ON s.term_id = t.term_id
     LEFT JOIN tblinstructor i ON s.instructor_id = i.instructor_id
     LEFT JOIN tblroom r ON s.room_id = r.room_id
+    WHERE $status_condition
     ORDER BY s.section_code
 ");
 
@@ -141,8 +156,10 @@ $terms = $conn->query("SELECT * FROM tblterm ORDER BY start_date DESC");
 $instructors = $conn->query("SELECT * FROM tblinstructor ORDER BY last_name, first_name");
 $rooms = $conn->query("SELECT * FROM tblroom ORDER BY building, room_code");
 
-// Count total sections
-$total_sections = $sections->num_rows;
+// Count sections
+$active_sections_count = $conn->query("SELECT COUNT(*) FROM tblsection WHERE is_active = TRUE")->fetch_row()[0];
+$archived_sections_count = $conn->query("SELECT COUNT(*) FROM tblsection WHERE is_active = FALSE")->fetch_row()[0];
+$total_sections = $show_archived ? $archived_sections_count : $active_sections_count;
 
 // Day patterns for dropdown
 $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
@@ -180,10 +197,6 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
-            <!-- <a href="dashboard.php" class="menu-item">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a> -->
             <a href="student.php" class="menu-item" >
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>
@@ -218,7 +231,7 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
             <a href="prerequisite.php" class="menu-item"">
                 <i class="fas fa-sitemap"></i>
                 <span>Prerequisite</span>
-			</a>
+            </a>
             </a>
             <a href="term.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
@@ -230,21 +243,35 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
         <div class="page-header">
             <h1>Section</h1>
             <div class="header-actions">
-              <button class="btn btn-primary" id="openSectionModal">
-                <i class="fas fa-plus"></i>
-                Add New Section
-              </button>
+                <?php if (!$show_archived): ?>
+                <button class="btn btn-primary" id="openSectionModal">
+                    <i class="fas fa-plus"></i>
+                    Add New Section
+                </button>
+                <?php endif; ?>
             </div>
 
-          <!-- Export Buttons -->
-          <div class="export-buttons">
-            <button class="btn btn-export-pdf" onclick="exportData('pdf')">
-              <i class="fas fa-file-pdf"></i> Export PDF
-            </button>
-            <button class="btn btn-export-excel" onclick="exportData('excel')">
-              <i class="fas fa-file-excel"></i> Export Excel
-            </button>
-          </div>
+            <!-- Export Buttons -->
+            <div class="export-buttons">
+                <button class="btn btn-export-pdf" onclick="exportData('pdf')">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+                <button class="btn btn-export-excel" onclick="exportData('excel')">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- Section Status Toggle -->
+        <div class="section-status-toggle">
+            <a href="?page=sections" class="status-btn <?php echo !$show_archived ? 'active' : ''; ?>">
+                <i class="fas fa-user-check"></i>
+                Active Sections (<?php echo $active_sections_count; ?>)
+            </a>
+            <a href="?page=sections&show_archived=true" class="status-btn <?php echo $show_archived ? 'active' : ''; ?>">
+                <i class="fas fa-archive"></i>
+                Archived Sections (<?php echo $archived_sections_count; ?>)
+            </a>
         </div>
 
         <!-- Add/Edit Section Modal -->
@@ -315,7 +342,7 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
                                 if ($instructors && $instructors->num_rows > 0):
                                     $instructors->data_seek(0);
                                     while($instructor = $instructors->fetch_assoc()): 
-                                        $selected = ($edit_section && $edit_section['instruction_id'] == $instructor['instructor_id']) ? 'selected' : '';
+                                        $selected = ($edit_section && $edit_section['instructor_id'] == $instructor['instructor_id']) ? 'selected' : '';
                                 ?>
                                     <option value="<?php echo $instructor['instructor_id']; ?>" <?php echo $selected; ?>>
                                         <?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>
@@ -398,9 +425,9 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
         <div class="delete-confirmation" id="deleteConfirmation">
             <div class="confirmation-dialog">
                 <h3>Delete Section</h3>
-                <p id="deleteMessage">Are you sure you want to delete this section? This action cannot be undone.</p>
+                <p id="deleteMessage">Are you sure you want to delete this section? This action will move the section to archived records.</p>
                 <div class="confirmation-actions">
-                    <button class="confirm-delete" id="confirmDelete">Yes</button>
+                    <button class="confirm-delete" id="confirmDelete">Yes, Delete</button>
                     <button class="cancel-delete" id="cancelDelete">Cancel</button>
                 </div>
             </div>
@@ -414,7 +441,6 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
 
         <!-- Sections Table -->
         <div class="table-container">
-            <h2>Section List</h2>
             
             <!-- Search and Filters -->
             <div class="search-container">
@@ -424,12 +450,11 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
                     </div>
                     <input type="text" id="searchSections" class="search-input" placeholder="Search sections by code, course, instructor...">
                 </div>
-                <button class="btn btn-primary search-btn" id="searchButton">
-                    <i class="fas fa-search"></i>
-                    Search
-                </button>
                 
-                <div class="search-stats" id="searchStats">Showing <?php echo $total_sections; ?> of <?php echo $total_sections; ?> sections</div>
+                <div class="search-stats" id="searchStats">
+                    Showing <?php echo $total_sections; ?> of <?php echo $total_sections; ?> 
+                    <?php echo $show_archived ? 'archived' : 'active'; ?> sections
+                </div>
                 
                 <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
             </div>
@@ -463,7 +488,7 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
                                 }
                             }
                     ?>
-                    <tr>
+                    <tr class="<?php echo $show_archived ? 'archived-section' : ''; ?>">
                         <td>
                             <div class="section-info">
                                 <div class="section-code"><?php echo htmlspecialchars($section['section_code']); ?></div>
@@ -512,26 +537,38 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
                             </div>
                         </td>
                         <td class="actions">
-                            <button type="button" class="btn btn-edit edit-btn" 
-                                    data-section-id="<?php echo $section['section_id']; ?>"
-                                    data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>"
-                                    data-course-id="<?php echo $section['course_id']; ?>"
-                                    data-term-id="<?php echo $section['term_id']; ?>"
-                                    data-instructor-id="<?php echo $section['instructor_id']; ?>"
-                                    data-day-pattern="<?php echo htmlspecialchars($section['day_pattern']); ?>"
-                                    data-start-time="<?php echo htmlspecialchars($section['start_time']); ?>"
-                                    data-end-time="<?php echo htmlspecialchars($section['end_time']); ?>"
-                                    data-room-id="<?php echo $section['room_id']; ?>"
-                                    data-max-capacity="<?php echo $section['max_capacity']; ?>">
-                                <i class="fas fa-edit"></i>
-                                Edit
-                            </button>
-                            <button type="button" class="btn btn-danger delete-btn" 
-                                    data-section-id="<?php echo $section['section_id']; ?>"
-                                    data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>">
-                                <i class="fas fa-trash"></i>
-                                Delete
-                            </button>
+                            <?php if ($show_archived): ?>
+                                <!-- Only show Restore button for archived sections -->
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="section_id" value="<?php echo $section['section_id']; ?>">
+                                    <button type="submit" name="restore_section" class="btn btn-success">
+                                        <i class="fas fa-trash-restore"></i>
+                                        Restore
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <!-- Show Edit and Delete buttons for active sections -->
+                                <button type="button" class="btn btn-edit edit-btn" 
+                                        data-section-id="<?php echo $section['section_id']; ?>"
+                                        data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>"
+                                        data-course-id="<?php echo $section['course_id']; ?>"
+                                        data-term-id="<?php echo $section['term_id']; ?>"
+                                        data-instructor-id="<?php echo $section['instructor_id']; ?>"
+                                        data-day-pattern="<?php echo htmlspecialchars($section['day_pattern']); ?>"
+                                        data-start-time="<?php echo htmlspecialchars($section['start_time']); ?>"
+                                        data-end-time="<?php echo htmlspecialchars($section['end_time']); ?>"
+                                        data-room-id="<?php echo $section['room_id']; ?>"
+                                        data-max-capacity="<?php echo $section['max_capacity']; ?>">
+                                    <i class="fas fa-edit"></i>
+                                    Edit
+                                </button>
+                                <button type="button" class="btn btn-danger delete-btn" 
+                                        data-section-id="<?php echo $section['section_id']; ?>"
+                                        data-section-code="<?php echo htmlspecialchars($section['section_code']); ?>">
+                                    <i class="fas fa-trash"></i>
+                                    Delete
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php 
@@ -541,7 +578,11 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
                     <tr>
                         <td colspan="8" style="text-align: center; padding: 2rem;">
                             <div style="color: var(--gray-500); font-style: italic;">
-                                No sections found. Click "Add New Section" to get started.
+                                <?php if ($show_archived): ?>
+                                    No archived sections found.
+                                <?php else: ?>
+                                    No sections found. Click "Add New Section" to get started.
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
