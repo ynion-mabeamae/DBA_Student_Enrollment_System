@@ -512,6 +512,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+
+
 // Export data function
 function exportData(type) {
     // Build export URL
