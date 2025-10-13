@@ -27,12 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("sssi", $last_name, $first_name, $email, $dept_id);
     
     if ($stmt->execute()) {
-      $_SESSION['success_message'] = "Instructor added successfully!";
+      $_SESSION['message'] = "success::Instructor added successfully!";
     } else {
-      $_SESSION['error_message'] = "Error adding instructor: " . $conn->error;
+      $_SESSION['message'] = "error::Error adding instructor: " . $conn->error;
     }
     
-    // Redirect to prevent form resubmission
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
   }
@@ -51,12 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("sssii", $last_name, $first_name, $email, $dept_id, $instructor_id);
     
     if ($stmt->execute()) {
-      $_SESSION['success_message'] = "Instructor updated successfully!";
+      $_SESSION['message'] = "success::Instructor updated successfully!";
     } else {
-      $_SESSION['error_message'] = "Error updating instructor: " . $conn->error;
+      $_SESSION['message'] = "error::Error updating instructor: " . $conn->error;
     }
     
-    // Redirect to prevent form resubmission
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
   }
@@ -69,12 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("i", $instructor_id);
       
     if ($stmt->execute()) {
-      $_SESSION['success_message'] = "Instructor deleted successfully!";
+      $_SESSION['message'] = "success::Instructor deleted successfully!";
     } else {
-      $_SESSION['error_message'] = "Error deleting instructor: " . $conn->error;
+      $_SESSION['message'] = "error::Error deleting instructor: " . $conn->error;
     }
       
-    // Redirect to prevent form resubmission
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
   }
@@ -121,30 +118,23 @@ $total_instructors = $instructors->num_rows;
   <link rel="stylesheet" href="../styles/dashboard.css">
 </head>
 <body>
-  <!-- Success/Error Notification -->
-  <?php if (isset($_SESSION['success_message'])): ?>
-    <div class="notification success" id="successNotification">
-      <div class="notification-content">
-        <span class="notification-icon">✓</span>
-        <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-        <button class="notification-close">&times;</button>
-      </div>
-      <div class="notification-progress"></div>
-    </div>
-    <?php unset($_SESSION['success_message']); ?>
-  <?php endif; ?>
-
-  <?php if (isset($_SESSION['error_message'])): ?>
-    <div class="notification error" id="errorNotification">
-      <div class="notification-content">
-        <span class="notification-icon">⚠</span>
-        <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-        <button class="notification-close">&times;</button>
-      </div>
-      <div class="notification-progress"></div>
-    </div>
-    <?php unset($_SESSION['error_message']); ?>
-  <?php endif; ?>
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer">
+      <?php if (isset($_SESSION['message'])): ?>
+          <?php 
+          $message = $_SESSION['message'];
+          list($type, $text) = explode('::', $message, 2);
+          unset($_SESSION['message']);
+          ?>
+          <div class="toast <?php echo $type; ?>">
+              <i class="fas fa-<?php echo $type === 'success' ? 
+              'check-circle' : ($type === 'error' ? 
+              'exclamation-circle' : ($type === 'warning' ? 
+              'exclamation-triangle' : 'info-circle')); ?>"></i>
+              <?php echo $text; ?>
+          </div>
+      <?php endif; ?>
+  </div>
 
   <!-- Sidebar -->
     <div class="sidebar">
@@ -300,7 +290,9 @@ $total_instructors = $instructors->num_rows;
       <!-- Search and Filters -->
       <div class="search-container">
         <div class="search-box">
-          <div class="search-icon">🔍</div>
+          <div class="search-icon">
+            <i class="fas fa-search"></i>
+          </div>
           <input type="text" id="searchInstructors" class="search-input" placeholder="Search instructors by name, email, or department...">
         </div>
           
@@ -363,10 +355,14 @@ $total_instructors = $instructors->num_rows;
               <?php endif; ?>
             </td>
             <td class="actions">
-              <a href="?edit_id=<?php echo $instructor['instructor_id']; ?>" class="btn btn-edit">Edit</a>
+              <a href="?edit_id=<?php echo $instructor['instructor_id']; ?>" class="btn btn-edit">
+                <i class="fas fa-edit"></i>
+                Edit
+              </a>
               <button type="button" class="btn btn-danger delete-btn" 
                       data-instructor-id="<?php echo $instructor['instructor_id']; ?>"
                       data-instructor-name="<?php echo htmlspecialchars($instructor['last_name'] . ', ' . $instructor['first_name']); ?>">
+                <i class="fas fa-trash"></i>
                 Delete
               </button>
             </td>
