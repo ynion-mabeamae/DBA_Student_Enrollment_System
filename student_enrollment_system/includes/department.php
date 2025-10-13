@@ -190,6 +190,7 @@ $total_departments = $departments->num_rows;
             <h1>Department</h1>
             <div class="header-actions">
               <button class="btn btn-primary" id="openDepartmentModal">
+                <i class="fas fa-plus"></i>
                 Add New Department
               </button>
             </div>

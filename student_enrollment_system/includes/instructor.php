@@ -211,6 +211,7 @@ $total_instructors = $instructors->num_rows;
       <h1>Instructor</h1>
       <div class="header-actions">
         <button class="btn btn-primary" id="openInstructorModal">
+          <i class="fas fa-plus"></i>
           Add New Instructor
         </button>
       </div>

@@ -266,7 +266,10 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
     <div class="page-header">
       <h1>Enrollment</h1>
       <div class="header-actions">
-        <button class="btn btn-primary" id="openEnrollmentModal">Add New Enrollment</button>
+        <button class="btn btn-primary" id="openEnrollmentModal">
+          <i class="fas fa-plus"></i>
+          Add New Enrollment
+        </button>
         <div class="export-buttons">
           <form method="POST" style="display: inline;">
             <button type="submit" name="export_pdf" class="btn btn-pdf">

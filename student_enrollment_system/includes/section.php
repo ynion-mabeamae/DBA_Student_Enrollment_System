@@ -241,6 +241,7 @@ $day_patterns = ['MWF', 'TTH', 'MW', 'TTh', 'M', 'T', 'W', 'Th', 'F', 'S'];
             <h1>Section</h1>
             <div class="header-actions">
               <button class="btn btn-primary" id="openSectionModal">
+                <i class="fas fa-plus"></i>
                 Add New Section
               </button>
             </div>

@@ -179,6 +179,7 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
     <div class="toast-container" id="toastContainer">
         <?php if (isset($_SESSION['message'])): ?>
             <div class="toast <?php echo $_SESSION['message_type']; ?>">
+                <i class="fas fa-check-circle"></i>
                 <?php echo $_SESSION['message']; ?>
             </div>
             <?php 
@@ -251,6 +252,7 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
             <div class="header-actions">
                 <?php if (!$show_archived): ?>
                 <button class="btn" onclick="openModal('add-student-modal')">
+                    <i class="fas fa-plus"></i>
                     Add New Student
                 </button>
                 <?php endif; ?>

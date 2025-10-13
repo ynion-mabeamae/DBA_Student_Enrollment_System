@@ -206,6 +206,7 @@ $total_programs = $programs->num_rows;
 				<h1>Program</h1>
         <div class="header-actions">
           <button class="btn btn-primary" id="openProgramModal">
+            <i class="fas fa-plus"></i>
             Add New Program
           </button>
         </div>

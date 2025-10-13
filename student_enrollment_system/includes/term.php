@@ -191,6 +191,7 @@ $total_terms = $terms->num_rows;
           <h1>Term</h1>
           <div class="header-actions">
             <button class="btn btn-primary" id="openTermModal">
+              <i class="fas fa-plus"></i>
               Add New Term
             </button>
           </div>

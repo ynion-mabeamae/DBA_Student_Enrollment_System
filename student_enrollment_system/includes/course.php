@@ -173,6 +173,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
       <h1>Course</h1>
       <div class="header-actions">
         <button class="btn" onclick="openModal('add-course-modal')">
+          <i class="fas fa-plus"></i>
           Add New Course
         </button>
       </div>

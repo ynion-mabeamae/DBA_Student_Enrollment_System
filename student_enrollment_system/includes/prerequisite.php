@@ -259,6 +259,7 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
         <h1>Prerequisite</h1>
         <div class="header-actions">
           <button class="btn btn-primary" id="openPrerequisiteModal">
+            <i class="fas fa-plus"></i>
             Add New Prerequisite
           </button>
         </div>
