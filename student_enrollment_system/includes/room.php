@@ -304,7 +304,6 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
 
         <!-- Rooms Table -->
         <div class="table-container">
-            <h2>Room List</h2>
             
             <!-- Search and Filters -->
             <div class="search-container">

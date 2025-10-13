@@ -286,7 +286,6 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
 
         <!-- Terms Table -->
         <div class="table-container">
-            <h2>Term List</h2>
             
             <!-- Search and Filters -->
             <div class="search-container">

@@ -424,7 +424,6 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
 
         <!-- Prerequisites Table -->
         <div class="table-container">
-            <h2>Course Prerequisites List</h2>
             
             <!-- Search and Filters -->
             <div class="search-container">
