@@ -163,7 +163,7 @@ body {
 /* Search Container */
 .search-container {
   background: white;
-  padding: 1.5rem;
+  padding: 0.5rem;
   margin: 0;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
