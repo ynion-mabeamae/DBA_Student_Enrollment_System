@@ -4,7 +4,6 @@ const EnrollmentManager = {
   // Initialize the enrollment management system
   init: function(isEditing = false) {
       this.initializeModal();
-      this.initializeNotifications();
       
       if (isEditing) {
           this.openEditModal();
@@ -147,96 +146,20 @@ const EnrollmentManager = {
       }
   },
 
-  // Notification functionality
-  initializeNotifications: function() {
-      this.setupNotificationEvents();
-      this.autoHideNotifications();
-      this.showNotifications();
-  },
-
-  setupNotificationEvents: function() {
-      // Close notification when clicking close button
-      const closeButtons = document.querySelectorAll('.notification-close');
-      closeButtons.forEach(button => {
-          button.addEventListener('click', (e) => {
-              this.closeNotification(e.target.closest('.notification'));
-          });
-      });
-
-      // Auto-close notifications when clicking anywhere
-      document.addEventListener('click', (e) => {
-          if (e.target.closest('.notification')) {
-              setTimeout(() => {
-                  this.closeNotification(e.target.closest('.notification'));
-              }, 3000);
-          }
-      });
-  },
-
-  closeNotification: function(notification) {
-      if (notification) {
-          notification.classList.remove('show');
-          setTimeout(() => {
-              notification.style.display = 'none';
-          }, 300);
-      }
-  },
-
-  autoHideNotifications: function() {
-      const notifications = document.querySelectorAll('.notification');
-      notifications.forEach(notification => {
-          setTimeout(() => {
-              this.closeNotification(notification);
-          }, 5000);
-      });
-  },
-
-  showNotifications: function() {
-      const notifications = document.querySelectorAll('.notification');
-      notifications.forEach(notification => {
-          setTimeout(() => {
-              notification.classList.add('show');
-          }, 100);
-      });
-  },
-
-  // Utility functions
+  // Utility functions for toast notifications (if needed elsewhere in the code)
   showSuccessMessage: function(message) {
-      this.showNotification(message, 'success');
+      this.showToast(message, 'success');
   },
 
   showErrorMessage: function(message) {
-      this.showNotification(message, 'error');
+      this.showToast(message, 'error');
   },
 
-  showNotification: function(message, type) {
-      // Create notification element
-      const notification = document.createElement('div');
-      notification.className = `notification ${type}`;
-      notification.innerHTML = `
-          <div class="notification-content">
-              <span class="notification-icon">${type === 'success' ? '✓' : '⚠'}</span>
-              <span class="notification-message">${message}</span>
-              <button class="notification-close">&times;</button>
-          </div>
-          <div class="notification-progress"></div>
-      `;
-
-      document.body.appendChild(notification);
-
-      // Add event listener to close button
-      notification.querySelector('.notification-close').addEventListener('click', () => {
-          this.closeNotification(notification);
-      });
-
-      // Show and auto-hide
-      setTimeout(() => {
-          notification.classList.add('show');
-      }, 100);
-
-      setTimeout(() => {
-          this.closeNotification(notification);
-      }, 5000);
+  showToast: function(message, type) {
+      // Use the global showToast function defined in the HTML
+      if (typeof showToast === 'function') {
+          showToast(message, type);
+      }
   },
 
   // Student display functionality

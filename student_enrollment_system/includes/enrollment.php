@@ -27,12 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("iiss", $student_id, $section_id, $date_enrolled, $start_time);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Enrollment added successfully!";
+            $_SESSION['message'] = "success::Enrollment added successfully!";
         } else {
-            $_SESSION['error_message'] = "Error adding enrollment: " . $conn->error;
+            $_SESSION['message'] = "error::Error adding enrollment: " . $conn->error;
         }
         
-        // Redirect to prevent form resubmission
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
@@ -49,16 +48,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 SET student_id = ?, section_id = ?, date_enrolled = ?, start_time = ?, letter_grade = ?
                 WHERE enrollment_id = ?";
         $stmt = $conn->prepare($sql);
-        // Fixed: Changed "iissi" to "iissii" - 6 parameters for 6 variables
         $stmt->bind_param("iissii", $student_id, $section_id, $date_enrolled, $start_time, $letter_grade, $enrollment_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Enrollment updated successfully!";
+            $_SESSION['message'] = "success::Enrollment updated successfully!";
         } else {
-            $_SESSION['error_message'] = "Error updating enrollment: " . $conn->error;
+            $_SESSION['message'] = "error::Error updating enrollment: " . $conn->error;
         }
         
-        // Redirect to prevent form resubmission
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
@@ -71,24 +68,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $enrollment_id);
         
         if ($stmt->execute()) {
-            $_SESSION['success_message'] = "Enrollment deleted successfully!";
+            $_SESSION['message'] = "success::Enrollment deleted successfully!";
         } else {
-            $_SESSION['error_message'] = "Error deleting enrollment: " . $conn->error;
+            $_SESSION['message'] = "error::Error deleting enrollment: " . $conn->error;
         }
         
-        // Redirect to prevent form resubmission
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
     
     // Handle export requests
     if (isset($_POST['export_pdf'])) {
-        require_once 'export_pdf.php';
+        require_once 'enrollment_export_pdf.php';
         exit();
     }
     
     if (isset($_POST['export_excel'])) {
-        require_once 'export_excel.php';
+        require_once 'enrollment_export_excel.php';
         exit();
     }
 }
@@ -176,30 +172,25 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
   <?php endif; ?>
 </style>
 <body>
-  <!-- Success/Error Notification -->
-  <?php if (isset($_SESSION['success_message'])): ?>
-    <div class="notification success" id="successNotification">
-      <div class="notification-content">
-        <span class="notification-icon">✓</span>
-        <span class="notification-message"><?php echo $_SESSION['success_message']; ?></span>
-        <button class="notification-close">&times;</button>
-      </div>
-      <div class="notification-progress"></div>
-    </div>
-    <?php unset($_SESSION['success_message']); ?>
-  <?php endif; ?>
-
-  <?php if (isset($_SESSION['error_message'])): ?>
-    <div class="notification error" id="errorNotification">
-      <div class="notification-content">
-        <span class="notification-icon">⚠</span>
-        <span class="notification-message"><?php echo $_SESSION['error_message']; ?></span>
-        <button class="notification-close">&times;</button>
-      </div>
-      <div class="notification-progress"></div>
-    </div>
-    <?php unset($_SESSION['error_message']); ?>
-  <?php endif; ?>
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer">
+    <?php if (isset($_SESSION['message'])): ?>
+        <?php 
+        $message = $_SESSION['message'];
+        list($type, $text) = explode('::', $message, 2);
+        ?>
+        <div class="toast <?php echo $type; ?>">
+            <i class="fas fa-<?php echo $type === 'success' ? 
+              'check-circle' : ($type === 'error' ? 
+              'exclamation-circle' : ($type === 'warning' ? 
+              'exclamation-triangle' : 'info-circle')); ?>"></i>
+            <?php echo $text; ?>
+        </div>
+        <?php 
+        unset($_SESSION['message']);
+        ?>
+    <?php endif; ?>
+  </div>
 
   <!-- Sidebar -->
     <div class="sidebar">
@@ -273,12 +264,12 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
         <div class="export-buttons">
           <form method="POST" style="display: inline;">
             <button type="submit" name="export_pdf" class="btn btn-pdf">
-              <i class="export-icon"></i> Export PDF
+              <i class="fas fa-file-pdf"></i> Export PDF
             </button>
           </form>
           <form method="POST" style="display: inline;">
             <button type="submit" name="export_excel" class="btn btn-excel">
-              <i class="export-icon"></i> Export Excel
+              <i class="fas fa-file-excel"></i> Export Excel
             </button>
           </form>
         </div>
@@ -475,12 +466,16 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
               <?php endif; ?>
             </td>
             <td class="actions">
-                <a href="?edit_id=<?php echo $enrollment['enrollment_id']; ?>" class="btn btn-edit">Edit</a>
+                <a href="?edit_id=<?php echo $enrollment['enrollment_id']; ?>" class="btn btn-edit">
+                  <i class="fas fa-edit"></i>
+                  Edit
+                </a>
                 <button class="btn btn-danger delete-btn" 
                         data-enrollment-id="<?php echo $enrollment['enrollment_id']; ?>"
                         data-course-code="<?php echo htmlspecialchars($enrollment['course_code']); ?>"
                         data-course-title="<?php echo htmlspecialchars($enrollment['course_title']); ?>"
                         data-student-name="<?php echo htmlspecialchars($enrollment['last_name'] . ', ' . $enrollment['first_name']); ?>">
+                    <i class="fas fa-trash"></i>
                     Delete
                 </button>
             </td>
