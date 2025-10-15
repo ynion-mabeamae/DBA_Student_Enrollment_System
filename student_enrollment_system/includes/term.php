@@ -140,6 +140,10 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
             <h2>Student Enrollment System</h2>
         </div>
         <div class="sidebar-menu">
+            <a href="dashboard.php" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
             <a href="student.php" class="menu-item" >
                 <i class="fas fa-user-graduate"></i>
                 <span>Students</span>

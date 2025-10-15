@@ -132,9 +132,9 @@ if ($result && $result->num_rows > 0) {
                 <i class="fas fa-door-open"></i>
                 <span>Rooms</span>
             </a>
-            <a href="course_prerequisite.php" class="menu-item">
+            <a href="prerequisite.php" class="menu-item">
                 <i class="fas fa-sitemap"></i>
-                <span>Course Prerequisites</span>
+                <span>Prerequisites</span>
             </a>
             <a href="term.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
