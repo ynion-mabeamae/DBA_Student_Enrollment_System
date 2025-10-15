@@ -1063,7 +1063,7 @@ table td {
 /* Toast Notifications */
 .toast-container {
     position: fixed;
-    top: 10%;
+    top: 5%;
     left: 40%;
     z-index: 1100;
     display: flex;
