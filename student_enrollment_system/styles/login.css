@@ -12,6 +12,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 20px;
+    overflow: hidden;
 }
 
 .container {
@@ -47,8 +48,8 @@ body {
 
 .form-section {
     flex: 1;
-    padding: 50px;
-    max-height: 795px;
+    padding: 30px;
+    max-height: 800px;
 }
 
 .form-toggle {
