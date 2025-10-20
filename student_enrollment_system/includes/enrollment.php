@@ -511,7 +511,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
               <?php else: ?>
                 <button type="submit" name="add_enrollment" class="btn btn-success">Add Enrollment</button>
               <?php endif; ?>
-              <button type="button" class="btn btn-cancel" id="cancelEnrollment">Cancel</button>
+              <button type="button" class="btn" id="cancelEnrollment">Cancel</button>
             </div>
           </form>
         </div>

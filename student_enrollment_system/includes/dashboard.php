@@ -3,17 +3,17 @@ session_start();
 require_once '../includes/config.php';
 
 // Check if user is logged in, redirect to login if not
-// if (!isset($_SESSION['user_id'])) {
-//     header("Location: ../includes/login.php");
-//     exit();
-// }
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../includes/login.php");
+    exit();
+}
 
 // Handle logout
-// if (isset($_GET['logout'])) {
-//     session_destroy();
-//     header("Location: ../includes/login.php");
-//     exit();
-// }
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: ../includes/login.php");
+    exit();
+}
 
 // Fetch NEW statistics for the dashboard cards
 $stats = [];
@@ -141,12 +141,12 @@ if ($result && $result->num_rows > 0) {
                 <span>Terms</span>
             </a>
             <!-- Logout Item -->
-            <!-- <div class="logout-item">
+            <div class="logout-item">
                 <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
-            </div> -->
+            </div>
         </div>
     </div>
 
