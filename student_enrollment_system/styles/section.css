@@ -49,24 +49,17 @@ body {
 
 /* Page Header */
 .page-header {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    color: white;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: var(--shadow);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .page-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    flex: 1;
+    color: var(--primary);
+    font-size: 1.8rem;
 }
 
 .header-actions {
@@ -83,49 +76,49 @@ body {
         overflow: hidden;
         border: 1px solid #ddd;
         
-    }
+}
 
-    .status-btn {
-        flex: 1;
-        padding: 12px 20px;
-        text-align: center;
-        background: #f8f9fa;
-        color: #6c757d;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        
-    }
+.status-btn {
+    flex: 1;
+    padding: 12px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    color: #6c757d;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+}
 
-    .status-btn:hover {
-        background: #e9ecef;
-    }
+.status-btn:hover {
+    background: #e9ecef;
+}
 
-    .status-btn.active {
-        background: #007bff;
-        color: white;
-    }
+.status-btn.active {
+    background: #007bff;
+    color: white;
+}
 
-    .status-btn i {
-        margin-right: 8px;
-    }
+.status-btn i {
+    margin-right: 8px;
+}
 
-    /* Style for archived sections */
-    .archived-section {
-        background-color: #f8f9fa;
-        opacity: 0.7;
-    }
+/* Style for archived sections */
+.archived-section {
+    background-color: #f8f9fa;
+    opacity: 0.7;
+}
 
-    .archived-section td {
-        color: #6c757d;
-        font-style: italic;
-    }
+.archived-section td {
+    color: #6c757d;
+    font-style: italic;
+}
 
-    /* Ensure the table container has proper spacing */
-    .table-container {
-        margin-top: 0;
-    }
+/* Ensure the table container has proper spacing */
+.table-container {
+    margin-top: 0;
+}
 
 
 /* Toast Notifications */
