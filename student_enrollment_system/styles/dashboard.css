@@ -39,13 +39,13 @@ body {
     padding: 20px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     text-align: center;
-    transition: all 0.3s;
+    /* transition: all 0.3s; */
 }
 
-.year-level-card:hover {
+/* .year-level-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
+} */
 
 .year-level-card .level {
     font-size: 1.2rem;
@@ -80,14 +80,14 @@ body {
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s;
+    /* transition: all 0.3s; */
     border-left: 4px solid var(--primary);
 }
 
-.program-card:hover {
+/* .program-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
+} */
 
 .program-card .program-code {
     font-size: 1.3rem;
@@ -353,12 +353,12 @@ body {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
-    transition: transform 0.3s;
+    /* transition: transform 0.3s; */
 }
 
-.stat-card:hover {
+/* .stat-card:hover {
     transform: translateY(-5px);
-}
+} */
 
 .stat-icon {
     width: 60px;
