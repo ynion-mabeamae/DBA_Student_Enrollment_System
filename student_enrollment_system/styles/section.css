@@ -449,13 +449,12 @@ body {
 }
 
 .modal .btn-cancel {
-    background: #6b7280;
+    background: var(--primary);
     color: white;
 }
 
 .modal .btn-cancel:hover {
-    background: #4b5563;
-    transform: translateY(-1px);
+    background: var(--primary-dark);
 }
 
 /* Loading overlay */
@@ -659,6 +658,15 @@ body {
 
 .btn-export-excel:hover {
     background: #218838;
+}
+
+.btn-edit {
+    background: var(--info);
+    color: white;
+}
+
+.btn-edit:hover {
+    background: var(--primary);
 }
 
 /* Table styles */

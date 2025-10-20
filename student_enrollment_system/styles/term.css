@@ -7,7 +7,7 @@
 }
 
 :root {
-  --primary: #4361ee;
+    --primary: #4361ee;
     --primary-dark: #3a56d4;
     --secondary: #7209b7;
     --success: #4cc9f0;
@@ -466,12 +466,12 @@ body {
 }
 
 .btn-cancel {
-    background-color: #6b7280;
+    background-color: var(--primary);
     color: white;
 }
 
 .btn-cancel:hover {
-    background-color: #4b5563;
+    background-color: var(--primary-dark);
 }
 
 .btn-export-pdf {
@@ -490,6 +490,15 @@ body {
 
 .btn-export-excel:hover {
     background: #218838;
+}
+
+.btn-edit {
+    background: var(--info);
+    color: white;
+}
+
+.btn-edit:hover {
+    background: var(--primary);
 }
 
 /* Table styles */
