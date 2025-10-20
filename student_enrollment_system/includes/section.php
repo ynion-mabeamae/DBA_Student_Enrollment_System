@@ -253,7 +253,6 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
                     Add New Section
                 </button>
                 <?php endif; ?>
-            </div>
 
             <!-- Export Buttons -->
             <div class="export-buttons">
@@ -265,6 +264,7 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
                 </button>
             </div>
         </div>
+    </div>
 
         <!-- Section Status Toggle -->
         <div class="section-status-toggle">

@@ -217,16 +217,16 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
             Add New Room
           </button>
           <?php endif; ?>
-        </div>
 
-        <!-- Export Buttons -->
-        <div class="export-buttons">
+          <!-- Export Buttons -->
+          <div class="export-buttons">
           <button class="btn btn-export-pdf" onclick="exportData('pdf')">
-            <i class="fas fa-file-pdf"></i> Export PDF
+              <i class="fas fa-file-pdf"></i> Export PDF
           </button>
           <button class="btn btn-export-excel" onclick="exportData('excel')">
-            <i class="fas fa-file-excel"></i> Export Excel
+              <i class="fas fa-file-excel"></i> Export Excel
           </button>
+          </div>
         </div>
       </div>
 
