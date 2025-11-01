@@ -15,18 +15,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $birthdate = $_POST['birthdate'];
         $year_level = $_POST['year_level'];
         $program_id = $_POST['program_id'];
-        
-        $sql = "INSERT INTO tblstudent (student_no, last_name, first_name, email, gender, birthdate, year_level, program_id) 
+
+        // Check for duplicate student_no
+        $check_student_no = $conn->prepare("SELECT student_id FROM tblstudent WHERE student_no = ?");
+        $check_student_no->bind_param("s", $student_no);
+        $check_student_no->execute();
+        $student_no_result = $check_student_no->get_result();
+
+        // Check for duplicate name combination
+        $check_name = $conn->prepare("SELECT student_id FROM tblstudent WHERE last_name = ? AND first_name = ?");
+        $check_name->bind_param("ss", $last_name, $first_name);
+        $check_name->execute();
+        $name_result = $check_name->get_result();
+
+        $duplicate_errors = [];
+
+        if ($student_no_result->num_rows > 0) {
+            $duplicate_errors[] = "Student Number '$student_no' already exists";
+        }
+
+        if ($name_result->num_rows > 0) {
+            $duplicate_errors[] = "Student name '$last_name, $first_name' already exists";
+        }
+
+        if (!empty($duplicate_errors)) {
+            // Set session variable to trigger duplicate modal
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST; // Preserve form data
+            header("Location: " . $_SERVER['PHP_SELF'] . "?page=students");
+            exit();
+        }
+
+        $sql = "INSERT INTO tblstudent (student_no, last_name, first_name, email, gender, birthdate, year_level, program_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("ssssssii", $student_no, $last_name, $first_name, $email, $gender, $birthdate, $year_level, $program_id);
-        
+
         if ($stmt->execute()) {
             $_SESSION['message'] = "success::Student added successfully!";
         } else {
             $_SESSION['message'] = "error::Error adding student: " . $conn->error;
         }
-        
+
         header("Location: " . $_SERVER['PHP_SELF'] . "?page=students");
         exit();
     }
@@ -590,22 +620,22 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                     <label for="edit_student_no">Student Number *</label>
                     <input type="text" id="edit_student_no" name="student_no" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_last_name">Last Name *</label>
                     <input type="text" id="edit_last_name" name="last_name" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_first_name">First Name *</label>
                     <input type="text" id="edit_first_name" name="first_name" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_email">Email *</label>
                     <input type="email" id="edit_email" name="email" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_gender">Gender</label>
                     <select id="edit_gender" name="gender">
@@ -613,12 +643,12 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                         <option value="Female">Female</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_birthdate">Birthdate</label>
                     <input type="date" id="edit_birthdate" name="birthdate">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_year_level">Year Level</label>
                     <select id="edit_year_level" name="year_level">
@@ -628,14 +658,14 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                         <option value="4">4th Year</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_program_id">Program</label>
                     <select id="edit_program_id" name="program_id">
                         <option value="">Select Program</option>
-                        <?php 
+                        <?php
                         $programs_edit = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
-                        while($program = $programs_edit->fetch_assoc()): 
+                        while($program = $programs_edit->fetch_assoc()):
                         ?>
                             <option value="<?php echo $program['program_id']; ?>">
                                 <?php echo $program['program_code'] . ' - ' . $program['program_name']; ?>
@@ -643,12 +673,35 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
                         <?php endwhile; ?>
                     </select>
                 </div>
-                
+
                 <div class="form-actions">
                     <button type="submit" name="edit_student" class="btn btn-success">Update Student</button>
                     <button type="button" class="btn" onclick="closeModal('edit-student-modal')">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Duplicate Student Modal -->
+    <div id="duplicate-student-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Duplicate Student Detected</h2>
+                <button class="close-modal" onclick="closeModal('duplicate-student-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="duplicate-errors">
+                    <p>The following duplicate entries were found:</p>
+                    <ul id="duplicateErrorList">
+                        <!-- Errors will be populated by JavaScript -->
+                    </ul>
+                    <p>Please check your input and try again.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="goBackToForm()">Go Back to Form</button>
+                <button type="button" class="btn" onclick="closeModal('duplicate-student-modal')">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -689,5 +742,39 @@ $programs = $conn->query("SELECT * FROM tblprogram ORDER BY program_name");
         unset($_SESSION['message']);
         ?>
     <?php endif; ?>
+
+    <!-- Duplicate Student Modal Script -->
+    <?php if (isset($_SESSION['duplicate_errors'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const duplicateErrors = <?php echo json_encode($_SESSION['duplicate_errors']); ?>;
+                const errorList = document.getElementById('duplicateErrorList');
+
+                // Clear existing list items
+                errorList.innerHTML = '';
+
+                // Add each error to the list
+                duplicateErrors.forEach(function(error) {
+                    const li = document.createElement('li');
+                    li.textContent = error;
+                    errorList.appendChild(li);
+                });
+
+                // Show the modal
+                openModal('duplicate-student-modal');
+            });
+        </script>
+        <?php
+        unset($_SESSION['duplicate_errors']);
+        unset($_SESSION['form_data']);
+        ?>
+    <?php endif; ?>
+
+    <script>
+        function goBackToForm() {
+            closeModal('duplicate-student-modal');
+            openModal('add-student-modal');
+        }
+    </script>
 </body>
 </html>

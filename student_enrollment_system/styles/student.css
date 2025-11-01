@@ -1042,61 +1042,118 @@ tr.archived-row td {
     font-style: italic;
 }
 
+/* Duplicate Student Modal Styles */
+.modal-body {
+    padding: 1.5rem;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    background: white;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.duplicate-errors {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+}
+
+.duplicate-errors p {
+    margin-bottom: 1rem;
+    color: var(--gray-700);
+    font-weight: 600;
+}
+
+.duplicate-errors ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.duplicate-errors li {
+    padding: 0.75rem;
+    background: var(--gray-100);
+    border-radius: var(--border-radius);
+    margin-bottom: 0.5rem;
+    border-left: 3px solid var(--danger);
+    color: var(--gray-800);
+    font-weight: 500;
+}
+
+.duplicate-errors li:last-child {
+    margin-bottom: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .page-header {
         padding: 1.5rem;
     }
-    
+
     .page-header h1 {
         font-size: 2rem;
     }
-    
+
     .search-container,
     .table-container,
     .form-container,
     .bulk-actions {
         margin: 0 1rem 1rem;
     }
-    
+
     .search-box {
         grid-template-columns: 1fr;
     }
-    
+
     .search-actions {
         justify-content: stretch;
     }
-    
+
     .search-actions .btn {
         flex: 1;
     }
-    
+
     .action-buttons {
         flex-direction: column;
     }
-    
+
     .bulk-actions form {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .actions {
         flex-direction: column;
     }
-    
+
     .modal-content {
         margin: 1rem;
         width: calc(100% - 2rem);
         max-width: none;
     }
-    
+
     .form-actions {
         flex-direction: column;
     }
-    
+
     #students-table {
         display: block;
         overflow-x: auto;
+    }
+
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    .duplicate-errors {
+        padding: 1rem;
     }
 }
 
@@ -1104,20 +1161,34 @@ tr.archived-row td {
     .page-header {
         padding: 1rem;
     }
-    
+
     .page-header h1 {
         font-size: 1.75rem;
     }
-    
+
     .modal-header {
         padding: 1rem;
     }
-    
+
     .modal-header h2 {
         font-size: 1.25rem;
     }
-    
+
     .form-container {
         padding: 1rem;
+    }
+
+    .modal-body,
+    .modal-footer {
+        padding: 0.75rem;
+    }
+
+    .duplicate-errors {
+        padding: 0.75rem;
+    }
+
+    .duplicate-errors li {
+        padding: 0.5rem;
+        font-size: 0.9rem;
     }
 }
