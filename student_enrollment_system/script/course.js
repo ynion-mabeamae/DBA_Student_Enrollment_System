@@ -193,25 +193,45 @@ function exportData(type) {
     const showArchived = urlParams.get('show_archived') === 'true';
     const search = urlParams.get('search') || '';
     const department = urlParams.get('department') || '';
-    
+
     // Build export URL
     let exportUrl = `course_export_${type}.php?`;
-    
+
     if (showArchived) {
         exportUrl += 'show_archived=true&';
     }
-    
+
     if (search) {
         exportUrl += `search=${encodeURIComponent(search)}&`;
     }
-    
+
     if (department) {
         exportUrl += `department=${department}&`;
     }
-    
+
     // Remove trailing & or ?
     exportUrl = exportUrl.replace(/[&?]$/, '');
-    
+
     // Open export in new window
     window.open(exportUrl, '_blank');
+}
+
+// Function to populate duplicate errors in the modal
+function populateDuplicateErrors(errors) {
+    const errorList = document.getElementById('duplicateCourseErrorList');
+    if (errorList && errors) {
+        errorList.innerHTML = '';
+        errors.forEach(error => {
+            const li = document.createElement('li');
+            li.className = 'error-item';
+            li.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${error}`;
+            errorList.appendChild(li);
+        });
+    }
+}
+
+// Function to go back to course form from duplicate modal
+function goBackToCourseForm() {
+    closeModal('duplicate-course-modal');
+    openModal('add-course-modal');
 }

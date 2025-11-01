@@ -20,17 +20,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $lecture_hours = $_POST['lecture_hours'] ?: 0;
         $lab_hours = $_POST['lab_hours'] ?: 0;
         $dept_id = $_POST['dept_id'];
-        
-        $sql = "INSERT INTO tblcourse (course_code, course_title, units, lecture_hours, lab_hours, dept_id) VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssdiii", $course_code, $course_title, $units, $lecture_hours, $lab_hours, $dept_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Course added successfully!";
-            $_SESSION['message_type'] = "success";
+
+        // Check for duplicate course_code
+        $duplicate_errors = [];
+        $check_sql = "SELECT course_id FROM tblcourse WHERE course_code = ? AND is_active = TRUE";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("s", $course_code);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            $duplicate_errors[] = "Course code '$course_code' already exists.";
+        }
+
+        if (empty($duplicate_errors)) {
+            $sql = "INSERT INTO tblcourse (course_code, course_title, units, lecture_hours, lab_hours, dept_id) VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssdiii", $course_code, $course_title, $units, $lecture_hours, $lab_hours, $dept_id);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "Course added successfully!";
+                $_SESSION['message_type'] = "success";
+            } else {
+                $_SESSION['message'] = "Error adding course: " . $conn->error;
+                $_SESSION['message_type'] = "error";
+            }
         } else {
-            $_SESSION['message'] = "Error adding course: " . $conn->error;
-            $_SESSION['message_type'] = "error";
+            // Store duplicate errors and form data for modal display
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST;
         }
         header("Location: ".$_SERVER['PHP_SELF']);
         exit();
@@ -366,6 +384,29 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
         </div>
         <?php endif; ?>
 
+        <!-- Duplicate Course Modal -->
+        <div id="duplicate-course-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Duplicate Course Detected</h2>
+                    <button class="close-modal" onclick="closeModal('duplicate-course-modal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="duplicate-errors">
+                        <p>The following duplicate entries were found:</p>
+                        <ul id="duplicateCourseErrorList">
+                            <!-- Errors will be populated by JavaScript -->
+                        </ul>
+                        <p>Please check your input and try again.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="goBackToCourseForm()">Go Back to Form</button>
+                    <button type="button" class="btn" onclick="closeModal('duplicate-course-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Courses Table -->
         <div class="table-container">
 
@@ -641,6 +682,20 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
         <?php
         unset($_SESSION['message']);
         unset($_SESSION['message_type']);
+        ?>
+    <?php endif; ?>
+
+    <!-- Duplicate Course Modal Script -->
+    <?php if (isset($_SESSION['duplicate_errors'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                populateDuplicateErrors(<?php echo json_encode($_SESSION['duplicate_errors']); ?>);
+                openModal('duplicate-course-modal');
+            });
+        </script>
+        <?php
+        unset($_SESSION['duplicate_errors']);
+        unset($_SESSION['form_data']);
         ?>
     <?php endif; ?>
 </body>
