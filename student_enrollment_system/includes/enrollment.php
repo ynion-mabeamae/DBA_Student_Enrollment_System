@@ -21,18 +21,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $date_enrolled = $_POST['date_enrolled'];
         $status = $_POST['status'];
         $letter_grade = $_POST['letter_grade'] ?? null;
-        
-        $sql = "INSERT INTO tblenrollment (student_id, section_id, date_enrolled, status, letter_grade) 
+
+        $sql = "INSERT INTO tblenrollment (student_id, section_id, date_enrolled, status, letter_grade)
                 VALUES (?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("iisss", $student_id, $section_id, $date_enrolled, $status, $letter_grade);
-        
+
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Enrollment added successfully!";
+            $_SESSION['message'] = "Enrollment added successfully!";
+            $_SESSION['message_type'] = "success";
+
+            // Calculate the page number for the student to show the new enrollment at the top
+            $student_query = $conn->prepare("SELECT last_name, first_name FROM tblstudent WHERE student_id = ?");
+            $student_query->bind_param("i", $student_id);
+            $student_query->execute();
+            $student_result = $student_query->get_result()->fetch_assoc();
+
+            if ($student_result) {
+                $last_name = $student_result['last_name'];
+                $first_name = $student_result['first_name'];
+
+                // Count students that come before this student in alphabetical order
+                $position_query = $conn->prepare("
+                    SELECT COUNT(*) as position
+                    FROM tblstudent
+                    WHERE is_active = TRUE
+                    AND (last_name < ? OR (last_name = ? AND first_name < ?))
+                ");
+                $position_query->bind_param("sss", $last_name, $last_name, $first_name);
+                $position_query->execute();
+                $position_result = $position_query->get_result()->fetch_assoc();
+                $position = $position_result['position'];
+
+                $page_num = floor($position / $records_per_page) + 1;
+
+                // Preserve existing query parameters and update page_num
+                $query_params = $_GET;
+                $query_params['page_num'] = $page_num;
+                $redirect_url = $_SERVER['PHP_SELF'] . '?' . http_build_query($query_params);
+
+                header("Location: " . $redirect_url);
+                exit();
+            }
         } else {
-            $_SESSION['message'] = "error::Error adding enrollment: " . $conn->error;
+            $_SESSION['message'] = "Error adding enrollment: " . $conn->error;
+            $_SESSION['message_type'] = "error";
         }
-        
+
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
@@ -52,9 +87,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("iisssi", $student_id, $section_id, $date_enrolled, $status, $letter_grade, $enrollment_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Enrollment updated successfully!";
+            $_SESSION['message'] = "Enrollment updated successfully!";
+            $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "error::Error updating enrollment: " . $conn->error;
+            $_SESSION['message'] = "Error updating enrollment: " . $conn->error;
+            $_SESSION['message_type'] = "error";
         }
         
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -70,9 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $enrollment_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Enrollment archived successfully!";
+            $_SESSION['message'] = "Enrollment archived successfully!";
+            $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "error::Error archiving enrollment: " . $conn->error;
+            $_SESSION['message'] = "Error archiving enrollment: " . $conn->error;
+            $_SESSION['message_type'] = "error";
         }
         
         header("Location: " . $_SERVER['PHP_SELF'] . "?page=enrollments");
@@ -88,9 +127,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $enrollment_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Enrollment restored successfully!";
+            $_SESSION['message'] = "Enrollment restored successfully!";
+            $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "error::Error restoring enrollment: " . $conn->error;
+            $_SESSION['message'] = "Error restoring enrollment: " . $conn->error;
+            $_SESSION['message_type'] = "error";
         }
         
         header("Location: " . $_SERVER['PHP_SELF'] . "?page=enrollments" . (isset($_GET['show_archived']) ? '&show_archived=true' : ''));
@@ -118,11 +159,11 @@ $search_params = [];
 
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search_term = $conn->real_escape_string($_GET['search']);
-    $search_condition .= "AND (s.student_no LIKE '%$search_term%' OR 
-                                 s.first_name LIKE '%$search_term%' OR 
-                                 s.last_name LIKE '%$search_term%' OR 
-                                 c.course_code LIKE '%$search_term%' OR 
-                                 c.course_title LIKE '%$search_term%' OR 
+    $search_condition .= "AND (s.student_no LIKE '%$search_term%' OR
+                                 s.first_name LIKE '%$search_term%' OR
+                                 s.last_name LIKE '%$search_term%' OR
+                                 c.course_code LIKE '%$search_term%' OR
+                                 c.course_title LIKE '%$search_term%' OR
                                  sec.section_code LIKE '%$search_term%' OR
                                  t.term_code LIKE '%$search_term%' OR
                                  e.status LIKE '%$search_term%')";
@@ -139,6 +180,48 @@ if (isset($_GET['course']) && !empty($_GET['course'])) {
     $course_id = $conn->real_escape_string($_GET['course']);
     $search_condition .= " AND c.course_id = '$course_id'";
     $search_params['course'] = $course_id;
+}
+
+// Pagination setup
+$records_per_page = 1; // One student per page for pagination
+$page = isset($_GET['page_num']) ? (int)$_GET['page_num'] : 1;
+$offset = ($page - 1) * $records_per_page;
+
+// Get total students with enrollments for pagination
+$total_students_query = "
+    SELECT COUNT(DISTINCT e.student_id) as total
+    FROM tblenrollment e
+    JOIN tblstudent s ON e.student_id = s.student_id
+    JOIN tblsection sec ON e.section_id = sec.section_id
+    JOIN tblcourse c ON sec.course_id = c.course_id
+    JOIN tblterm t ON sec.term_id = t.term_id
+    WHERE $status_condition $search_condition
+";
+$total_students_result = $conn->query($total_students_query);
+$total_students = $total_students_result->fetch_assoc()['total'];
+$total_pages = ceil($total_students / $records_per_page);
+
+// Get the student for current page
+$current_student_query = "
+    SELECT DISTINCT s.student_id, s.student_no, s.first_name, s.last_name
+    FROM tblenrollment e
+    JOIN tblstudent s ON e.student_id = s.student_id
+    JOIN tblsection sec ON e.section_id = sec.section_id
+    JOIN tblcourse c ON sec.course_id = c.course_id
+    JOIN tblterm t ON sec.term_id = t.term_id
+    WHERE $status_condition $search_condition
+    ORDER BY s.last_name, s.first_name
+    LIMIT 1 OFFSET $offset
+";
+$current_student_result = $conn->query($current_student_query);
+$current_student = $current_student_result->fetch_assoc();
+
+// If no specific student selected, use the current page's student
+if (!isset($_GET['student']) || empty($_GET['student'])) {
+    if ($current_student) {
+        $student_id = $current_student['student_id'];
+        $search_condition .= " AND e.student_id = '$student_id'";
+    }
 }
 
 // Get enrollment data for editing if enrollment_id is provided
@@ -163,7 +246,7 @@ if (isset($_GET['edit_id'])) {
 
 // Get all enrollments with student and course information
 $enrollments_query = "
-    SELECT e.*, s.student_no, s.first_name, s.last_name, 
+    SELECT e.*, s.student_no, s.first_name, s.last_name,
            c.course_code, c.course_title, sec.section_code,
            t.term_code, c.course_id
     FROM tblenrollment e
@@ -172,7 +255,7 @@ $enrollments_query = "
     JOIN tblcourse c ON sec.course_id = c.course_id
     JOIN tblterm t ON sec.term_id = t.term_id
     WHERE $status_condition $search_condition
-    ORDER BY e.date_enrolled DESC
+    ORDER BY e.enrollment_id DESC
 ";
 
 error_log("Enrollment Query: " . $enrollments_query);
@@ -211,6 +294,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
   <link rel="stylesheet" href="../styles/enrollment.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../styles/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     .course-code {
       font-weight: 600;
@@ -259,6 +343,51 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       background-color: #e2e3e5;
       color: #383d41;
     }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 16px;
+    }
+
+    .page-btn {
+      display: inline-block;
+      padding: 8px 12px;
+      background-color: #f8f9fa;
+      color: #495057;
+      text-decoration: none;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+
+    .page-btn:hover {
+      background-color: #e9ecef;
+      border-color: #adb5bd;
+    }
+
+    .page-btn.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .page-btn.disabled {
+      background-color: #e9ecef;
+      color: #6c757d;
+      border-color: #dee2e6;
+      cursor: not-allowed;
+    }
+
+    .page-dots {
+      padding: 8px 4px;
+      color: #6c757d;
+      font-size: 14px;
+    }
   </style>
 </head>
 <style>
@@ -269,25 +398,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
   <?php endif; ?>
 </style>
 <body>
-  <!-- Toast Notification Container -->
-  <div class="toast-container" id="toastContainer">
-    <?php if (isset($_SESSION['message'])): ?>
-        <?php 
-        $message = $_SESSION['message'];
-        list($type, $text) = explode('::', $message, 2);
-        ?>
-        <div class="toast <?php echo $type; ?>">
-            <i class="fas fa-<?php echo $type === 'success' ? 
-              'check-circle' : ($type === 'error' ? 
-              'exclamation-circle' : ($type === 'warning' ? 
-              'exclamation-triangle' : 'info-circle')); ?>"></i>
-            <?php echo $text; ?>
-        </div>
-        <?php 
-        unset($_SESSION['message']);
-        ?>
-    <?php endif; ?>
-  </div>
+
 
   <!-- Sidebar -->
     <div class="sidebar">
@@ -675,6 +786,72 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
           </p>
       </div>
       <?php endif; ?>
+
+      <!-- Pagination -->
+      <?php if ($total_pages > 1): ?>
+      <div class="pagination no-print">
+          <?php
+          // Build query string for pagination links
+          $query_params = $_GET;
+          unset($query_params['page_num']); // Remove page_num to rebuild it
+
+          $base_url = $_SERVER['PHP_SELF'] . '?' . http_build_query($query_params);
+          if (!empty($query_params)) {
+              $base_url .= '&';
+          } else {
+              $base_url .= '?';
+          }
+
+          // Previous button
+          if ($page > 1): ?>
+              <a href="<?php echo $base_url; ?>page_num=<?php echo $page - 1; ?>" class="page-btn">
+                  <i class="fas fa-chevron-left"></i> Previous
+              </a>
+          <?php else: ?>
+              <span class="page-btn disabled">
+                  <i class="fas fa-chevron-left"></i> Previous
+              </span>
+          <?php endif; ?>
+
+          <!-- Page numbers -->
+          <?php
+          $start_page = max(1, $page - 2);
+          $end_page = min($total_pages, $page + 2);
+
+          if ($start_page > 1): ?>
+              <a href="<?php echo $base_url; ?>page_num=1" class="page-btn">1</a>
+              <?php if ($start_page > 2): ?>
+                  <span class="page-dots">...</span>
+              <?php endif; ?>
+          <?php endif; ?>
+
+          <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+              <?php if ($i == $page): ?>
+                  <span class="page-btn active"><?php echo $i; ?></span>
+              <?php else: ?>
+                  <a href="<?php echo $base_url; ?>page_num=<?php echo $i; ?>" class="page-btn"><?php echo $i; ?></a>
+              <?php endif; ?>
+          <?php endfor; ?>
+
+          <?php if ($end_page < $total_pages): ?>
+              <?php if ($end_page < $total_pages - 1): ?>
+                  <span class="page-dots">...</span>
+              <?php endif; ?>
+              <a href="<?php echo $base_url; ?>page_num=<?php echo $total_pages; ?>" class="page-btn"><?php echo $total_pages; ?></a>
+          <?php endif; ?>
+
+          <!-- Next button -->
+          <?php if ($page < $total_pages): ?>
+              <a href="<?php echo $base_url; ?>page_num=<?php echo $page + 1; ?>" class="page-btn">
+                  Next <i class="fas fa-chevron-right"></i>
+              </a>
+          <?php else: ?>
+              <span class="page-btn disabled">
+                  Next <i class="fas fa-chevron-right"></i>
+              </span>
+          <?php endif; ?>
+      </div>
+      <?php endif; ?>
     </div>
 
     </div>
@@ -685,7 +862,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
     // Pass PHP data to JavaScript
     const isEditing = <?php echo $edit_enrollment ? 'true' : 'false'; ?>;
     const showArchived = <?php echo $show_archived ? 'true' : 'false'; ?>;
-    
+
     // Initialize the application
     document.addEventListener('DOMContentLoaded', function() {
       if (typeof EnrollmentManager !== 'undefined') {
@@ -693,5 +870,40 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       }
     });
   </script>
+
+  <!-- SweetAlert Notifications -->
+  <?php if (isset($_SESSION['message'])): ?>
+      <script>
+          document.addEventListener('DOMContentLoaded', function() {
+              const message = <?php echo json_encode($_SESSION['message']); ?>;
+              const type = <?php echo json_encode($_SESSION['message_type'] ?? 'info'); ?>;
+
+              let icon = 'info';
+              let title = 'Notification';
+              if (type === 'success') {
+                  icon = 'success';
+                  title = 'Success';
+              } else if (type === 'error') {
+                  icon = 'error';
+                  title = 'Error';
+              } else if (type === 'warning') {
+                  icon = 'warning';
+                  title = 'Warning';
+              }
+
+              Swal.fire({
+                  icon: icon,
+                  title: title,
+                  text: message,
+                  confirmButtonText: 'OK',
+                  confirmButtonColor: '#4361ee'
+              });
+          });
+      </script>
+      <?php
+      unset($_SESSION['message']);
+      unset($_SESSION['message_type']);
+      ?>
+  <?php endif; ?>
 </body>
 </html>

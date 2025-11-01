@@ -123,26 +123,9 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_acti
     <link rel="stylesheet" href="../styles/department.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-    <!-- Toast Notification Container -->
-    <div class="toast-container" id="toastContainer">
-        <?php if (isset($_SESSION['message'])): ?>
-            <?php 
-            $message = $_SESSION['message'];
-            list($type, $text) = explode('::', $message, 2);
-            unset($_SESSION['message']);
-            ?>
-            <div class="toast <?php echo $type; ?>">
-                <i class="fas fa-<?php echo $type === 'success' ? 
-                'check-circle' : ($type === 'error' ? 
-                'exclamation-circle' : ($type === 'warning' ? 
-                'exclamation-triangle' : 'info-circle')); ?>"></i>
-                <?php echo $text; ?>
-            </div>
-        <?php endif; ?>
-    </div>
-
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
@@ -382,11 +365,48 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_acti
     </div>
 
     <script src="../script/department.js"></script>
+
+    <!-- SweetAlert Notifications -->
+    <?php if (isset($_SESSION['message'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const fullMessage = <?php echo json_encode($_SESSION['message']); ?>;
+                const parts = fullMessage.split('::');
+                const type = parts[0];
+                const message = parts[1];
+
+                let icon = 'info';
+                let title = 'Notification';
+                if (type === 'success') {
+                    icon = 'success';
+                    title = 'Success';
+                } else if (type === 'error') {
+                    icon = 'error';
+                    title = 'Error';
+                } else if (type === 'warning') {
+                    icon = 'warning';
+                    title = 'Warning';
+                }
+
+                Swal.fire({
+                    icon: icon,
+                    title: title,
+                    text: message,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#4361ee'
+                });
+            });
+        </script>
+        <?php
+        unset($_SESSION['message']);
+        ?>
+    <?php endif; ?>
+
     <script>
         // Pass PHP data to JavaScript
         const showArchived = <?php echo $show_archived ? 'true' : 'false'; ?>;
         const isEditing = <?php echo $edit_department ? 'true' : 'false'; ?>;
-        
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof DepartmentManager !== 'undefined') {
@@ -399,19 +419,19 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_acti
             // Get current filter parameters
             const urlParams = new URLSearchParams(window.location.search);
             const showArchived = urlParams.get('show_archived') === 'true';
-            
+
             // Build export URL
             let exportUrl = `department_export_${type}.php?`;
-            
+
             if (showArchived) {
                 exportUrl += 'show_archived=true&';
             }
-            
+
             // Remove trailing & or ?
             exportUrl = exportUrl.replace(/[&?]$/, '');
-            
+
             console.log('Export URL:', exportUrl); // Debug log
-            
+
             // Open export in new window
             window.open(exportUrl, '_blank');
         }

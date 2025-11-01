@@ -26,9 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ssdiii", $course_code, $course_title, $units, $lecture_hours, $lab_hours, $dept_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Course added successfully!";
+            $_SESSION['message'] = "Course added successfully!";
+            $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "error::Error adding course: " . $conn->error;
+            $_SESSION['message'] = "Error adding course: " . $conn->error;
+            $_SESSION['message_type'] = "error";
         }
         header("Location: ".$_SERVER['PHP_SELF']);
         exit();
@@ -48,9 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ssdiiii", $course_code, $course_title, $units, $lecture_hours, $lab_hours, $dept_id, $course_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Course updated successfully!";
+            $_SESSION['message'] = "Course updated successfully!";
+            $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "error::Error updating course: " . $conn->error;
+            $_SESSION['message'] = "Error updating course: " . $conn->error;
+            $_SESSION['message_type'] = "error";
         }
         header("Location: ".$_SERVER['PHP_SELF']);
         exit();
@@ -65,9 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $course_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Course deleted successfully!";
+            $_SESSION['message'] = "Course deleted successfully!";
+            $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "error::Error deleted course: " . $conn->error;
+            $_SESSION['message'] = "Error deleted course: " . $conn->error;
+            $_SESSION['message_type'] = "error";
         }
         
         header("Location: " . $_SERVER['PHP_SELF'] . "?page=courses");
@@ -83,9 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $course_id);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Course restored successfully!";
+            $_SESSION['message'] = "Course restored successfully!";
+            $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "error::Error restoring course: " . $conn->error;
+            $_SESSION['message'] = "Error restoring course: " . $conn->error;
+            $_SESSION['message_type'] = "error";
         }
         
         header("Location: " . $_SERVER['PHP_SELF'] . "?page=courses" . (isset($_GET['show_archived']) ? '&show_archived=true' : ''));
@@ -156,6 +164,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
     <link rel="stylesheet" href="../styles/course.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body> 
     <!-- Sidebar -->
@@ -209,26 +218,6 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
                 <span>Terms</span>
             </a>
         </div>
-    </div>
-
-    <!-- Toast Notification Container -->
-    <div class="toast-container" id="toastContainer">
-        <?php if (isset($_SESSION['message'])): ?>
-            <?php 
-            $message = $_SESSION['message'];
-            list($type, $text) = explode('::', $message, 2);
-            ?>
-            <div class="toast <?php echo $type; ?>">
-                <i class="fas fa-<?php echo $type === 'success' ? 
-                'check-circle' : ($type === 'error' ? 
-                'exclamation-circle' : ($type === 'warning' ? 
-                'exclamation-triangle' : 'info-circle')); ?>"></i>
-                <?php echo $text; ?>
-            </div>
-            <?php 
-            unset($_SESSION['message']);
-            ?>
-        <?php endif; ?>
     </div>
 
     <div class="main-content">
@@ -616,41 +605,43 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
     </form>
 
     <script src="../script/course.js"></script>
-    <script>
-        // Check for session messages on page load
-        <?php if (isset($_SESSION['message'])): ?>
-            <?php 
-            $message = $_SESSION['message'];
-            unset($_SESSION['message']);
-            list($type, $text) = explode('::', $message, 2);
-            ?>
-            showToast('<?php echo addslashes($text); ?>', '<?php echo $type; ?>');
-        <?php endif; ?>
 
-        // Toast notification function
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            // Set icon based on type
-            let icon = 'check-circle';
-            if (type === 'error') icon = 'exclamation-circle';
-            if (type === 'warning') icon = 'exclamation-triangle';
-            if (type === 'info') icon = 'info-circle';
-            
-            toast.innerHTML = `
-                <i class="fas fa-${icon}"></i>
-                ${message}
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            // Remove toast after 5 seconds
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
-        }
-    </script>
+    <!-- SweetAlert2 Library -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- SweetAlert Notifications -->
+    <?php if (isset($_SESSION['message'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const message = <?php echo json_encode($_SESSION['message']); ?>;
+                const type = <?php echo json_encode($_SESSION['message_type'] ?? 'info'); ?>;
+
+                let icon = 'info';
+                let title = 'Notification';
+                if (type === 'success') {
+                    icon = 'success';
+                    title = 'Success';
+                } else if (type === 'error') {
+                    icon = 'error';
+                    title = 'Error';
+                } else if (type === 'warning') {
+                    icon = 'warning';
+                    title = 'Warning';
+                }
+
+                Swal.fire({
+                    icon: icon,
+                    title: title,
+                    text: message,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#4361ee'
+                });
+            });
+        </script>
+        <?php
+        unset($_SESSION['message']);
+        unset($_SESSION['message_type']);
+        ?>
+    <?php endif; ?>
 </body>
 </html>

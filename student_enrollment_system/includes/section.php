@@ -174,22 +174,9 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
     <link rel="stylesheet" href="../styles/section.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-    <!-- Toast Notification Container -->
-    <div class="toast-container" id="toastContainer">
-        <?php if (isset($_SESSION['message'])): ?>
-            <?php 
-            $message = $_SESSION['message'];
-            list($type, $text) = explode('::', $message, 2);
-            unset($_SESSION['message']);
-            ?>
-            <div class="toast <?php echo $type; ?>">
-                <i class="fas fa-<?php echo $type === 'success' ? 'check-circle' : ($type === 'error' ? 'exclamation-circle' : ($type === 'warning' ? 'exclamation-triangle' : 'info-circle')); ?>"></i>
-                <?php echo $text; ?>
-            </div>
-        <?php endif; ?>
-    </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -598,5 +585,24 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
     
 
     <script src="../script/section.js"></script>
+
+    <script>
+        // SweetAlert notification handling
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if (isset($_SESSION['message'])): ?>
+                <?php
+                $message = $_SESSION['message'];
+                list($type, $text) = explode('::', $message, 2);
+                unset($_SESSION['message']);
+                ?>
+                Swal.fire({
+                    icon: '<?php echo $type; ?>',
+                    title: '<?php echo ucfirst($type); ?>',
+                    text: '<?php echo $text; ?>',
+                    confirmButtonText: 'OK'
+                });
+            <?php endif; ?>
+        });
+    </script>
 </body>
 </html>

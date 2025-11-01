@@ -301,20 +301,41 @@ const EnrollmentManager = {
       }
   },
 
-  // Utility functions for toast notifications
+  // Utility functions for SweetAlert notifications
   showSuccessMessage: function(message) {
-      this.showToast(message, 'success');
+      Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: message,
+          timer: 3000,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+      });
   },
 
   showErrorMessage: function(message) {
-      this.showToast(message, 'error');
+      Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: message,
+          timer: 5000,
+          showConfirmButton: true,
+          toast: false,
+          position: 'center'
+      });
   },
 
   showToast: function(message, type) {
-      // Use the global showToast function defined in the HTML
-      if (typeof showToast === 'function') {
-          showToast(message, type);
-      }
+      Swal.fire({
+          icon: type,
+          title: type.charAt(0).toUpperCase() + type.slice(1),
+          text: message,
+          timer: type === 'error' ? 5000 : 3000,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+      });
   },
 
   // Student display functionality
