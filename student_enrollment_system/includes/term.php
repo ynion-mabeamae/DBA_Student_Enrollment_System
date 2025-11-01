@@ -137,7 +137,7 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Student Enrollment System</h2>
+            <h2>Enrollment Management System</h2>
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">

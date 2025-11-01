@@ -193,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
 
         <!-- Welcome Section -->
         <div class="welcome-section">
-            <h1><i class="fas fa-graduation-cap"></i> Student Enrollment System</h1>
+            <h1><i class="fas fa-graduation-cap"></i>Enrollment Management System</h1>
             <p>Manage student enrollments, courses, and academic records efficiently with our comprehensive enrollment system.</p>
         </div>
         

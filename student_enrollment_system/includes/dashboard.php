@@ -93,7 +93,7 @@ if ($result && $result->num_rows > 0) {
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Student Enrollment System</h2>
+            <h2>Enrollment Management System</h2>
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item active">

@@ -154,7 +154,7 @@ $total_programs = $show_archived ? $archived_programs_count : $active_programs_c
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Student Enrollment System</h2>
+            <h2>Enrollment Management System</h2>
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
