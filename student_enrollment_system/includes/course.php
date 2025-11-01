@@ -110,13 +110,37 @@ if (isset($_GET['department']) && !empty($_GET['department'])) {
     $department_condition = " AND c.dept_id = '$dept_id'";
 }
 
-// Get courses based on active status - NEWEST FIRST
+// Pagination settings
+$records_per_page = 10;
+$current_page = isset($_GET['page_num']) ? (int)$_GET['page_num'] : 1;
+$current_page = max(1, $current_page); // Ensure page is at least 1
+$offset = ($current_page - 1) * $records_per_page;
+
+// Get total count for pagination
+$total_query = "
+    SELECT COUNT(*) as total
+    FROM tblcourse c
+    LEFT JOIN tbldepartment d ON c.dept_id = d.dept_id
+    WHERE $status_condition $search_condition $department_condition
+";
+$total_result = $conn->query($total_query);
+$total_records = $total_result->fetch_assoc()['total'];
+$total_pages = ceil($total_records / $records_per_page);
+
+// Ensure current page doesn't exceed total pages
+if ($current_page > $total_pages && $total_pages > 0) {
+    $current_page = $total_pages;
+    $offset = ($current_page - 1) * $records_per_page;
+}
+
+// Get courses based on active status with pagination - NEWEST FIRST
 $courses = $conn->query("
-    SELECT c.*, d.dept_code, d.dept_name 
-    FROM tblcourse c 
+    SELECT c.*, d.dept_code, d.dept_name
+    FROM tblcourse c
     LEFT JOIN tbldepartment d ON c.dept_id = d.dept_id
     WHERE $status_condition $search_condition $department_condition
     ORDER BY c.course_id DESC, c.course_code
+    LIMIT $records_per_page OFFSET $offset
 ");
 
 // Get departments for dropdown
@@ -252,7 +276,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
                 <div class="search-box">
                     <div class="search-group">
                         <label>Search Courses</label>
-                        <input type="text" name="search" class="search-input" placeholder="Search by course code, title, or department..." 
+                        <input type="text" name="search" class="search-input" placeholder="Search by course code, title, or department..."
                                 value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     </div>
 
@@ -260,11 +284,11 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
                         <label>Department</label>
                         <select name="department" class="search-input">
                             <option value="">All Departments</option>
-                            <?php 
+                            <?php
                             $depts_search = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
-                            while($dept = $depts_search->fetch_assoc()): 
+                            while($dept = $depts_search->fetch_assoc()):
                             ?>
-                                <option value="<?php echo $dept['dept_id']; ?>" 
+                                <option value="<?php echo $dept['dept_id']; ?>"
                                     <?php echo (isset($_GET['department']) && $_GET['department'] == $dept['dept_id']) ? 'selected' : ''; ?>>
                                     <?php echo $dept['dept_name']; ?>
                                 </option>
@@ -355,7 +379,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
 
         <!-- Courses Table -->
         <div class="table-container">
-            
+
             <?php if ($courses->num_rows > 0): ?>
                 <table id="courses-table">
                     <thead>
@@ -412,7 +436,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
                                         <i class="fas fa-edit"></i>
                                         Edit
                                     </button>
-                                    <button class="btn btn-danger delete-btn" 
+                                    <button class="btn btn-danger delete-btn"
                                             data-course-id="<?php echo $course['course_id']; ?>"
                                             data-course-code="<?php echo htmlspecialchars($course['course_code']); ?>"
                                             data-course-title="<?php echo htmlspecialchars($course['course_title']); ?>">
@@ -437,6 +461,73 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
                 </div>
             <?php endif; ?>
         </div>
+
+        <!-- Pagination -->
+        <?php if ($total_pages > 1): ?>
+        <div class="pagination">
+            <?php
+            // Build query string for pagination links
+            $query_params = $_GET;
+            unset($query_params['page_num']); // Remove page_num to rebuild it
+
+            // Previous button
+            if ($current_page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $current_page - 1])); ?>" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            <?php else: ?>
+                <span class="pagination-btn disabled">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </span>
+            <?php endif; ?>
+
+            <!-- Page numbers -->
+            <?php
+            $start_page = max(1, $current_page - 2);
+            $end_page = min($total_pages, $current_page + 2);
+
+            // Show first page if not in range
+            if ($start_page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => 1])); ?>" class="pagination-btn">1</a>
+                <?php if ($start_page > 2): ?>
+                    <span class="pagination-info">...</span>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <!-- Page numbers in range -->
+            <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                <?php if ($i == $current_page): ?>
+                    <span class="pagination-btn disabled"><?php echo $i; ?></span>
+                <?php else: ?>
+                    <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $i])); ?>" class="pagination-btn"><?php echo $i; ?></a>
+                <?php endif; ?>
+            <?php endfor; ?>
+
+            <!-- Show last page if not in range -->
+            <?php if ($end_page < $total_pages): ?>
+                <?php if ($end_page < $total_pages - 1): ?>
+                    <span class="pagination-info">...</span>
+                <?php endif; ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $total_pages])); ?>" class="pagination-btn"><?php echo $total_pages; ?></a>
+            <?php endif; ?>
+
+            <!-- Next button -->
+            <?php if ($current_page < $total_pages): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $current_page + 1])); ?>" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <?php else: ?>
+                <span class="pagination-btn disabled">
+                    Next <i class="fas fa-chevron-right"></i>
+                </span>
+            <?php endif; ?>
+
+            <!-- Page info -->
+            <span class="pagination-info">
+                Page <?php echo $current_page; ?> of <?php echo $total_pages; ?> (<?php echo $total_records; ?> total records)
+            </span>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- Edit Course Modal -->
