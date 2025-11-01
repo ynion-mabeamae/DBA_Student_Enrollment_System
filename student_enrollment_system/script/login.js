@@ -102,24 +102,46 @@
 
         function createMovingLines() {
             const container = document.getElementById('movingLines');
-            
+
             for (let i = 0; i < 8; i++) {
                 const line = document.createElement('div');
                 line.className = 'line';
-                
+
                 // Random properties
                 const width = Math.random() * 200 + 50;
                 const height = Math.random() * 4 + 1;
                 const top = Math.random() * 100;
                 const duration = Math.random() * 30 + 20;
                 const delay = Math.random() * 10;
-                
+
                 line.style.width = `${width}px`;
                 line.style.height = `${height}px`;
                 line.style.top = `${top}%`;
                 line.style.animationDuration = `${duration}s`;
                 line.style.animationDelay = `${delay}s`;
-                
+
                 container.appendChild(line);
             }
         }
+
+        // Password toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleIcons = document.querySelectorAll('.toggle-password');
+
+            toggleIcons.forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        this.classList.remove('fa-eye');
+                        this.classList.add('fa-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        this.classList.remove('fa-eye-slash');
+                        this.classList.add('fa-eye');
+                    }
+                });
+            });
+        });

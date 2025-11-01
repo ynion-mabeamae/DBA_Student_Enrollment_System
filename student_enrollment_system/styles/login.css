@@ -119,13 +119,37 @@ body {
     font-size: 0.9rem;
 }
 
-.form-group input {
+.input-group {
+    position: relative;
+}
+
+.input-group input {
     width: 100%;
-    padding: 12px 15px;
+    padding: 12px 40px 12px 15px;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 1rem;
     transition: all 0.3s;
+}
+
+.input-group i {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #667eea;
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.input-group i.toggle-password {
+    cursor: pointer;
+    pointer-events: auto;
+    transition: color 0.3s;
+}
+
+.input-group i.toggle-password:hover {
+    color: #5a6fd8;
 }
 
 .form-group input:focus {

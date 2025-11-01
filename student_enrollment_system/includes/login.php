@@ -178,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Student Enrollment System</title>
+    <title>Login - Enrollment Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/login.css">
 </head>
@@ -222,14 +222,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
                 <form method="POST" action="">
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required 
-                            value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
-                            placeholder="Enter your email address">
+                        <div class="input-group">
+                            <input type="email" id="email" name="email" required
+                                value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
+                                placeholder="Enter your email address">
+                            <i class="fas fa-envelope"></i>
+                        </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required placeholder="Enter your password">
+                        <div class="input-group">
+                            <input type="password" id="password" name="password" required placeholder="Enter your password">
+                            <i class="fas fa-eye toggle-password" data-target="password"></i>
+                        </div>
                     </div>
                     
                     <button type="submit" name="login" class="btn">Sign In</button>
@@ -251,23 +257,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="first_name">First Name</label>
-                            <input type="text" id="first_name" name="first_name" required
-                                   value="<?php echo isset($_POST['first_name']) ? htmlspecialchars($_POST['first_name']) : ''; ?>"
-                                   placeholder="Enter your first name">
+                            <div class="input-group">
+                                <input type="text" id="first_name" name="first_name" required
+                                       value="<?php echo isset($_POST['first_name']) ? htmlspecialchars($_POST['first_name']) : ''; ?>"
+                                       placeholder="Enter your first name">
+                                <i class="fas fa-user"></i>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="last_name">Last Name</label>
-                            <input type="text" id="last_name" name="last_name" required
-                                   value="<?php echo isset($_POST['last_name']) ? htmlspecialchars($_POST['last_name']) : ''; ?>"
-                                   placeholder="Enter your last name">
+                            <div class="input-group">
+                                <input type="text" id="last_name" name="last_name" required
+                                       value="<?php echo isset($_POST['last_name']) ? htmlspecialchars($_POST['last_name']) : ''; ?>"
+                                       placeholder="Enter your last name">
+                                <i class="fas fa-user"></i>
+                            </div>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="reg_email">Email Address</label>
-                        <input type="email" id="reg_email" name="reg_email" required
-                               value="<?php echo isset($_POST['reg_email']) ? htmlspecialchars($_POST['reg_email']) : ''; ?>"
-                               placeholder="Enter your email address">
+                        <div class="input-group">
+                            <input type="email" id="reg_email" name="reg_email" required
+                                   value="<?php echo isset($_POST['reg_email']) ? htmlspecialchars($_POST['reg_email']) : ''; ?>"
+                                   placeholder="Enter your email address">
+                            <i class="fas fa-envelope"></i>
+                        </div>
                     </div>
 
                     <!-- Role Selection -->
@@ -283,13 +298,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
 
                     <div class="form-group">
                         <label for="reg_password">Password</label>
-                        <input type="password" id="reg_password" name="reg_password" required placeholder="Create a password (min. 6 characters)">
+                        <div class="input-group">
+                            <input type="password" id="reg_password" name="reg_password" required placeholder="Create a password (min. 6 characters)">
+                            <i class="fas fa-eye toggle-password" data-target="reg_password"></i>
+                        </div>
                         <div class="password-instructions">Must be at least 6 characters long</div>
                     </div>
 
                     <div class="form-group">
                         <label for="confirm_password">Confirm Password</label>
-                        <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm your password">
+                        <div class="input-group">
+                            <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm your password">
+                            <i class="fas fa-eye toggle-password" data-target="confirm_password"></i>
+                        </div>
                     </div>
 
                     <button type="submit" name="register" class="btn">Create Account</button>
@@ -332,15 +353,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
                     
                     <div class="form-group">
                         <label for="new_password">New Password</label>
-                        <input type="password" id="new_password" name="new_password" required 
-                               placeholder="Enter new password (min. 6 characters)">
+                        <div class="input-group">
+                            <input type="password" id="new_password" name="new_password" required
+                                   placeholder="Enter new password (min. 6 characters)">
+                            <i class="fas fa-eye toggle-password" data-target="new_password"></i>
+                        </div>
                         <div class="password-instructions">Must be at least 6 characters long</div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="confirm_new_password">Confirm New Password</label>
-                        <input type="password" id="confirm_new_password" name="confirm_new_password" required 
-                               placeholder="Confirm your new password">
+                        <div class="input-group">
+                            <input type="password" id="confirm_new_password" name="confirm_new_password" required
+                                   placeholder="Confirm your new password">
+                            <i class="fas fa-eye toggle-password" data-target="confirm_new_password"></i>
+                        </div>
                     </div>
                     
                     <button type="submit" name="reset_password" class="btn">Reset Password</button>
