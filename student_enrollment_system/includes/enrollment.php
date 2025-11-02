@@ -2,6 +2,9 @@
 session_start();
 require_once '../includes/config.php';
 
+// Pagination setup - define records per page
+$records_per_page = 1; // One student per page for pagination
+
 // Handle logout
 // if (isset($_GET['logout'])) {
 //     // Destroy all session data
@@ -30,45 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($stmt->execute()) {
             $_SESSION['message'] = "Enrollment added successfully!";
             $_SESSION['message_type'] = "success";
-
-            // Calculate the page number for the student to show the new enrollment at the top
-            $student_query = $conn->prepare("SELECT last_name, first_name FROM tblstudent WHERE student_id = ?");
-            $student_query->bind_param("i", $student_id);
-            $student_query->execute();
-            $student_result = $student_query->get_result()->fetch_assoc();
-
-            if ($student_result) {
-                $last_name = $student_result['last_name'];
-                $first_name = $student_result['first_name'];
-
-                // Count students that come before this student in alphabetical order
-                $position_query = $conn->prepare("
-                    SELECT COUNT(*) as position
-                    FROM tblstudent
-                    WHERE is_active = TRUE
-                    AND (last_name < ? OR (last_name = ? AND first_name < ?))
-                ");
-                $position_query->bind_param("sss", $last_name, $last_name, $first_name);
-                $position_query->execute();
-                $position_result = $position_query->get_result()->fetch_assoc();
-                $position = $position_result['position'];
-
-                $page_num = floor($position / $records_per_page) + 1;
-
-                // Preserve existing query parameters and update page_num
-                $query_params = $_GET;
-                $query_params['page_num'] = $page_num;
-                $redirect_url = $_SERVER['PHP_SELF'] . '?' . http_build_query($query_params);
-
-                header("Location: " . $redirect_url);
-                exit();
-            }
         } else {
             $_SESSION['message'] = "Error adding enrollment: " . $conn->error;
             $_SESSION['message_type'] = "error";
         }
 
-        header("Location: " . $_SERVER['PHP_SELF']);
+        // Preserve current query parameters to stay on the same page
+        $query_string = http_build_query($_GET);
+        $redirect_url = $_SERVER['PHP_SELF'] . ($query_string ? '?' . $query_string : '');
+        header("Location: " . $redirect_url);
         exit();
     }
     
@@ -353,38 +326,31 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       padding: 16px;
     }
 
-    .page-btn {
+    .pagination-btn {
       display: inline-block;
       padding: 8px 12px;
-      background-color: #f8f9fa;
-      color: #495057;
+      background-color: #007bff;
+      color: white;
       text-decoration: none;
-      border: 1px solid #dee2e6;
+      border: 1px solid #007bff;
       border-radius: 4px;
       transition: all 0.2s ease;
       font-size: 14px;
     }
 
-    .page-btn:hover {
-      background-color: #e9ecef;
-      border-color: #adb5bd;
+    .pagination-btn:hover {
+      background-color: #0056b3;
+      border-color: #0056b3;
     }
 
-    .page-btn.active {
-      background-color: #007bff;
+    .pagination-btn.disabled {
+      background-color: #6c757d;
       color: white;
-      border-color: #007bff;
-    }
-
-    .page-btn.disabled {
-      background-color: #e9ecef;
-      color: #6c757d;
-      border-color: #dee2e6;
+      border-color: #6c757d;
       cursor: not-allowed;
     }
 
-    .page-dots {
-      padding: 8px 4px;
+    .pagination-info {
       color: #6c757d;
       font-size: 14px;
     }
@@ -787,71 +753,72 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       </div>
       <?php endif; ?>
 
-      <!-- Pagination -->
-      <?php if ($total_pages > 1): ?>
-      <div class="pagination no-print">
-          <?php
-          // Build query string for pagination links
-          $query_params = $_GET;
-          unset($query_params['page_num']); // Remove page_num to rebuild it
+        <!-- Pagination -->
+        <?php if ($total_pages > 1): ?>
+        <div class="pagination">
+            <?php
+            // Build query string for pagination links
+            $query_params = $_GET;
+            unset($query_params['page_num']); // Remove page_num to rebuild it
 
-          $base_url = $_SERVER['PHP_SELF'] . '?' . http_build_query($query_params);
-          if (!empty($query_params)) {
-              $base_url .= '&';
-          } else {
-              $base_url .= '?';
-          }
+            // Previous button
+            if ($page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $page - 1])); ?>" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            <?php else: ?>
+                <span class="pagination-btn disabled">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </span>
+            <?php endif; ?>
 
-          // Previous button
-          if ($page > 1): ?>
-              <a href="<?php echo $base_url; ?>page_num=<?php echo $page - 1; ?>" class="page-btn">
-                  <i class="fas fa-chevron-left"></i> Previous
-              </a>
-          <?php else: ?>
-              <span class="page-btn disabled">
-                  <i class="fas fa-chevron-left"></i> Previous
-              </span>
-          <?php endif; ?>
+            <!-- Page numbers -->
+            <?php
+            $start_page = max(1, $page - 2);
+            $end_page = min($total_pages, $page + 2);
 
-          <!-- Page numbers -->
-          <?php
-          $start_page = max(1, $page - 2);
-          $end_page = min($total_pages, $page + 2);
+            // Show first page if not in range
+            if ($start_page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => 1])); ?>" class="pagination-btn">1</a>
+                <?php if ($start_page > 2): ?>
+                    <span class="pagination-info">...</span>
+                <?php endif; ?>
+            <?php endif; ?>
 
-          if ($start_page > 1): ?>
-              <a href="<?php echo $base_url; ?>page_num=1" class="page-btn">1</a>
-              <?php if ($start_page > 2): ?>
-                  <span class="page-dots">...</span>
-              <?php endif; ?>
-          <?php endif; ?>
+            <!-- Page numbers in range -->
+            <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                <?php if ($i == $page): ?>
+                    <span class="pagination-btn disabled"><?php echo $i; ?></span>
+                <?php else: ?>
+                    <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $i])); ?>" class="pagination-btn"><?php echo $i; ?></a>
+                <?php endif; ?>
+            <?php endfor; ?>
 
-          <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
-              <?php if ($i == $page): ?>
-                  <span class="page-btn active"><?php echo $i; ?></span>
-              <?php else: ?>
-                  <a href="<?php echo $base_url; ?>page_num=<?php echo $i; ?>" class="page-btn"><?php echo $i; ?></a>
-              <?php endif; ?>
-          <?php endfor; ?>
+            <!-- Show last page if not in range -->
+            <?php if ($end_page < $total_pages): ?>
+                <?php if ($end_page < $total_pages - 1): ?>
+                    <span class="pagination-info">...</span>
+                <?php endif; ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $total_pages])); ?>" class="pagination-btn"><?php echo $total_pages; ?></a>
+            <?php endif; ?>
 
-          <?php if ($end_page < $total_pages): ?>
-              <?php if ($end_page < $total_pages - 1): ?>
-                  <span class="page-dots">...</span>
-              <?php endif; ?>
-              <a href="<?php echo $base_url; ?>page_num=<?php echo $total_pages; ?>" class="page-btn"><?php echo $total_pages; ?></a>
-          <?php endif; ?>
+            <!-- Next button -->
+            <?php if ($page < $total_pages): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $page + 1])); ?>" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <?php else: ?>
+                <span class="pagination-btn disabled">
+                    Next <i class="fas fa-chevron-right"></i>
+                </span>
+            <?php endif; ?>
 
-          <!-- Next button -->
-          <?php if ($page < $total_pages): ?>
-              <a href="<?php echo $base_url; ?>page_num=<?php echo $page + 1; ?>" class="page-btn">
-                  Next <i class="fas fa-chevron-right"></i>
-              </a>
-          <?php else: ?>
-              <span class="page-btn disabled">
-                  Next <i class="fas fa-chevron-right"></i>
-              </span>
-          <?php endif; ?>
-      </div>
-      <?php endif; ?>
+            <!-- Page info -->
+            <span class="pagination-info">
+                Page <?php echo $page; ?> of <?php echo $total_pages; ?> (<?php echo $total_students; ?> total students)
+            </span>
+        </div>
+        <?php endif; ?>
     </div>
 
     </div>
