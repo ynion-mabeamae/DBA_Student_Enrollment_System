@@ -550,6 +550,10 @@ table td {
     vertical-align: middle;
 }
 
+table tbody td:first-child {
+    text-align: center;
+}
+
 /* Search and filter styles */
 .search-container {
     display: flex;
@@ -610,6 +614,7 @@ table td {
 .department-info {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
 }
 
@@ -619,15 +624,18 @@ table td {
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     font-size: 0.9rem;
+    text-align: center;
 }
 
 .department-name {
     font-weight: 500;
     color: #374151;
+    text-align: left;
+    justify-content: center;
 }
 
 .actions {
-    display: flex;
+    display: flex; 
     gap: 0.5rem;
     justify-content: center;
 }
