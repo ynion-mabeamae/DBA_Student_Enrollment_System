@@ -185,6 +185,13 @@ $total_programs = $show_archived ? $archived_programs_count : $active_programs_c
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
+            <!-- Logout Item -->
+            <div class="logout-item">
+                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
         </div>
     </div>
 

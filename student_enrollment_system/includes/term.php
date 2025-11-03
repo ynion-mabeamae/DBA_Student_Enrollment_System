@@ -169,6 +169,13 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </div>
+            <!-- Logout Item -->
+            <div class="logout-item">
+                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
         </div>
     </div>
 

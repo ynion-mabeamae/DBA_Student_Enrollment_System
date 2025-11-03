@@ -416,6 +416,13 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
+            <!-- Logout Item -->
+            <div class="logout-item">
+                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
         </div>
     </div>
 

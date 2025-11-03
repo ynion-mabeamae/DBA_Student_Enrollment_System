@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 // Handle logout
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../includes/login.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -36,12 +36,12 @@ $stats['programs'] = $result ? $result->fetch_assoc()['count'] : 0;
 
 // NEW: Students per Year Level (1st to 4th year only)
 $result = $conn->query("
-    SELECT 
+    SELECT
         year_level,
         COUNT(*) as student_count
-    FROM tblstudent 
+    FROM tblstudent
     WHERE year_level IN ('1', '2', '3', '4')
-    GROUP BY year_level 
+    GROUP BY year_level
     ORDER BY year_level
 ");
 $year_level_stats = [];
@@ -61,7 +61,7 @@ $stats['departments'] = $result ? $result->fetch_assoc()['count'] : 0;
 
 // NEW: Students per Program/Section (DIT, BSIT, etc.)
 $result = $conn->query("
-    SELECT 
+    SELECT
         p.program_code,
         p.program_name,
         COUNT(s.student_id) as student_count
@@ -154,38 +154,6 @@ if ($result && $result->num_rows > 0) {
     <div class="main-content">
         <div class="header">
             <h1>Dashboard Overview</h1>
-            <!-- <div class="user-info">
-                <div class="user-avatar">
-                    <?php 
-                    // Display user's first initial
-                    if (isset($_SESSION['first_name'])) {
-                        echo strtoupper(substr($_SESSION['first_name'], 0, 1));
-                    } else {
-                        echo 'A';
-                    }
-                    ?>
-                </div>
-                <div class="user-details">
-                    <div class="user-name">
-                        <?php 
-                        if (isset($_SESSION['first_name']) && isset($_SESSION['last_name'])) {
-                            echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']);
-                        } else {
-                            echo 'Admin User';
-                        }
-                        ?>
-                    </div>
-                    <div class="user-role">
-                        <?php 
-                        if (isset($_SESSION['role'])) {
-                            echo htmlspecialchars($_SESSION['role']);
-                        } else {
-                            echo 'Administrator';
-                        }
-                        ?>
-                    </div>
-                </div>
-            </div> -->
         </div>
 
         <!-- Stats Cards -->
@@ -246,7 +214,7 @@ if ($result && $result->num_rows > 0) {
                     <p>Total Prerequisites</p>
                 </div>
             </div>
-            
+
             <div class="stat-card rooms">
                 <div class="stat-icon">
                     <i class="fas fa-list"></i>
@@ -256,7 +224,7 @@ if ($result && $result->num_rows > 0) {
                     <p>Prerequisite Courses</p>
                 </div>
             </div>
-            
+
             <div class="stat-card terms">
                 <div class="stat-icon">
                     <i class="fas fa-chart-bar"></i>
@@ -266,14 +234,14 @@ if ($result && $result->num_rows > 0) {
                     <p>Active Programs</p>
                 </div>
             </div>
-            
+
             <div class="stat-card instructors">
                 <div class="stat-icon">
                     <i class="fas fa-chalkboard-teacher"></i>
                 </div>
                 <div class="stat-info">
                     <h3>
-                        <?php 
+                        <?php
                         $result = $conn->query("SELECT COUNT(*) as count FROM tblinstructor");
                         echo $result ? $result->fetch_assoc()['count'] : 0;
                         ?>
@@ -310,14 +278,14 @@ if ($result && $result->num_rows > 0) {
         <!-- Programs/Sections Distribution -->
         <div class="table-container section-spacing">
             <h2>Students by Program/Section</h2>
-            
+
             <div class="program-cards">
                 <?php
                 if (!empty($program_stats)):
                     foreach ($program_stats as $program):
                         $program_class = 'default';
                         $program_code_lower = strtolower($program['program_code']);
-                        
+
                         // Assign specific classes based on program code
                         if (strpos($program_code_lower, 'dit') !== false) {
                             $program_class = 'dit';
@@ -342,7 +310,7 @@ if ($result && $result->num_rows > 0) {
                         } elseif (strpos($program_code_lower, 'bspsy') !== false) {
                             $program_class = 'bspsy';
                         }
-                        
+
                         $percentage = $stats['students'] > 0 ? round(($program['student_count'] / $stats['students']) * 100, 1) : 0;
                 ?>
                 <div class="program-card <?php echo $program_class; ?>">
@@ -351,9 +319,9 @@ if ($result && $result->num_rows > 0) {
                     <div class="student-count"><?php echo $program['student_count']; ?></div>
                     <div class="student-label"><?php echo $percentage; ?>% of total students</div>
                 </div>
-                <?php 
+                <?php
                     endforeach;
-                else: 
+                else:
                 ?>
                 <div class="program-card default">
                     <div class="program-code">No Programs</div>
@@ -368,13 +336,13 @@ if ($result && $result->num_rows > 0) {
         <!-- Students Per Year Level Section -->
         <div class="table-container section-spacing">
             <h2>Students Distribution by Year Level (1st - 4th Year)</h2>
-            
+
             <div class="year-level-cards">
                 <?php
                 // Define year level labels for 1st to 4th year only
                 $year_level_labels = [
                     '1' => 'First Year',
-                    '2' => 'Second Year', 
+                    '2' => 'Second Year',
                     '3' => 'Third Year',
                     '4' => 'Fourth Year'
                 ];
@@ -390,7 +358,7 @@ if ($result && $result->num_rows > 0) {
                     <div class="label"><?php echo $percentage; ?>% of total</div>
                 </div>
                 <?php } ?>
-                
+
                 <!-- Total Students Card -->
                 <div class="year-level-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                     <div class="level" style="color: white;">All Students</div>
@@ -403,7 +371,7 @@ if ($result && $result->num_rows > 0) {
 
     <script>
         // Your existing JavaScript code for modals and functionality...
-        
+
         // Additional JavaScript for dashboard interactions
         document.addEventListener('DOMContentLoaded', function() {
             // Add click animations to cards
