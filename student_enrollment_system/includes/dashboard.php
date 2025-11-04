@@ -141,8 +141,9 @@ if ($result && $result->num_rows > 0) {
                 <span>Terms</span>
             </a>
             <!-- Logout Item -->
+            <!-- Logout Item -->
             <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                <a href="#" class="menu-item" onclick="openLogoutModal()">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
@@ -369,6 +370,18 @@ if ($result && $result->num_rows > 0) {
         </div>
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="delete-confirmation" id="logoutConfirmation">
+        <div class="confirmation-dialog">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div class="confirmation-actions">
+                <button class="confirm-delete" id="confirmLogout">Yes, Logout</button>
+                <button class="cancel-delete" id="cancelLogout">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Your existing JavaScript code for modals and functionality...
 
@@ -411,6 +424,44 @@ if ($result && $result->num_rows > 0) {
                         }, 300);
                     }
                 }, 5000);
+            });
+        });
+
+                // Logout Modal Functions
+        function openLogoutModal() {
+            document.getElementById('logoutConfirmation').style.display = 'flex';
+        }
+
+        function closeLogoutModal() {
+            document.getElementById('logoutConfirmation').style.display = 'none';
+        }
+
+        // Add click animations to cards
+        document.addEventListener('DOMContentLoaded', function() {
+            // Logout modal buttons
+            document.getElementById('confirmLogout').addEventListener('click', function() {
+                window.location.href = '?logout=true';
+            });
+
+            document.getElementById('cancelLogout').addEventListener('click', function() {
+                closeLogoutModal();
+            });
+
+            // Close modal when clicking outside
+            document.getElementById('logoutConfirmation').addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeLogoutModal();
+                }
+            });
+
+            const cards = document.querySelectorAll('.stat-card, .enrollment-card, .action-card');
+            cards.forEach(card => {
+                card.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
             });
         });
     </script>
