@@ -12,22 +12,22 @@ $error = '';
 
 // Handle Login
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
-    $student_no = trim($_POST['student_no'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if (empty($student_no) || empty($password)) {
-        $error = "Please enter both student number and password.";
+    if (empty($email) || empty($password)) {
+        $error = "Please enter both email and password.";
     } else {
-        // Get email from tblstudent
-        $student_sql = "SELECT email FROM tblstudent WHERE student_no = ? AND is_active = TRUE";
+        // Check if email exists in tblstudent and get student_id
+        $student_sql = "SELECT student_id FROM tblstudent WHERE email = ? AND is_active = TRUE";
         $student_stmt = $conn->prepare($student_sql);
-        $student_stmt->bind_param("s", $student_no);
+        $student_stmt->bind_param("s", $email);
         $student_stmt->execute();
         $student_result = $student_stmt->get_result();
 
         if ($student_result->num_rows === 1) {
             $student = $student_result->fetch_assoc();
-            $email = $student['email'];
+            $student_id = $student['student_id'];
 
             // Check password in users table
             $user_sql = "SELECT * FROM users WHERE email = ? AND role = 'student'";
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
                 $user = $user_result->fetch_assoc();
 
                 if (password_verify($password, $user['password_hash'])) {
-                    $_SESSION['user_id'] = $user['user_id'];
+                    $_SESSION['user_id'] = $student_id;
                     $_SESSION['email'] = $user['email'];
                     $_SESSION['role'] = 'student';
                     $_SESSION['first_name'] = $user['first_name'];
@@ -50,14 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
                     header("Location: student_dashboard.php");
                     exit();
                 } else {
-                    $error = "Invalid student number or password.";
+                    $error = "Invalid email or password.";
                 }
             } else {
-                $error = "Invalid student number or password.";
+                $error = "Invalid email or password.";
             }
             $user_stmt->close();
         } else {
-            $error = "Invalid student number or password.";
+            $error = "Invalid email or password.";
         }
         $student_stmt->close();
     }
@@ -98,17 +98,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
                 <div class="form-container active" id="login-form">
                     <div class="form-header">
                         <h2>Student Login</h2>
-                        <p>Sign in with your student number</p>
+                        <p>Sign in with your email</p>
                     </div>
 
                     <form method="POST" action="">
                         <div class="form-group">
-                            <label for="student_no">Student Number</label>
+                            <label for="email">Email</label>
                             <div class="input-group">
-                                <input type="text" id="student_no" name="student_no" required
-                                    value="<?php echo isset($_POST['student_no']) ? htmlspecialchars($_POST['student_no']) : ''; ?>"
-                                    placeholder="Enter your student number">
-                                <i class="fas fa-id-card"></i>
+                                <input type="email" id="email" name="email" required
+                                    value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
+                                    placeholder="Enter your email">
+                                <i class="fas fa-envelope"></i>
                             </div>
                         </div>
 

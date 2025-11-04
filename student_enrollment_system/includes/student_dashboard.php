@@ -4,14 +4,14 @@ require_once 'config.php';
 
 // Check if user is logged in and is a student
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
-    header("Location: ../index.php");
+    header("Location: ../includes/index.php");
     exit();
 }
 
 // Handle logout
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../index.php");
+    header("Location: ../includes/index.php");
     exit();
 }
 
@@ -24,9 +24,26 @@ $student_query = "
     WHERE s.student_id = ? AND s.is_active = TRUE
 ";
 $stmt = $conn->prepare($student_query);
+if (!$stmt) {
+    // Handle database error
+    session_destroy();
+    header("Location: ../index.php?error=database_error");
+    exit();
+}
 $stmt->bind_param("i", $user_id);
-$stmt->execute();
+if (!$stmt->execute()) {
+    // Handle execution error
+    session_destroy();
+    header("Location: ../index.php?error=database_error");
+    exit();
+}
 $student_result = $stmt->get_result();
+if (!$student_result) {
+    // Handle result error
+    session_destroy();
+    header("Location: ../index.php?error=database_error");
+    exit();
+}
 $student = $student_result->fetch_assoc();
 
 if (!$student) {
@@ -49,9 +66,19 @@ $current_enrollments_query = "
     ORDER BY t.term_code DESC, c.course_code ASC
 ";
 $stmt = $conn->prepare($current_enrollments_query);
-$stmt->bind_param("i", $student['student_id']);
-$stmt->execute();
-$current_enrollments = $stmt->get_result();
+if (!$stmt) {
+    $current_enrollments = false;
+} else {
+    $stmt->bind_param("i", $student['student_id']);
+    if (!$stmt->execute()) {
+        $current_enrollments = false;
+    } else {
+        $current_enrollments = $stmt->get_result();
+        if (!$current_enrollments) {
+            $current_enrollments = false;
+        }
+    }
+}
 
 // Get completed courses with grades
 $completed_enrollments_query = "
@@ -64,13 +91,23 @@ $completed_enrollments_query = "
     ORDER BY t.term_code DESC, c.course_code ASC
 ";
 $stmt = $conn->prepare($completed_enrollments_query);
-$stmt->bind_param("i", $student['student_id']);
-$stmt->execute();
-$completed_enrollments = $stmt->get_result();
+if (!$stmt) {
+    $completed_enrollments = false;
+} else {
+    $stmt->bind_param("i", $student['student_id']);
+    if (!$stmt->execute()) {
+        $completed_enrollments = false;
+    } else {
+        $completed_enrollments = $stmt->get_result();
+        if (!$completed_enrollments) {
+            $completed_enrollments = false;
+        }
+    }
+}
 
 // Calculate GPA
 $gpa = 0;
-$completed_count = $completed_enrollments->num_rows;
+$completed_count = $completed_enrollments ? $completed_enrollments->num_rows : 0;
 if ($completed_count > 0) {
     $total_points = 0;
     $completed_enrollments->data_seek(0);
@@ -142,7 +179,7 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
             </a>
             <!-- Logout Item -->
             <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                <a href="#" class="menu-item" onclick="openLogoutModal()">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
@@ -170,7 +207,7 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                     <i class="fas fa-book-open"></i>
                 </div>
                 <div class="stat-info">
-                    <h3><?php echo $current_enrollments->num_rows; ?></h3>
+                    <h3><?php echo $current_enrollments ? $current_enrollments->num_rows : 0; ?></h3>
                     <p>Current Enrollments</p>
                 </div>
             </div>
@@ -216,12 +253,12 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                 <a href="student_enrollments.php" class="view-all-link">View All</a>
             </div>
 
-            <?php if ($current_enrollments->num_rows > 0): ?>
+            <?php if ($current_enrollments && $current_enrollments->num_rows > 0): ?>
                 <div class="enrollment-cards">
                     <?php
                     $current_enrollments->data_seek(0);
                     $count = 0;
-                    while ($enrollment = $current_enrollments->fetch_assoc() && $count < 3):
+                    while ($count < 3 && ($enrollment = $current_enrollments->fetch_assoc())):
                         $count++;
                     ?>
                     <div class="enrollment-card">
@@ -319,9 +356,46 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
         </div>
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="delete-confirmation" id="logoutConfirmation">
+        <div class="confirmation-dialog">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div class="confirmation-actions">
+                <button class="confirm-delete" id="confirmLogout">Yes, Logout</button>
+                <button class="cancel-delete" id="cancelLogout">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Logout Modal Functions
+        function openLogoutModal() {
+            document.getElementById('logoutConfirmation').style.display = 'flex';
+        }
+
+        function closeLogoutModal() {
+            document.getElementById('logoutConfirmation').style.display = 'none';
+        }
+
         // Add click animations to cards
         document.addEventListener('DOMContentLoaded', function() {
+            // Logout modal buttons
+            document.getElementById('confirmLogout').addEventListener('click', function() {
+                window.location.href = '?logout=true';
+            });
+
+            document.getElementById('cancelLogout').addEventListener('click', function() {
+                closeLogoutModal();
+            });
+
+            // Close modal when clicking outside
+            document.getElementById('logoutConfirmation').addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeLogoutModal();
+                }
+            });
+
             const cards = document.querySelectorAll('.stat-card, .enrollment-card, .action-card');
             cards.forEach(card => {
                 card.addEventListener('click', function() {

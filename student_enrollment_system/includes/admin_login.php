@@ -68,8 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
 
         if ($role === 'student') {
             $student_no = trim($_POST['student_no'] ?? '');
+            $email = trim($_POST['email'] ?? '');
             if (empty($student_no)) {
                 $error = "Please enter student number.";
+            } elseif (empty($email)) {
+                $error = "Please enter email.";
             } else {
                 // Check if student_no already exists
                 $check_sql = "SELECT student_id FROM tblstudent WHERE student_no = ?";
@@ -81,28 +84,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
                 if ($check_result->num_rows > 0) {
                     $error = "Student number already exists. Please use a different student number.";
                 } else {
-                    // Insert into tblstudent
-                    $student_sql = "INSERT INTO tblstudent (student_no, email, first_name, last_name, is_active) VALUES (?, ?, ?, ?, TRUE)";
-                    $student_stmt = $conn->prepare($student_sql);
-                    $student_stmt->bind_param("ssss", $student_no, $student_no, $first_name, $last_name);
+                    // Check if email already exists
+                    $email_check_sql = "SELECT user_id FROM users WHERE email = ?";
+                    $email_check_stmt = $conn->prepare($email_check_sql);
+                    $email_check_stmt->bind_param("s", $email);
+                    $email_check_stmt->execute();
+                    $email_check_result = $email_check_stmt->get_result();
 
-                    if ($student_stmt->execute()) {
-                        // Insert into users table
+                    if ($email_check_result->num_rows > 0) {
+                        $error = "Email already exists. Please use a different email.";
+                    } else {
+                        // Insert into users table first to get user_id
                         $user_sql = "INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES (?, ?, ?, ?, ?)";
                         $user_stmt = $conn->prepare($user_sql);
-                        $user_stmt->bind_param("sssss", $student_no, $password_hash, $first_name, $last_name, $role);
+                        $user_stmt->bind_param("sssss", $email, $password_hash, $first_name, $last_name, $role);
 
                         if ($user_stmt->execute()) {
-                            $success = "Student account created successfully!";
-                            $_POST = [];
+                            $user_id = $conn->insert_id;
+
+                            // Insert into tblstudent with student_id = user_id
+                            $student_sql = "INSERT INTO tblstudent (student_id, student_no, email, first_name, last_name, is_active) VALUES (?, ?, ?, ?, ?, TRUE)";
+                            $student_stmt = $conn->prepare($student_sql);
+                            $student_stmt->bind_param("sssss", $user_id, $student_no, $email, $first_name, $last_name);
+
+                            if ($student_stmt->execute()) {
+                                $success = "Student account created successfully!";
+                                $_POST = [];
+                            } else {
+                                // Delete the user if student insert failed
+                                $delete_sql = "DELETE FROM users WHERE user_id = ?";
+                                $delete_stmt = $conn->prepare($delete_sql);
+                                $delete_stmt->bind_param("i", $user_id);
+                                $delete_stmt->execute();
+                                $delete_stmt->close();
+                                $error = "Failed to create student record. Please try again.";
+                            }
+                            $student_stmt->close();
                         } else {
                             $error = "Failed to create user account. Please try again.";
                         }
                         $user_stmt->close();
-                    } else {
-                        $error = "Failed to create student record. Please try again.";
                     }
-                    $student_stmt->close();
+                    $email_check_stmt->close();
                 }
                 $check_stmt->close();
             }
@@ -128,6 +151,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
 
                     if ($user_stmt->execute()) {
                         $success = "Instructor account created successfully!";
+                        $_POST = [];
+                    } else {
+                        $error = "Registration failed. Please try again.";
+                    }
+                    $user_stmt->close();
+                }
+                $check_stmt->close();
+            }
+        } elseif ($role === 'admin') {
+            $username = trim($_POST['username'] ?? '');
+            if (empty($username)) {
+                $error = "Please enter username.";
+            } else {
+                // Check if username already exists
+                $check_sql = "SELECT user_id FROM users WHERE email = ?";
+                $check_stmt = $conn->prepare($check_sql);
+                $check_stmt->bind_param("s", $username);
+                $check_stmt->execute();
+                $check_result = $check_stmt->get_result();
+
+                if ($check_result->num_rows > 0) {
+                    $error = "Username already exists. Please use a different username.";
+                } else {
+                    // Insert into users table
+                    $user_sql = "INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES (?, ?, ?, ?, ?)";
+                    $user_stmt = $conn->prepare($user_sql);
+                    $user_stmt->bind_param("sssss", $username, $password_hash, $first_name, $last_name, $role);
+
+                    if ($user_stmt->execute()) {
+                        $success = "Admin account created successfully!";
                         $_POST = [];
                     } else {
                         $error = "Registration failed. Please try again.";
@@ -202,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
             gap: 30px;
             max-width: 1200px;
             margin: 0 auto;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
         }
 
         .login-card {
@@ -531,6 +584,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
                     Create new instructor accounts for course management and student supervision.
                 </p>
             </div>
+
+            <div class="login-card" onclick="openModal('admin-modal')">
+                <i class="fas fa-user-cog card-icon admin-icon"></i>
+                <h2 class="card-title">Create Admin Account</h2>
+                <p class="card-description">
+                    Create new admin accounts for system administration and full access management.
+                </p>
+            </div>
         </div>
 
         <div class="back-link">
@@ -617,6 +678,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
                 </div>
 
                 <div class="form-group">
+                    <label for="student_email">Email</label>
+                    <input type="email" id="student_email" name="email" required
+                           value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
+                           placeholder="Enter email address">
+                </div>
+
+                <div class="form-group">
                     <label for="student_password">Password</label>
                     <div class="input-group">
                         <input type="password" id="student_password" name="reg_password" required placeholder="Create a password (min. 6 characters)">
@@ -697,6 +765,69 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
                 </div>
 
                 <button type="submit" name="register" class="btn">Create Instructor Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Registration Modal -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('admin-modal')">&times;</span>
+            <div class="form-header" style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: #333; margin-bottom: 10px;">Create Admin Account</h2>
+                <p style="color: #666;">Add a new admin to the system</p>
+            </div>
+
+            <?php if (!empty($error)): ?>
+                <div class="alert alert-error"><?php echo $error; ?></div>
+            <?php endif; ?>
+
+            <?php if (!empty($success)): ?>
+                <div class="alert alert-success"><?php echo $success; ?></div>
+            <?php endif; ?>
+
+            <form method="POST" action="">
+                <input type="hidden" name="role" value="admin">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="admin_first_name">First Name</label>
+                        <input type="text" id="admin_first_name" name="first_name" required
+                               value="<?php echo isset($_POST['first_name']) ? htmlspecialchars($_POST['first_name']) : ''; ?>"
+                               placeholder="Enter first name">
+                    </div>
+                    <div class="form-group">
+                        <label for="admin_last_name">Last Name</label>
+                        <input type="text" id="admin_last_name" name="last_name" required
+                               value="<?php echo isset($_POST['last_name']) ? htmlspecialchars($_POST['last_name']) : ''; ?>"
+                               placeholder="Enter last name">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="admin_username">Username</label>
+                    <input type="text" id="admin_username" name="username" required
+                           value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>"
+                           placeholder="Enter username">
+                </div>
+
+                <div class="form-group">
+                    <label for="admin_password">Password</label>
+                    <div class="input-group">
+                        <input type="password" id="admin_password" name="reg_password" required placeholder="Create a password (min. 6 characters)">
+                        <i class="fas fa-eye toggle-password" data-target="admin_password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #667eea; cursor: pointer;"></i>
+                    </div>
+                    <div class="password-instructions">Must be at least 6 characters long</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="admin_confirm_password">Confirm Password</label>
+                    <div class="input-group">
+                        <input type="password" id="admin_confirm_password" name="confirm_password" required placeholder="Confirm password">
+                        <i class="fas fa-eye toggle-password" data-target="admin_confirm_password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #667eea; cursor: pointer;"></i>
+                    </div>
+                </div>
+
+                <button type="submit" name="register" class="btn">Create Admin Account</button>
             </form>
         </div>
     </div>

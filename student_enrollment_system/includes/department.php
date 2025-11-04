@@ -1,15 +1,13 @@
-<?php
+in  <?php
 session_start();
 require_once '../includes/config.php';
 
 // Handle logout
-// if (isset($_GET['logout'])) {
-//     // Destroy all session data
-//     session_destroy();
-//     // Redirect to login page
-//     header("Location: ../includes/login.php");
-//     exit();
-// }
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: ../includes/index.php");
+    exit();
+}
 
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'department';
 
