@@ -367,7 +367,7 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
   <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Enrollment Management System</h2>
+            <img src="../assets/EMS.png" alt="EMS Logo">
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">

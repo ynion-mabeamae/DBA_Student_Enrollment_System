@@ -14,7 +14,7 @@
     --light: #f8f9fa;
     --dark: #212529;
     --gray: #6c757d;
-    --sidebar-width: 250px;
+    --sidebar-width: 200px;
     --danger-color: #e63946;
     --light-bg: #f8f9fa;
     --dark-text: #212529;
@@ -27,6 +27,13 @@ body {
     color: var(--dark);
     display: flex;
     min-height: 100vh;
+}
+
+img {
+    width: 70px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
 }
 
 /* Additional styles for year level cards */
@@ -246,8 +253,8 @@ body {
 }
 
 .sidebar-header h2 {
-    font-size: 1.5rem;
-    margin-bottom: 5px;
+    display:flex;
+    align-items: center;
 }
 
 .sidebar-header p {

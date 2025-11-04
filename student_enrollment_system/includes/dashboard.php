@@ -92,8 +92,8 @@ if ($result && $result->num_rows > 0) {
 
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-header">
-            <h2>Enrollment Management System</h2>
+        <div class="sidebar-header" style="display: flex; align-items: center;">
+            <img src="../assets/EMS.png" alt="EMS Logo">
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item active">

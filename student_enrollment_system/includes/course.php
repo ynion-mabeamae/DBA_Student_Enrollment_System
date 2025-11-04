@@ -188,7 +188,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Enrollment Management System</h2>
+            <img src="../assets/EMS.png" alt="EMS Logo">
         </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
