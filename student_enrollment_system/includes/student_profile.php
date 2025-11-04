@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
             </a>
             <!-- Logout Item -->
             <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                <a href="#" class="menu-item" onclick="openLogoutModal()">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
@@ -308,7 +308,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
         </div>
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="delete-confirmation" id="logoutConfirmation">
+        <div class="confirmation-dialog">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div class="confirmation-actions">
+                <button class="confirm-delete" id="confirmLogout">Yes, Logout</button>
+                <button class="cancel-delete" id="cancelLogout">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Logout Modal Functions
+        function openLogoutModal() {
+            document.getElementById('logoutConfirmation').style.display = 'flex';
+        }
+
+        function closeLogoutModal() {
+            document.getElementById('logoutConfirmation').style.display = 'none';
+        }
+
         // Password confirmation validation
         document.getElementById('confirm_password').addEventListener('input', function() {
             const newPassword = document.getElementById('new_password').value;
@@ -323,6 +344,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 
         // Auto-hide alerts after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
+            // Logout modal buttons
+            document.getElementById('confirmLogout').addEventListener('click', function() {
+                window.location.href = '?logout=true';
+            });
+
+            document.getElementById('cancelLogout').addEventListener('click', function() {
+                closeLogoutModal();
+            });
+
+            // Close modal when clicking outside
+            document.getElementById('logoutConfirmation').addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeLogoutModal();
+                }
+            });
+
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
                 setTimeout(() => {
