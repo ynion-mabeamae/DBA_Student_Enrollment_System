@@ -4,14 +4,14 @@ require_once 'config.php';
 
 // Check if user is logged in and is a student
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
-    header("Location: ../includes/index.php");
+    header("Location: ../includes/student_login.php");
     exit();
 }
 
 // Handle logout
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../includes/index.php");
+    header("Location: ../includes/student_login.php");
     exit();
 }
 
