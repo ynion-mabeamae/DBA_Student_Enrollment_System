@@ -2,6 +2,13 @@
 session_start();
 require_once '../includes/config.php';
 
+// Handle logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: ../includes/index.php");
+    exit();
+}
+
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'program';
 
 // Handle show archived toggle
@@ -187,10 +194,22 @@ $total_programs = $show_archived ? $archived_programs_count : $active_programs_c
             </a>
             <!-- Logout Item -->
             <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                <a href="#" class="menu-item" onclick="openLogoutModal()">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
+            </div>
+        </div>
+    </div>
+
+            <!-- Logout Confirmation Modal -->
+    <div class="delete-confirmation" id="logoutConfirmation">
+        <div class="confirmation-dialog">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div class="confirmation-actions">
+                <button class="confirm-delete" id="confirmLogout">Yes, Logout</button>
+                <button class="cancel-delete" id="cancelLogout">Cancel</button>
             </div>
         </div>
     </div>
@@ -422,6 +441,34 @@ $total_programs = $show_archived ? $archived_programs_count : $active_programs_c
                     confirmButtonText: 'OK'
                 });
             <?php endif; ?>
+        });
+
+                // Logout modal functions
+        function openLogoutModal() {
+            const modal = document.getElementById('logoutConfirmation');
+            modal.style.display = 'flex';
+        }
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutConfirmation');
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modal.style.opacity = '1';
+            }, 300);
+        }
+
+        // Event listeners for logout modal
+        document.getElementById('confirmLogout').addEventListener('click', function() {
+            window.location.href = '?logout=true';
+        });
+        document.getElementById('cancelLogout').addEventListener('click', function() {
+            closeLogoutModal();
+        });
+        // Close modal when clicking outside
+        document.getElementById('logoutConfirmation').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeLogoutModal();
+            }
         });
     </script>
 </body>

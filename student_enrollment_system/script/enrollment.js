@@ -857,5 +857,52 @@ function displaySearchInfo() {
     }
 }
 
+// Logout Modal Functions
+function openLogoutModal() {
+    const modal = document.getElementById('logoutConfirmation');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.style.opacity = '1';
+    }, 10);
+}
+
+function closeLogoutModal() {
+    const modal = document.getElementById('logoutConfirmation');
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}
+
+// Add click animations to cards
+document.addEventListener('DOMContentLoaded', function() {
+    // Logout modal buttons
+    document.getElementById('confirmLogout').addEventListener('click', function() {
+        window.location.href = '?logout=true';
+    });
+
+    document.getElementById('cancelLogout').addEventListener('click', function() {
+        closeLogoutModal();
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('logoutConfirmation').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeLogoutModal();
+        }
+    });
+
+    const cards = document.querySelectorAll('.stat-card, .enrollment-card, .action-card');
+    cards.forEach(card => {
+        card.addEventListener('click', function() {
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+});
+
+
 // Call this function to display search info
 // displaySearchInfo();
