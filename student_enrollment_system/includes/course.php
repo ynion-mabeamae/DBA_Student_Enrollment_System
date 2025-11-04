@@ -5,7 +5,7 @@ require_once 'config.php';
 // Handle logout
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../includes/login.php");
+    header("Location: ../includes/index.php");
     exit();
 }
 
@@ -237,10 +237,22 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
             </a>
             <!-- Logout Item -->
             <div class="logout-item">
-                <a href="?logout=true" class="menu-item" onclick="return confirm('Are you sure you want to logout?')">
+                <a href="#" class="menu-item" onclick="openLogoutModal()">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="delete-confirmation" id="logoutConfirmation">
+        <div class="confirmation-dialog">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div class="confirmation-actions">
+                <button class="confirm-delete" id="confirmLogout">Yes, Logout</button>
+                <button class="cancel-delete" id="cancelLogout">Cancel</button>
             </div>
         </div>
     </div>
@@ -651,6 +663,8 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
         <input type="hidden" name="course_id" id="deleteCourseId">
         <input type="hidden" name="delete_course" value="1">
     </form>
+
+
 
     <script src="../script/course.js"></script>
 

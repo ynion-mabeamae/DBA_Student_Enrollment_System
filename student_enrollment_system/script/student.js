@@ -243,13 +243,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const studentId = e.target.getAttribute('data-student-id');
             const studentNo = e.target.getAttribute('data-student-no');
             const studentName = e.target.getAttribute('data-student-name');
-            
+
             // Set delete message
             deleteMessage.textContent = `Are you sure you want to delete student "${studentNo} - ${studentName}"? This action cannot be undone.`;
-            
+
             // Set delete form values
             document.getElementById('deleteStudentId').value = studentId;
-            
+
             // Show delete confirmation modal
             showDeleteModal();
         }
@@ -284,6 +284,51 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             deleteModal.style.display = 'none';
         }, 300);
+    }
+});
+
+// Logout Modal Functions
+function openLogoutModal() {
+    const modal = document.getElementById('logoutConfirmation');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.style.opacity = '1';
+    }, 10);
+}
+
+function closeLogoutModal() {
+    const modal = document.getElementById('logoutConfirmation');
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}
+
+// Logout Modal Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const logoutModal = document.getElementById('logoutConfirmation');
+    const confirmLogoutBtn = document.getElementById('confirmLogout');
+    const cancelLogoutBtn = document.getElementById('cancelLogout');
+
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', function() {
+            window.location.href = '?logout=true';
+        });
+    }
+
+    if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', function() {
+            closeLogoutModal();
+        });
+    }
+
+    if (logoutModal) {
+        // Close modal when clicking outside
+        logoutModal.addEventListener('click', function(event) {
+            if (event.target === logoutModal) {
+                closeLogoutModal();
+            }
+        });
     }
 });
 
