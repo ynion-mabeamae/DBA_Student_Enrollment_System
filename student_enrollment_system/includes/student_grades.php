@@ -142,7 +142,6 @@ foreach ($grades_by_term as $term => $enrollments) {
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Student Portal</h2>
             <div class="student-info">
                 <div class="student-avatar">
                     <?php echo strtoupper(substr($student['first_name'], 0, 1)); ?>

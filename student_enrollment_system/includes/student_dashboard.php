@@ -149,7 +149,6 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Student Portal</h2>
             <div class="student-info">
                 <div class="student-avatar">
                     <?php echo strtoupper(substr($student['first_name'], 0, 1)); ?>
@@ -244,6 +243,27 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                     <p>Year Level</p>
                 </div>
             </div>
+
+
+        </div>
+
+                            <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="action-card" onclick="window.location.href='student_profile.php'">
+                <i class="fas fa-user-edit"></i>
+                <h3>Update Profile</h3>
+                <p>Manage your personal information</p>
+            </div>
+            <div class="action-card" onclick="window.location.href='student_enrollments.php'">
+                <i class="fas fa-calendar-check"></i>
+                <h3>View Schedule</h3>
+                <p>Check your class schedule</p>
+            </div>
+            <div class="action-card" onclick="window.location.href='student_grades.php'">
+                <i class="fas fa-chart-bar"></i>
+                <h3>Academic Record</h3>
+                <p>View your complete academic history</p>
+            </div>
         </div>
 
         <!-- Current Enrollments Section -->
@@ -334,25 +354,6 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                     <p>No grades available yet.</p>
                 </div>
             <?php endif; ?>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-            <div class="action-card" onclick="window.location.href='student_profile.php'">
-                <i class="fas fa-user-edit"></i>
-                <h3>Update Profile</h3>
-                <p>Manage your personal information</p>
-            </div>
-            <div class="action-card" onclick="window.location.href='student_enrollments.php'">
-                <i class="fas fa-calendar-check"></i>
-                <h3>View Schedule</h3>
-                <p>Check your class schedule</p>
-            </div>
-            <div class="action-card" onclick="window.location.href='student_grades.php'">
-                <i class="fas fa-chart-bar"></i>
-                <h3>Academic Record</h3>
-                <p>View your complete academic history</p>
-            </div>
         </div>
     </div>
 
