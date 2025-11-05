@@ -128,9 +128,6 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
 
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-header">
-            <img src="../assets/EMS.png" alt="EMS Logo">
-        </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
                 <i class="fas fa-tachometer-alt"></i>

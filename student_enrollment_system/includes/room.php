@@ -135,9 +135,6 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
 
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-header">
-            <img src="../assets/EMS.png" alt="EMS Logo">
-        </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
                 <i class="fas fa-tachometer-alt"></i>

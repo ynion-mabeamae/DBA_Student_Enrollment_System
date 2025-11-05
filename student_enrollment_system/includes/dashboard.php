@@ -92,9 +92,6 @@ if ($result && $result->num_rows > 0) {
 
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-header" style="display: flex; align-items: center;">
-            <img src="../assets/EMS.png" alt="EMS Logo">
-        </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item active">
                 <i class="fas fa-tachometer-alt"></i>
@@ -140,7 +137,6 @@ if ($result && $result->num_rows > 0) {
                 <i class="fas fa-calendar-alt"></i>
                 <span>Terms</span>
             </a>
-            <!-- Logout Item -->
             <!-- Logout Item -->
             <div class="logout-item">
                 <a href="#" class="menu-item" onclick="openLogoutModal()">
@@ -394,8 +390,16 @@ if ($result && $result->num_rows > 0) {
     <script>
         // Your existing JavaScript code for modals and functionality...
 
-        // Additional JavaScript for dashboard interactions
+        // Sidebar toggle functionality
         document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarLogo = document.querySelector('.sidebar-logo-collapsed');
+
+            // Toggle sidebar on logo click
+            sidebarLogo.addEventListener('click', function() {
+                sidebar.classList.toggle('expanded');
+            });
+
             // Add click animations to cards
             const cards = document.querySelectorAll('.stat-card, .year-level-card, .action-card, .program-card');
             cards.forEach(card => {

@@ -237,13 +237,8 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
     </style>
 </head>
 <body>
-
-
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-header">
-            <img src="../assets/EMS.png" alt="EMS Logo">
-        </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
                 <i class="fas fa-tachometer-alt"></i>

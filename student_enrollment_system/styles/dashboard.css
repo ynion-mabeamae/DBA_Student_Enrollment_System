@@ -14,7 +14,8 @@
     --light: #f8f9fa;
     --dark: #212529;
     --gray: #6c757d;
-    --sidebar-width: 170px;
+    --sidebar-width: 70px;
+    --sidebar-expanded: 170px;
     --danger-color: #e63946;
     --light-bg: #f8f9fa;
     --dark-text: #212529;
@@ -244,12 +245,44 @@ img {
     height: 100vh;
     position: fixed;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.sidebar:hover {
+    width: var(--sidebar-expanded);
+}
+
+.sidebar-logo-collapsed {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 20px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar:hover .sidebar-logo-collapsed {
+    opacity: 0;
 }
 
 .sidebar-header {
     padding: 20px;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.sidebar:hover .sidebar-header {
+    opacity: 1;
 }
 
 .sidebar-header h2 {
@@ -262,8 +295,15 @@ img {
     opacity: 0.8;
 }
 
+.sidebar-logo {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+}
+
 .sidebar-menu {
     padding: 15px 0;
+    width: 100%;
 }
 
 /* Remove underline from sidebar links */
@@ -286,12 +326,20 @@ img {
 }
 
 .menu-item {
-    padding: 12px 20px;
+    padding: 12px 0;
     display: flex;
     align-items: center;
+    justify-content: center;
     transition: all 0.3s;
     cursor: pointer;
     border-left: 3px solid transparent;
+    width: 100%;
+    position: relative;
+}
+
+.sidebar:hover .menu-item {
+    padding: 12px 20px;
+    justify-content: flex-start;
 }
 
 .menu-item:hover {
@@ -305,10 +353,32 @@ img {
 }
 
 .menu-item i {
-    margin-right: 10px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-right: 0;
     font-size: 1.1rem;
     width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+}
+
+.sidebar:hover .menu-item i {
+    position: static;
+    transform: none;
+    margin-right: 10px;
+}
+
+.menu-item span {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar:hover .menu-item span {
+    opacity: 1;
 }
 
 /* Main Content Styles */

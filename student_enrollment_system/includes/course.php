@@ -187,9 +187,6 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
 <body> 
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-header">
-            <img src="../assets/EMS.png" alt="EMS Logo">
-        </div>
         <div class="sidebar-menu">
             <a href="dashboard.php" class="menu-item">
                 <i class="fas fa-tachometer-alt"></i>
