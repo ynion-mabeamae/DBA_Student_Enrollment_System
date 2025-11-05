@@ -431,11 +431,13 @@ img {
 .stat-info h3 {
     font-size: 1.8rem;
     margin-bottom: 5px;
+    text-align: justify; 
 }
 
 .stat-info p {
     color: var(--gray);
     font-size: 0.9rem;
+    text-align: justify;
 }
 
 /* Content Tabs */
