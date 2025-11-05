@@ -155,6 +155,15 @@ if ($result && $result->num_rows > 0) {
     <div class="main-content">
         <div class="header">
             <h1>Dashboard Overview</h1>
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name"><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></span>
+                    <span class="user-role">Admin</span>
+                </div>
+            </div>
         </div>
 
         <!-- Stats Cards -->

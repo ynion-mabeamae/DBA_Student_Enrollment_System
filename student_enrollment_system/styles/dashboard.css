@@ -14,7 +14,7 @@
     --light: #f8f9fa;
     --dark: #212529;
     --gray: #6c757d;
-    --sidebar-width: 200px;
+    --sidebar-width: 170px;
     --danger-color: #e63946;
     --light-bg: #f8f9fa;
     --dark-text: #212529;
@@ -337,17 +337,33 @@ img {
     align-items: center;
 }
 
-.user-info img {
+.user-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    margin-right: 10px;
     background-color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-weight: bold;
+    font-size: 1.2rem;
+    margin-right: 10px;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 0.9rem;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: var(--gray);
 }
 
 /* Stats Cards */
