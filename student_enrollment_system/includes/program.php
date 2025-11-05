@@ -14,6 +14,19 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'program';
 // Handle show archived toggle
 $show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
 
+// Handle search and pagination
+$search_condition = "";
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+    $search_term = $conn->real_escape_string($_GET['search']);
+    $search_condition = "AND (p.program_code LIKE '%$search_term%' OR p.program_name LIKE '%$search_term%' OR d.dept_name LIKE '%$search_term%')";
+}
+
+// Pagination settings
+$records_per_page = 10;
+$current_page = isset($_GET['page_num']) ? (int)$_GET['page_num'] : 1;
+$current_page = max(1, $current_page); // Ensure page is at least 1
+$offset = ($current_page - 1) * $records_per_page;
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_program'])) {
@@ -110,14 +123,32 @@ if (isset($_GET['edit_id'])) {
     $edit_program = $stmt->get_result()->fetch_assoc();
 }
 
-// Get all programs with department information - filter by active status
+// Get total count for pagination
 $status_condition = $show_archived ? "p.is_active = FALSE" : "p.is_active = TRUE";
+$total_query = "
+    SELECT COUNT(*) as total
+    FROM tblprogram p
+    LEFT JOIN tbldepartment d ON p.dept_id = d.dept_id
+    WHERE $status_condition $search_condition
+";
+$total_result = $conn->query($total_query);
+$total_records = $total_result->fetch_assoc()['total'];
+$total_pages = ceil($total_records / $records_per_page);
+
+// Ensure current page doesn't exceed total pages
+if ($current_page > $total_pages && $total_pages > 0) {
+    $current_page = $total_pages;
+    $offset = ($current_page - 1) * $records_per_page;
+}
+
+// Get programs with pagination and search
 $programs = $conn->query("
-    SELECT p.*, d.dept_name 
-    FROM tblprogram p 
-    LEFT JOIN tbldepartment d ON p.dept_id = d.dept_id 
-    WHERE $status_condition
+    SELECT p.*, d.dept_name
+    FROM tblprogram p
+    LEFT JOIN tbldepartment d ON p.dept_id = d.dept_id
+    WHERE $status_condition $search_condition
     ORDER BY p.program_id DESC, p.program_name
+    LIMIT $records_per_page OFFSET $offset
 ");
 
 // Get departments for dropdown
@@ -418,6 +449,73 @@ $total_programs = $show_archived ? $archived_programs_count : $active_programs_c
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <?php if ($total_pages > 1): ?>
+        <div class="pagination">
+            <?php
+            // Build query string for pagination links
+            $query_params = $_GET;
+            unset($query_params['page_num']); // Remove page_num to rebuild it
+
+            // Previous button
+            if ($current_page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $current_page - 1])); ?>" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            <?php else: ?>
+                <span class="pagination-btn disabled">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </span>
+            <?php endif; ?>
+
+            <!-- Page numbers -->
+            <?php
+            $start_page = max(1, $current_page - 2);
+            $end_page = min($total_pages, $current_page + 2);
+
+            // Show first page if not in range
+            if ($start_page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => 1])); ?>" class="pagination-btn">1</a>
+                <?php if ($start_page > 2): ?>
+                    <span class="pagination-info">...</span>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <!-- Page numbers in range -->
+            <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                <?php if ($i == $current_page): ?>
+                    <span class="pagination-btn disabled"><?php echo $i; ?></span>
+                <?php else: ?>
+                    <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $i])); ?>" class="pagination-btn"><?php echo $i; ?></a>
+                <?php endif; ?>
+            <?php endfor; ?>
+
+            <!-- Show last page if not in range -->
+            <?php if ($end_page < $total_pages): ?>
+                <?php if ($end_page < $total_pages - 1): ?>
+                    <span class="pagination-info">...</span>
+                <?php endif; ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $total_pages])); ?>" class="pagination-btn"><?php echo $total_pages; ?></a>
+            <?php endif; ?>
+
+            <!-- Next button -->
+            <?php if ($current_page < $total_pages): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $current_page + 1])); ?>" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <?php else: ?>
+                <span class="pagination-btn disabled">
+                    Next <i class="fas fa-chevron-right"></i>
+                </span>
+            <?php endif; ?>
+
+            <!-- Page info -->
+            <span class="pagination-info">
+                Page <?php echo $current_page; ?> of <?php echo $total_pages; ?> (<?php echo $total_records; ?> total records)
+            </span>
+        </div>
+        <?php endif; ?>
     </div>
 
     <script src="../script/program.js"></script>
