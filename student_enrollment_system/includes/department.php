@@ -91,6 +91,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
 $status_condition = $show_archived ? "is_active = FALSE" : "is_active = TRUE";
 
+// Pagination settings
+$records_per_page = 10;
+$current_page = isset($_GET['page_num']) ? (int)$_GET['page_num'] : 1;
+$current_page = max(1, $current_page); // Ensure page is at least 1
+$offset = ($current_page - 1) * $records_per_page;
+
+// Get total count for pagination
+$total_query = "SELECT COUNT(*) as total FROM tbldepartment WHERE $status_condition";
+$total_result = $conn->query($total_query);
+$total_records = $total_result->fetch_assoc()['total'];
+$total_pages = ceil($total_records / $records_per_page);
+
+// Ensure current page doesn't exceed total pages
+if ($current_page > $total_pages && $total_pages > 0) {
+    $current_page = $total_pages;
+    $offset = ($current_page - 1) * $records_per_page;
+}
+
 // Get department data for editing if dept_id is provided
 $edit_department = null;
 if (isset($_GET['edit_id'])) {
@@ -101,11 +119,11 @@ if (isset($_GET['edit_id'])) {
     $edit_department = $stmt->get_result()->fetch_assoc();
 }
 
-// Get all departments
-$departments = $conn->query("SELECT * FROM tbldepartment WHERE $status_condition ORDER BY dept_name");
+// Get all departments with pagination
+$departments = $conn->query("SELECT * FROM tbldepartment WHERE $status_condition ORDER BY dept_name LIMIT $records_per_page OFFSET $offset");
 
-// Count total departments
-$total_departments = $departments->num_rows;
+// Count total departments (for display)
+$total_departments = $total_records;
 
 // Count active and archived departments
 $active_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_active = TRUE")->fetch_row()[0];
@@ -375,6 +393,80 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_acti
                     <?php endif; ?>
                 </tbody>
             </table>
+
+            <!-- Pagination -->
+            <?php if ($total_pages > 1): ?>
+            <div class="pagination">
+                <?php
+                // Build base URL for pagination links
+                $base_url = '?page=departments';
+                if ($show_archived) {
+                    $base_url .= '&show_archived=true';
+                }
+                $base_url .= '&page_num=';
+
+                // Previous button
+                if ($current_page > 1): ?>
+                    <a href="<?php echo $base_url . ($current_page - 1); ?>" class="pagination-btn">
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </a>
+                <?php else: ?>
+                    <span class="pagination-btn disabled">
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </span>
+                <?php endif; ?>
+
+                <?php
+                // Page numbers
+                $start_page = max(1, $current_page - 2);
+                $end_page = min($total_pages, $current_page + 2);
+
+                // Show first page if not in range
+                if ($start_page > 1): ?>
+                    <a href="<?php echo $base_url . '1'; ?>" class="pagination-btn">1</a>
+                    <?php if ($start_page > 2): ?>
+                        <span class="pagination-info">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                    <?php if ($i == $current_page): ?>
+                        <span class="pagination-btn disabled"><?php echo $i; ?></span>
+                    <?php else: ?>
+                        <a href="<?php echo $base_url . $i; ?>" class="pagination-btn"><?php echo $i; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php
+                // Show last page if not in range
+                if ($end_page < $total_pages): ?>
+                    <?php if ($end_page < $total_pages - 1): ?>
+                        <span class="pagination-info">...</span>
+                    <?php endif; ?>
+                    <a href="<?php echo $base_url . $total_pages; ?>" class="pagination-btn"><?php echo $total_pages; ?></a>
+                <?php endif; ?>
+
+                <?php
+                // Next button
+                if ($current_page < $total_pages): ?>
+                    <a href="<?php echo $base_url . ($current_page + 1); ?>" class="pagination-btn">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php else: ?>
+                    <span class="pagination-btn disabled">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </span>
+                <?php endif; ?>
+
+                <div class="pagination-info">
+                    Page <?php echo $current_page; ?> of <?php echo $total_pages; ?> (<?php echo $total_records; ?> total records)
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
