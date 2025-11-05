@@ -50,6 +50,17 @@ body {
     flex: 1;
     margin-left: var(--sidebar-width);
     padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure sidebar is visible and doesn't expand on hover to prevent overlap */
+.sidebar {
+    z-index: 1000;
+}
+
+.sidebar:hover {
+    width: var(--sidebar-width);
 }
 
 /* Page Header */
