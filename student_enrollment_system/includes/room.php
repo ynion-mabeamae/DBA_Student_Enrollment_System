@@ -5,6 +5,11 @@ require_once '../includes/config.php';
 // Handle show archived toggle
 $show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
 
+// Handle pagination
+$current_page = isset($_GET['page_num']) ? (int)$_GET['page_num'] : 1;
+$items_per_page = 10;
+$offset = ($current_page - 1) * $items_per_page;
+
 // Handle logout
 if (isset($_GET['logout'])) {
     session_destroy();
@@ -108,6 +113,20 @@ $rooms = $conn->query("
     SELECT * FROM tblroom 
     WHERE $status_condition
     ORDER BY building, room_code
+");
+
+// Get total count for pagination
+$total_query = "SELECT COUNT(*) as total FROM tblroom WHERE $status_condition";
+$total_result = $conn->query($total_query);
+$total_records = $total_result->fetch_assoc()['total'];
+$total_pages = ceil($total_records / $items_per_page);
+
+// Get rooms with pagination
+$rooms = $conn->query("
+    SELECT * FROM tblroom
+    WHERE $status_condition
+    ORDER BY building, room_code
+    LIMIT $items_per_page OFFSET $offset
 ");
 
 // Count total rooms
@@ -330,8 +349,8 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                 </div> -->
                 
                 <div class="search-stats" id="searchStats">
-                    Showing <?php echo $total_rooms; ?> of <?php echo $total_rooms; ?> 
-                    <?php echo $show_archived ? 'archived' : 'active'; ?> rooms
+                    Showing <?php echo min($items_per_page, $total_records - $offset); ?> of <?php echo $total_records; ?>
+                    <?php echo $show_archived ? 'archived' : 'active'; ?> rooms (Page <?php echo $current_page; ?> of <?php echo $total_pages; ?>)
                 </div>
                 
                 <button class="clear-search" id="clearSearch" style="display: none;">Clear Search</button>
@@ -414,6 +433,73 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <?php if ($total_pages > 1): ?>
+        <div class="pagination">
+            <?php
+            // Build query string for pagination links
+            $query_params = $_GET;
+            unset($query_params['page_num']); // Remove page_num to rebuild it
+
+            // Previous button
+            if ($current_page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $current_page - 1])); ?>" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            <?php else: ?>
+                <span class="pagination-btn disabled">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </span>
+            <?php endif; ?>
+
+            <!-- Page numbers -->
+            <?php
+            $start_page = max(1, $current_page - 2);
+            $end_page = min($total_pages, $current_page + 2);
+
+            // Show first page if not in range
+            if ($start_page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => 1])); ?>" class="pagination-btn">1</a>
+                <?php if ($start_page > 2): ?>
+                    <span class="pagination-info">...</span>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <!-- Page numbers in range -->
+            <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                <?php if ($i == $current_page): ?>
+                    <span class="pagination-btn disabled"><?php echo $i; ?></span>
+                <?php else: ?>
+                    <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $i])); ?>" class="pagination-btn"><?php echo $i; ?></a>
+                <?php endif; ?>
+            <?php endfor; ?>
+
+            <!-- Show last page if not in range -->
+            <?php if ($end_page < $total_pages): ?>
+                <?php if ($end_page < $total_pages - 1): ?>
+                    <span class="pagination-info">...</span>
+                <?php endif; ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $total_pages])); ?>" class="pagination-btn"><?php echo $total_pages; ?></a>
+            <?php endif; ?>
+
+            <!-- Next button -->
+            <?php if ($current_page < $total_pages): ?>
+                <a href="?<?php echo http_build_query(array_merge($query_params, ['page_num' => $current_page + 1])); ?>" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <?php else: ?>
+                <span class="pagination-btn disabled">
+                    Next <i class="fas fa-chevron-right"></i>
+                </span>
+            <?php endif; ?>
+
+            <!-- Page info -->
+            <span class="pagination-info">
+                Page <?php echo $current_page; ?> of <?php echo $total_pages; ?> (<?php echo $total_records; ?> total records)
+            </span>
+        </div>
+        <?php endif; ?>
     </div>
     
 
