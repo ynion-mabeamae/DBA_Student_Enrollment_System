@@ -23,7 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Check for duplicate course_code
         $duplicate_errors = [];
-        $check_sql = "SELECT course_id FROM tblcourse WHERE course_code = ? AND is_active = TRUE";
+        $check_sql = "SELECT course_id
+                      FROM tblcourse
+                      WHERE course_code = ? AND is_active = TRUE";
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("s", $course_code);
         $check_stmt->execute();
@@ -36,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($duplicate_errors)) {
             $sql = "INSERT INTO tblcourse (course_code, course_title, units, lecture_hours, lab_hours, dept_id) VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ssdiii", $course_code, $course_title, $units, $lecture_hours, $lab_hours, $dept_id);
+            $stmt->bind_param("ssdisi", $course_code, $course_title, $units, $lecture_hours, $lab_hours, $dept_id);
 
             if ($stmt->execute()) {
                 $_SESSION['message'] = "Course added successfully!";
@@ -65,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         $sql = "UPDATE tblcourse SET course_code=?, course_title=?, units=?, lecture_hours=?, lab_hours=?, dept_id=? WHERE course_id=?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssdiiii", $course_code, $course_title, $units, $lecture_hours, $lab_hours, $dept_id, $course_id);
+        $stmt->bind_param("ssdisii", $course_code, $course_title, $units, $lecture_hours, $lab_hours, $dept_id, $course_id);
         
         if ($stmt->execute()) {
             $_SESSION['message'] = "Course updated successfully!";
@@ -457,7 +459,7 @@ $departments = $conn->query("SELECT * FROM tbldepartment ORDER BY dept_name");
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <?php if ($course['lab_hours'] > 0): ?>
+                                <?php if ($course['lab_hours'] >= 0): ?>
                                     <span class="hours-badge lab-badge"><?php echo $course['lab_hours']; ?></span>
                                 <?php else: ?>
                                     <span class="text-muted">-</span>
