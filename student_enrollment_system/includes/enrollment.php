@@ -23,24 +23,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $status = $_POST['status'];
         $letter_grade = $_POST['letter_grade'] ?? null;
 
-        $sql = "INSERT INTO tblenrollment (student_id, section_id, date_enrolled, status, letter_grade)
-                VALUES (?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iisss", $student_id, $section_id, $date_enrolled, $status, $letter_grade);
+    // Check for duplicate enrollment (same student in same section that is active)
+    $duplicate_errors = [];
+    $check_sql = "SELECT enrollment_id FROM tblenrollment WHERE student_id = ? AND section_id = ? AND is_active = TRUE";
+    $check_stmt = $conn->prepare($check_sql);
+    if ($check_stmt) {
+      $check_stmt->bind_param("ii", $student_id, $section_id);
+      $check_stmt->execute();
+      $check_result = $check_stmt->get_result();
 
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Enrollment added successfully!";
-            $_SESSION['message_type'] = "success";
-        } else {
-            $_SESSION['message'] = "Error adding enrollment: " . $conn->error;
-            $_SESSION['message_type'] = "error";
-        }
+      if ($check_result && $check_result->num_rows > 0) {
+        $duplicate_errors[] = "Student is already enrolled in the selected section.";
+      }
+    }
 
-        // Preserve current query parameters to stay on the same page
-        $query_string = http_build_query($_GET);
-        $redirect_url = $_SERVER['PHP_SELF'] . ($query_string ? '?' . $query_string : '');
-        header("Location: " . $redirect_url);
-        exit();
+    if (empty($duplicate_errors)) {
+      $sql = "INSERT INTO tblenrollment (student_id, section_id, date_enrolled, status, letter_grade)
+          VALUES (?, ?, ?, ?, ?)";
+      $stmt = $conn->prepare($sql);
+      $stmt->bind_param("iisss", $student_id, $section_id, $date_enrolled, $status, $letter_grade);
+
+      if ($stmt->execute()) {
+        $_SESSION['message'] = "Enrollment added successfully!";
+        $_SESSION['message_type'] = "success";
+      } else {
+        $_SESSION['message'] = "Error adding enrollment: " . $conn->error;
+        $_SESSION['message_type'] = "error";
+      }
+    } else {
+      // Store duplicate errors and form data for modal display similar to course.php
+      $_SESSION['duplicate_errors'] = $duplicate_errors;
+      $_SESSION['form_data'] = $_POST;
+    }
+
+    // Preserve current query parameters to stay on the same page
+    $query_string = http_build_query($_GET);
+    $redirect_url = $_SERVER['PHP_SELF'] . ($query_string ? '?' . $query_string : '');
+    header("Location: " . $redirect_url);
+    exit();
     }
     
     if (isset($_POST['update_enrollment'])) {
@@ -751,6 +771,71 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
   </div>
 
   <script src="../script/enrollment.js"></script>
+  
+  <!-- Duplicate Enrollment Modal -->
+  <div id="duplicate-enrollment-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Duplicate Enrollment Detected</h2>
+        <button class="close-modal" onclick="closeDuplicateEnrollmentModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="duplicate-errors">
+          <p>The following duplicate entries were found:</p>
+          <ul id="duplicateEnrollmentErrorList">
+            <!-- Errors will be populated by JavaScript -->
+          </ul>
+          <p>Please check your input and try again.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="goBackToEnrollmentForm()">Go Back to Form</button>
+        <button type="button" class="btn" onclick="closeDuplicateEnrollmentModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Functions to open/close duplicate enrollment modal and populate errors
+    function openDuplicateEnrollmentModal() {
+      const modal = document.getElementById('duplicate-enrollment-modal');
+      if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeDuplicateEnrollmentModal() {
+      const modal = document.getElementById('duplicate-enrollment-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+    }
+
+    function populateDuplicateEnrollmentErrors(errors) {
+      const errorList = document.getElementById('duplicateEnrollmentErrorList');
+      if (errorList && errors) {
+        errorList.innerHTML = '';
+        errors.forEach(error => {
+          const li = document.createElement('li');
+          li.className = 'error-item';
+          li.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${error}`;
+          errorList.appendChild(li);
+        });
+      }
+    }
+
+    function goBackToEnrollmentForm() {
+      closeDuplicateEnrollmentModal();
+      // open enrollment modal
+      const enrollmentModal = document.getElementById('enrollmentModal');
+      if (enrollmentModal) {
+        enrollmentModal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+  </script>
   <script>
     // Pass PHP data to JavaScript
     const isEditing = <?php echo $edit_enrollment ? 'true' : 'false'; ?>;
@@ -797,6 +882,20 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
       unset($_SESSION['message']);
       unset($_SESSION['message_type']);
       ?>
+  <?php endif; ?>
+
+  <!-- Duplicate Enrollment Modal Script -->
+  <?php if (isset($_SESSION['duplicate_errors'])): ?>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        populateDuplicateEnrollmentErrors(<?php echo json_encode($_SESSION['duplicate_errors']); ?>);
+        openDuplicateEnrollmentModal();
+      });
+    </script>
+    <?php
+    unset($_SESSION['duplicate_errors']);
+    unset($_SESSION['form_data']);
+    ?>
   <?php endif; ?>
 </body>
 </html>
