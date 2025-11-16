@@ -18,20 +18,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $first_name = $_POST['first_name'];
         $email = $_POST['email'];
         $dept_id = $_POST['dept_id'] ?? null;
-        
-        $sql = "INSERT INTO tblinstructor (last_name, first_name, email, dept_id) 
-                VALUES (?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssi", $last_name, $first_name, $email, $dept_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Instructor added successfully!";
-        } else {
-            $_SESSION['message'] = "error::Error adding instructor: " . $conn->error;
+
+        // Check for duplicate instructor name
+        $duplicate_errors = [];
+        $full_name = $last_name . ' ' . $first_name;
+        $check_sql = "SELECT instructor_id
+                      FROM tblinstructor
+                      WHERE CONCAT(last_name, ' ', first_name) = ? AND is_active = TRUE";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("s", $full_name);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            $duplicate_errors[] = "Instructor name '$full_name' already exists.";
         }
-        
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
+
+        if (empty($duplicate_errors)) {
+            $sql = "INSERT INTO tblinstructor (last_name, first_name, email, dept_id)
+                    VALUES (?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssi", $last_name, $first_name, $email, $dept_id);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "success::Instructor added successfully!";
+            } else {
+                $_SESSION['message'] = "error::Error adding instructor: " . $conn->error;
+            }
+
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        } else {
+            // Store duplicate errors and form data for modal display
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST;
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        }
     }
     
     if (isset($_POST['update_instructor'])) {
@@ -317,6 +340,29 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tblinstructor WHERE is_acti
     </div>
     <?php endif; ?>
 
+    <!-- Duplicate Instructor Modal -->
+    <div id="duplicate-instructor-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Duplicate Instructor Detected</h2>
+                <button class="close-modal" onclick="closeModal('duplicate-instructor-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="duplicate-errors">
+                    <p>The following duplicate entries were found:</p>
+                    <ul id="duplicateInstructorErrorList">
+                        <!-- Errors will be populated by JavaScript -->
+                    </ul>
+                    <p>Please check your input and try again.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="goBackToInstructorForm()">Go Back to Form</button>
+                <button type="button" class="btn" onclick="closeModal('duplicate-instructor-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Instructors Table -->
     <div class="table-container">
         
@@ -471,7 +517,7 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tblinstructor WHERE is_acti
         // SweetAlert notification handling
         document.addEventListener('DOMContentLoaded', function() {
             <?php if (isset($_SESSION['message'])): ?>
-                <?php 
+                <?php
                 $message = $_SESSION['message'];
                 list($type, $text) = explode('::', $message, 2);
                 unset($_SESSION['message']);
@@ -485,5 +531,19 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tblinstructor WHERE is_acti
             <?php endif; ?>
         });
     </script>
+
+    <!-- Duplicate Instructor Modal Script -->
+    <?php if (isset($_SESSION['duplicate_errors'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                populateDuplicateErrors(<?php echo json_encode($_SESSION['duplicate_errors']); ?>);
+                openModal('duplicate-instructor-modal');
+            });
+        </script>
+        <?php
+        unset($_SESSION['duplicate_errors']);
+        unset($_SESSION['form_data']);
+        ?>
+    <?php endif; ?>
 </body>
 </html>

@@ -514,6 +514,47 @@ function closeLogoutModal() {
     }, 300);
 }
 
+// Duplicate Instructor Modal Functions
+function populateDuplicateErrors(errors) {
+    const errorList = document.getElementById('duplicateInstructorErrorList');
+    if (errorList && errors) {
+        errorList.innerHTML = '';
+        errors.forEach(error => {
+            const li = document.createElement('li');
+            li.textContent = error;
+            errorList.appendChild(li);
+        });
+    }
+}
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'block';
+        setTimeout(() => {
+            modal.classList.add('modal-show');
+        }, 10);
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('modal-show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
+}
+
+function goBackToInstructorForm() {
+    // Close the duplicate modal and open the instructor modal
+    closeModal('duplicate-instructor-modal');
+    setTimeout(() => {
+        InstructorManager.openNewInstructorModal();
+    }, 300);
+}
+
 // Add click animations to cards
 document.addEventListener('DOMContentLoaded', function() {
     // Logout modal buttons
