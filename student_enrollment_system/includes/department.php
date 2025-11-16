@@ -16,19 +16,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_department'])) {
         $dept_code = $_POST['dept_code'];
         $dept_name = $_POST['dept_name'];
-        
-        $sql = "INSERT INTO tbldepartment (dept_code, dept_name) VALUES (?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ss", $dept_code, $dept_name);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Department added successfully!";
-        } else {
-            $_SESSION['message'] = "error::Error adding department: " . $conn->error;
+
+        // Check for duplicate dept_code and dept_name
+        $duplicate_errors = [];
+
+        // Check for duplicate department code
+        $check_code_sql = "SELECT dept_id FROM tbldepartment WHERE dept_code = ? AND is_active = TRUE";
+        $check_code_stmt = $conn->prepare($check_code_sql);
+        $check_code_stmt->bind_param("s", $dept_code);
+        $check_code_stmt->execute();
+        $code_result = $check_code_stmt->get_result();
+
+        // Check for duplicate department name
+        $check_name_sql = "SELECT dept_id FROM tbldepartment WHERE dept_name = ? AND is_active = TRUE";
+        $check_name_stmt = $conn->prepare($check_name_sql);
+        $check_name_stmt->bind_param("s", $dept_name);
+        $check_name_stmt->execute();
+        $name_result = $check_name_stmt->get_result();
+
+        if ($code_result->num_rows > 0) {
+            $duplicate_errors[] = "Department code '$dept_code' already exists.";
         }
-        
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
+        if ($name_result->num_rows > 0) {
+            $duplicate_errors[] = "Department name '$dept_name' already exists.";
+        }
+
+        if (empty($duplicate_errors)) {
+            $sql = "INSERT INTO tbldepartment (dept_code, dept_name) VALUES (?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ss", $dept_code, $dept_name);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "success::Department added successfully!";
+            } else {
+                $_SESSION['message'] = "error::Error adding department: " . $conn->error;
+            }
+
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        } else {
+            // Store duplicate errors and form data for modal display
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST;
+        }
     }
     
     if (isset($_POST['update_department'])) {
@@ -288,6 +318,28 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_acti
         </div>
         <?php endif; ?>
 
+        <!-- Duplicate Department Modal -->
+        <div id="duplicate-department-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Duplicate Department Detected</h2>
+                    <button class="close-modal" onclick="closeModal('duplicate-department-modal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="duplicate-errors">
+                        <p>The following duplicate entries were found:</p>
+                        <ul id="duplicateDepartmentErrorList">
+                            <!-- Errors will be populated by JavaScript -->
+                        </ul>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-primary" onclick="goBackToDepartmentForm()">Go Back to Form</button>
+                        <button type="button" class="btn" onclick="closeModal('duplicate-department-modal')">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Delete Confirmation Dialog -->
         <div class="delete-confirmation" id="deleteConfirmation">
             <div class="confirmation-dialog">
@@ -472,6 +524,30 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_acti
 
     <script src="../script/department.js"></script>
 
+    <!-- Duplicate Department Modal Script -->
+    <?php if (isset($_SESSION['duplicate_errors'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const duplicateErrors = <?php echo json_encode($_SESSION['duplicate_errors']); ?>;
+                const errorList = document.getElementById('duplicateDepartmentErrorList');
+
+                // Add each error to the list
+                duplicateErrors.forEach(function(error) {
+                    const li = document.createElement('li');
+                    li.textContent = error;
+                    errorList.appendChild(li);
+                });
+
+                // Show the modal
+                openModal('duplicate-department-modal');
+            });
+        </script>
+        <?php
+        unset($_SESSION['duplicate_errors']);
+        unset($_SESSION['form_data']);
+        ?>
+    <?php endif; ?>
+
     <!-- SweetAlert Notifications -->
     <?php if (isset($_SESSION['message'])): ?>
         <script>
@@ -569,6 +645,34 @@ $archived_count = $conn->query("SELECT COUNT(*) FROM tbldepartment WHERE is_acti
                 closeLogoutModal();
             }
         });
+
+        // Function to go back to department form
+        function goBackToDepartmentForm() {
+            closeModal('duplicate-department-modal');
+            openModal('departmentModal');
+        }
+
+        // Function to open modal
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'block';
+                setTimeout(() => {
+                    modal.classList.add('show');
+                }, 10);
+            }
+        }
+
+        // Function to close modal
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+        }
     </script>
 </body>
 </html>
