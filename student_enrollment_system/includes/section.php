@@ -164,7 +164,7 @@ $sections = $conn->query("
     LEFT JOIN tblinstructor i ON s.instructor_id = i.instructor_id
     LEFT JOIN tblroom r ON s.room_id = r.room_id
     WHERE $status_condition
-    ORDER BY s.section_code
+    ORDER BY s.section_id DESC
     LIMIT $items_per_page OFFSET $offset
 ");
 
