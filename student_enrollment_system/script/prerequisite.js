@@ -8,6 +8,12 @@
         const updateBtn = document.getElementById('updatePrerequisiteBtn');
         const modalTitle = document.getElementById('prerequisiteModalTitle');
         const form = document.getElementById('prerequisiteForm');
+
+        // Duplicate prerequisite modal elements
+        const duplicateModal = document.getElementById('duplicate-prerequisite-modal');
+        const duplicateCloseBtn = duplicateModal.querySelector('.close-modal');
+        const duplicateCancelBtn = duplicateModal.querySelector('.close-modal');
+        const duplicateErrorsList = document.getElementById('duplicate-errors-list');
         
         // Delete confirmation elements
         const deleteModal = document.getElementById('deleteConfirmation');
@@ -44,7 +50,48 @@
             if (event.target === deleteModal) {
                 hideDeleteModal();
             }
+            if (event.target === duplicateModal) {
+                hideDuplicateModal();
+            }
         });
+
+        // Duplicate modal close functionality
+        duplicateCloseBtn.addEventListener('click', hideDuplicateModal);
+        duplicateCancelBtn.addEventListener('click', hideDuplicateModal);
+
+        // Go to Form button functionality
+        const goToFormBtn = document.getElementById('goToFormBtn');
+        goToFormBtn.addEventListener('click', function() {
+            hideDuplicateModal();
+            // Scroll to the form modal
+            const formModal = document.getElementById('prerequisiteModal');
+            formModal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        function showDuplicateModal(duplicates) {
+            // Clear previous errors
+            duplicateErrorsList.innerHTML = '';
+
+            // Add duplicate entries to the list
+            duplicates.forEach(duplicate => {
+                const li = document.createElement('li');
+                li.textContent = `Course: ${duplicate.course_code} Prerequisite: ${duplicate.prereq_course_code}`;
+                duplicateErrorsList.appendChild(li);
+            });
+
+            // Show modal
+            duplicateModal.style.display = 'block';
+            setTimeout(() => {
+                duplicateModal.classList.add('modal-show');
+            }, 10);
+        }
+
+        function hideDuplicateModal() {
+            duplicateModal.classList.remove('modal-show');
+            setTimeout(() => {
+                duplicateModal.style.display = 'none';
+            }, 300);
+        }
 
         // Edit button functionality
         document.querySelectorAll('.edit-btn').forEach(button => {
@@ -149,6 +196,46 @@
             }, 5000);
         });
 
+        // Form submission with duplicate check
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const courseId = document.getElementById('course_id').value;
+            const prereqCourseId = document.getElementById('prereq_course_id').value;
+            const courseIdOld = document.getElementById('course_id_old').value;
+            const prereqCourseIdOld = document.getElementById('prereq_course_id_old').value;
+
+            // Check for duplicates via AJAX
+            const formData = new FormData();
+            formData.append('check_duplicates', '1');
+            formData.append('course_id', courseId);
+            formData.append('prereq_course_id', prereqCourseId);
+            if (courseIdOld && prereqCourseIdOld) {
+                formData.append('course_id_old', courseIdOld);
+                formData.append('prereq_course_id_old', prereqCourseIdOld);
+            }
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(duplicates => {
+                if (duplicates.length > 0) {
+                    // Show duplicate modal
+                    showDuplicateModal(duplicates);
+                } else {
+                    // No duplicates, submit the form
+                    form.submit();
+                }
+            })
+            .catch(error => {
+                console.error('Error checking duplicates:', error);
+                // If AJAX fails, submit anyway
+                form.submit();
+            });
+        });
+
         // Search functionality
         const searchInput = document.getElementById('searchPrerequisites');
         const searchButton = document.getElementById('searchButton');
@@ -203,65 +290,7 @@ toasts.forEach(toast => {
 });
 });
 
-// Search functionality
-const searchInput = document.getElementById('searchPrerequisites');
-const searchButton = document.getElementById('searchButton');
-const clearSearch = document.getElementById('clearSearch');
-const searchStats = document.getElementById('searchStats');
-const tableRows = document.querySelectorAll('tbody tr');
 
-console.log('Search elements:', { searchInput, searchButton, clearSearch, searchStats, tableRows: tableRows.length });
-
-function performSearch() {
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    console.log('Searching for:', searchTerm);
-    
-    let visibleCount = 0;
-
-    tableRows.forEach(row => {
-        const courseCell = row.cells[0].textContent.toLowerCase();
-        const prereqCell = row.cells[1].textContent.toLowerCase();
-        
-        console.log('Row data:', { courseCell, prereqCell });
-        
-        if (courseCell.includes(searchTerm) || prereqCell.includes(searchTerm)) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-
-    console.log('Visible rows:', visibleCount);
-    
-    if (searchStats) {
-        searchStats.textContent = `Showing ${visibleCount} of ${tableRows.length} prerequisites`;
-    }
-    
-    if (clearSearch) {
-        clearSearch.style.display = searchTerm ? 'block' : 'none';
-    }
-}
-
-// Add event listeners
-if (searchButton && searchInput) {
-    searchButton.addEventListener('click', performSearch);
-    searchInput.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-            performSearch();
-        }
-    });
-    
-    // Optional: Real-time search as you type
-    // searchInput.addEventListener('input', performSearch);
-}
-
-if (clearSearch) {
-    clearSearch.addEventListener('click', function() {
-        searchInput.value = '';
-        performSearch();
-    });
-}
 
 // Export data function
 function exportData(type) {

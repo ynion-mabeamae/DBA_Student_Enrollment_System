@@ -19,6 +19,47 @@ $current_page = isset($_GET['page_num']) ? (int)$_GET['page_num'] : 1;
 $items_per_page = 10;
 $offset = ($current_page - 1) * $items_per_page;
 
+// Handle AJAX duplicate check
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['check_duplicates'])) {
+    header('Content-Type: application/json');
+
+    $course_id = $_POST['course_id'];
+    $prereq_course_id = $_POST['prereq_course_id'];
+
+    $duplicates = [];
+
+    if (isset($_POST['course_id_old']) && isset($_POST['prereq_course_id_old'])) {
+        // Update mode: exclude current prerequisite
+        $sql = "SELECT cp.course_id, cp.prereq_course_id, c1.course_code as course_code, c2.course_code as prereq_course_code
+                FROM tblcourse_prerequisite cp
+                LEFT JOIN tblcourse c1 ON cp.course_id = c1.course_id
+                LEFT JOIN tblcourse c2 ON cp.prereq_course_id = c2.course_id
+                WHERE cp.course_id = ? AND cp.prereq_course_id = ? AND cp.is_active = TRUE
+                AND (cp.course_id != ? OR cp.prereq_course_id != ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("iiii", $course_id, $prereq_course_id, $_POST['course_id_old'], $_POST['prereq_course_id_old']);
+    } else {
+        // Add mode: check for exact match
+        $sql = "SELECT cp.course_id, cp.prereq_course_id, c1.course_code as course_code, c2.course_code as prereq_course_code
+                FROM tblcourse_prerequisite cp
+                LEFT JOIN tblcourse c1 ON cp.course_id = c1.course_id
+                LEFT JOIN tblcourse c2 ON cp.prereq_course_id = c2.course_id
+                WHERE cp.course_id = ? AND cp.prereq_course_id = ? AND cp.is_active = TRUE";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ii", $course_id, $prereq_course_id);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $duplicates[] = $row;
+    }
+
+    echo json_encode($duplicates);
+    exit();
+}
+
 // Handle form submissions for Course Prerequisite
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_prerequisite'])) {
@@ -444,6 +485,29 @@ $courses = $conn->query("SELECT $course_select_field FROM tblcourse ORDER BY cou
             <input type="hidden" name="prereq_course_id" id="restorePrereqCourseId">
             <input type="hidden" name="restore_prerequisite" value="1">
         </form>
+
+        <!-- Duplicate Prerequisite Modal -->
+        <div id="duplicate-prerequisite-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Duplicate Prerequisite Detected</h2>
+                    <button type="button" class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="duplicate-errors">
+                        <p>The following prerequisite relationship(s) already exist:</p>
+                        <ul id="duplicate-errors-list">
+                            <!-- Error messages will be populated here -->
+                        </ul>
+                        <p>Please choose a different course combination.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="goToFormBtn" style="min-width: 120px;">Go to Form</button>
+                    <button type="button" class="btn btn-primary" id="cancelDuplicateBtn" text-align: center;">Cancel</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Prerequisites Table -->
         <div class="table-container">

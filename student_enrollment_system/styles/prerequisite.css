@@ -1094,6 +1094,111 @@ table td {
     }
 }
 
+/* Duplicate Prerequisite Modal Styles */
+#duplicate-prerequisite-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#duplicate-prerequisite-modal.modal-show {
+    opacity: 1;
+}
+
+#duplicate-prerequisite-modal .modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transform: translateY(-50px);
+    transition: transform 0.3s ease;
+}
+
+#duplicate-prerequisite-modal.modal-show .modal-content {
+    transform: translateY(0);
+}
+
+#duplicate-prerequisite-modal .modal-header {
+    color: white;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px 8px 0 0;
+}
+
+#duplicate-prerequisite-modal .modal-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.5rem;
+}
+
+#duplicate-prerequisite-modal .close-modal {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+#duplicate-prerequisite-modal .close-modal:hover {
+    color: white;
+}
+
+#duplicate-prerequisite-modal .modal-body {
+    padding: 2rem;
+}
+
+#duplicate-prerequisite-modal .duplicate-errors {
+    text-align: center;
+}
+
+#duplicate-prerequisite-modal .duplicate-errors p {
+    margin-bottom: 1rem;
+    color: var(--gray-700);
+    font-size: 1rem;
+}
+
+#duplicate-prerequisite-modal .duplicate-errors ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+#duplicate-prerequisite-modal .duplicate-errors li {
+    background: #fef2f2;
+    color: var(--danger);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    border-left: 4px solid var(--danger);
+    text-align: left;
+    font-weight: 500;
+}
+
+#duplicate-prerequisite-modal .modal-footer {
+    padding: 1.5rem 2rem;
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    border-radius: 0 0 8px 8px;
+}
+
 /* Responsive design for modal */
 @media (max-width: 768px) {
     .modal-content {
@@ -1102,9 +1207,23 @@ table td {
         max-height: 90vh;
         overflow-y: auto;
     }
-    
+
     .modal-body {
         padding: 1.5rem;
+    }
+
+    #duplicate-prerequisite-modal .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+
+    #duplicate-prerequisite-modal .modal-body {
+        padding: 1rem;
+    }
+
+    #duplicate-prerequisite-modal .modal-footer {
+        padding: 1rem;
+        flex-direction: column;
     }
 }
 
@@ -1113,16 +1232,29 @@ table td {
         width: 98%;
         margin: 0.5rem;
     }
-    
+
     .modal-body {
         padding: 1rem;
     }
-    
+
     .modal-header {
         padding: 1rem;
     }
-    
+
     .modal-header h2 {
         font-size: 1.25rem;
+    }
+
+    #duplicate-prerequisite-modal .modal-content {
+        margin: 5% auto;
+        width: 98%;
+    }
+
+    #duplicate-prerequisite-modal .modal-body {
+        padding: 1rem;
+    }
+
+    #duplicate-prerequisite-modal .modal-footer {
+        padding: 1rem;
     }
 }
