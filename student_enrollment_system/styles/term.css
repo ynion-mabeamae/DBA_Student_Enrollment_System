@@ -775,6 +775,73 @@ table td {
     animation: progress 5s linear;
 }
 
+#duplicate-term-modal .modal-header h2 {
+    color: white;
+}
+
+#duplicate-term-modal .modal-header i {
+    color: white;
+    margin-right: 10px;
+}
+
+.duplicate-errors {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.duplicate-errors p {
+    margin: 0 0 0.5rem 0;
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.duplicate-errors ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.duplicate-errors li {
+    color: #991b1b;
+    margin-bottom: 0.25rem;
+    line-height: 1.5;
+}
+
+.duplicate-errors li strong {
+    font-weight: 700;
+    color: #7f1d1d;
+    background-color: #fee2e2;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #fca5a5;
+}
+
+.duplicate-errors li:last-child {
+    margin-bottom: 0;
+}
+
+#duplicate-term-modal .modal-footer {
+    padding: 1.5rem 2rem;
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    border-radius: 0 0 8px 8px;
+}
+
+#duplicate-prerequisite-modal .modal-footer {
+    padding: 1.5rem 2rem;
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    border-radius: 0 0 8px 8px;
+}
+
 @keyframes progress {
     from { width: 100%; }
     to { width: 0%; }

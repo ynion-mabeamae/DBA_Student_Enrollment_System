@@ -1,4 +1,4 @@
-<?php
+    <?php
 session_start();
 require_once '../includes/config.php';
 
@@ -14,43 +14,124 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'term';
 // Handle show archived toggle
 $show_archived = isset($_GET['show_archived']) && $_GET['show_archived'] == 'true';
 
+// Handle AJAX duplicate check
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['check_duplicates'])) {
+    header('Content-Type: application/json');
+
+    $term_code = $_POST['term_code'];
+
+    $duplicates = [];
+
+    if (isset($_POST['term_id'])) {
+        // Update mode: exclude current term
+        $sql = "SELECT term_id, term_code, start_date, end_date
+                FROM tblterm
+                WHERE term_code = ? AND is_active = TRUE
+                AND term_id != ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("si", $term_code, $_POST['term_id']);
+    } else {
+        // Add mode: check for exact match
+        $sql = "SELECT term_id, term_code, start_date, end_date
+                FROM tblterm
+                WHERE term_code = ? AND is_active = TRUE";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $term_code);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $duplicates[] = $row;
+    }
+
+    echo json_encode($duplicates);
+    exit();
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_term'])) {
         $term_code = $_POST['term_code'];
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'];
-        
+
+        $duplicate_errors = [];
+
+        // Check if term code already exists (any status, to prevent database constraint violation)
+        $check_sql = "SELECT term_id, term_code, start_date, end_date FROM tblterm WHERE term_code = ?";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("s", $term_code);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            while ($row = $check_result->fetch_assoc()) {
+                $duplicate_errors[] = "Term code <strong>{$row['term_code']}</strong> already exists (Start: {$row['start_date']}, End: {$row['end_date']})";
+            }
+        }
+
+        if (!empty($duplicate_errors)) {
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST;
+            header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+            exit();
+        }
+
+        // Insert new record
         $sql = "INSERT INTO tblterm (term_code, start_date, end_date) VALUES (?, ?, ?)";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("sss", $term_code, $start_date, $end_date);
-        
+
         if ($stmt->execute()) {
             $_SESSION['message'] = "success::Term added successfully!";
         } else {
             $_SESSION['message'] = "error::Error adding term: " . $conn->error;
         }
-        
+
         header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
         exit();
     }
-    
+
     if (isset($_POST['update_term'])) {
         $term_id = $_POST['term_id'];
         $term_code = $_POST['term_code'];
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'];
-        
+
+        $duplicate_errors = [];
+
+        // Check if term code already exists (exclude current term)
+        $check_sql = "SELECT term_id, term_code, start_date, end_date FROM tblterm WHERE term_code = ? AND term_id != ?";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("si", $term_code, $term_id);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            while ($row = $check_result->fetch_assoc()) {
+                $duplicate_errors[] = "Term code <strong>{$row['term_code']}</strong> already exists (Start: {$row['start_date']}, End: {$row['end_date']})";
+            }
+        }
+
+        if (!empty($duplicate_errors)) {
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST;
+            header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+            exit();
+        }
+
         $sql = "UPDATE tblterm SET term_code = ?, start_date = ?, end_date = ? WHERE term_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("sssi", $term_code, $start_date, $end_date, $term_id);
-        
+
         if ($stmt->execute()) {
             $_SESSION['message'] = "success::Term updated successfully!";
         } else {
             $_SESSION['message'] = "error::Error updating term: " . $conn->error;
         }
-        
+
         header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
         exit();
     }
@@ -240,28 +321,28 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
                 <div class="modal-body">
                     <form method="POST" id="termForm">
                         <input type="hidden" name="term_id" id="term_id">
-                        
+
                         <div class="form-group">
                             <label for="term_code">Term Code *</label>
-                            <input type="text" id="term_code" name="term_code" 
+                            <input type="text" id="term_code" name="term_code"
                                 required maxlength="20" placeholder="Enter term code (e.g., SY2023-2024-1)">
                             <small class="form-help">Unique code for the term (max 20 characters)</small>
                         </div>
-                        
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="start_date">Start Date *</label>
                                 <input type="date" id="start_date" name="start_date" required>
                                 <small class="form-help">Start date of the term</small>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="end_date">End Date *</label>
                                 <input type="date" id="end_date" name="end_date" required>
                                 <small class="form-help">End date of the term</small>
                             </div>
                         </div>
-                        
+
                         <div class="form-actions">
                             <button type="submit" name="add_term" class="btn btn-success" id="addTermBtn">Add Term</button>
                             <button type="submit" name="update_term" class="btn btn-success" id="updateTermBtn" style="display: none;">Update Term</button>
@@ -271,6 +352,8 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
                 </div>
             </div>
         </div>
+
+
 
         <!-- Delete Confirmation Dialog -->
         <div class="delete-confirmation" id="deleteConfirmation">
@@ -399,7 +482,29 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
             </table>
         </div>
     </div>
-    
+
+    <!-- Duplicate Term Modal -->
+    <div id="duplicate-term-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Duplicate Term Detected</h2>
+                <button type="button" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="duplicate-errors">
+                    <p>The following term(s) already exist:</p>
+                    <ul id="duplicate-errors-list">
+                        <!-- Error messages will be populated here -->
+                    </ul>
+                    <p>Please choose a different term code.</p>
+                </div>
+            </div>
+        <div class="modal-footer" style="display: flex; justify-content: center; gap: 1rem;">
+            <button type="button" class="btn btn-primary" id="goToFormBtn" style="min-width: 120px;">Go to Form</button>
+            <button type="button" class="btn btn-primary" id="cancelDuplicateBtn">Cancel</button>
+        </div>
+        </div>
+    </div>
 
     <script src="../script/term.js"></script>
     <script>
@@ -467,5 +572,90 @@ $total_terms = $show_archived ? $archived_terms_count : $active_terms_count;
         unset($_SESSION['message']);
         ?>
     <?php endif; ?>
+
+    <!-- Duplicate Modal Handler -->
+    <?php if (isset($_SESSION['duplicate_errors'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const duplicateErrors = <?php echo json_encode($_SESSION['duplicate_errors']); ?>;
+                const formData = <?php echo isset($_SESSION['form_data']) ? json_encode($_SESSION['form_data']) : 'null'; ?>;
+
+                // Populate form with previous data
+                if (formData) {
+                    document.getElementById('term_id').value = formData.term_id || '';
+                    document.getElementById('term_code').value = formData.term_code || '';
+                    document.getElementById('start_date').value = formData.start_date || '';
+                    document.getElementById('end_date').value = formData.end_date || '';
+
+                    // Update modal title and buttons
+                    if (formData.term_id) {
+                        document.getElementById('termModalTitle').textContent = 'Edit Term';
+                        document.getElementById('addTermBtn').style.display = 'none';
+                        document.getElementById('updateTermBtn').style.display = 'block';
+                    } else {
+                        document.getElementById('termModalTitle').textContent = 'Add New Term';
+                        document.getElementById('addTermBtn').style.display = 'block';
+                        document.getElementById('updateTermBtn').style.display = 'none';
+                    }
+                }
+
+                // Populate duplicate errors
+                const errorList = document.getElementById('duplicate-errors-list');
+                errorList.innerHTML = '';
+                duplicateErrors.forEach(error => {
+                    const li = document.createElement('li');
+                    li.innerHTML = error;
+                    errorList.appendChild(li);
+                });
+
+                // Show the duplicate modal
+                const modal = document.getElementById('duplicate-term-modal');
+                modal.style.display = 'block';
+                setTimeout(() => {
+                    modal.classList.add('show');
+                }, 10);
+
+                // Add event listeners for modal buttons
+                document.getElementById('goToFormBtn').addEventListener('click', function() {
+                    // Close duplicate modal
+                    modal.style.display = 'none';
+                    modal.classList.remove('show');
+
+                    // Open term modal
+                    const termModal = document.getElementById('termModal');
+                    termModal.style.display = 'block';
+                    setTimeout(() => {
+                        termModal.classList.add('show');
+                    }, 10);
+                });
+
+                document.getElementById('cancelDuplicateBtn').addEventListener('click', function() {
+                    // Close duplicate modal
+                    modal.style.display = 'none';
+                    modal.classList.remove('show');
+                });
+
+                // Close modal when clicking the close button
+                modal.querySelector('.close-modal').addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    modal.classList.remove('show');
+                });
+
+                // Close modal when clicking outside
+                modal.addEventListener('click', function(event) {
+                    if (event.target === this) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                    }
+                });
+            });
+        </script>
+        <?php
+        unset($_SESSION['duplicate_errors']);
+        unset($_SESSION['form_data']);
+        ?>
+    <?php endif; ?>
+
+
 </body>
 </html>
