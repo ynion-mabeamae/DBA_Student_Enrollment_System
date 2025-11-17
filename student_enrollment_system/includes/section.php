@@ -29,24 +29,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $end_time = $_POST['end_time'];
         $room_id = $_POST['room_id'];
         $max_capacity = $_POST['max_capacity'];
-        
-        $sql = "INSERT INTO tblsection (section_code, course_id, term_id,
-                                        instructor_id, day_pattern, start_time,
-                                        end_time, room_id, max_capacity) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siiisssii", $section_code, $course_id, $term_id,
-                        $instructor_id, $day_pattern, $start_time, $end_time,
-                        $room_id, $max_capacity);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Section added successfully!";
-        } else {
-            $_SESSION['message'] = "error::Error adding section: " . $conn->error;
+
+        // Check for duplicate section code
+        $duplicate_errors = [];
+        $check_sql = "SELECT section_id FROM tblsection WHERE section_code = ? AND is_active = TRUE";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("s", $section_code);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            $duplicate_errors[] = "Section code '$section_code' already exists.";
         }
-        
-        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
-        exit();
+
+        if (empty($duplicate_errors)) {
+            $sql = "INSERT INTO tblsection (section_code, course_id, term_id,
+                                            instructor_id, day_pattern, start_time,
+                                            end_time, room_id, max_capacity)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("siiisssii", $section_code, $course_id, $term_id,
+                            $instructor_id, $day_pattern, $start_time, $end_time,
+                            $room_id, $max_capacity);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "success::Section added successfully!";
+            } else {
+                $_SESSION['message'] = "error::Error adding section: " . $conn->error;
+            }
+
+            header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+            exit();
+        } else {
+            // Store duplicate errors and form data for modal display
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST;
+            header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+            exit();
+        }
     }
     
     if (isset($_POST['update_section'])) {
@@ -441,6 +461,29 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
             </div>
         </div>
 
+        <!-- Duplicate Section Modal -->
+        <div id="duplicate-section-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Duplicate Section Detected</h2>
+                    <button class="close-modal" onclick="closeModal('duplicate-section-modal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="duplicate-errors">
+                        <p>The following duplicate entries were found:</p>
+                        <ul id="duplicateSectionErrorList">
+                            <!-- Errors will be populated by JavaScript -->
+                        </ul>
+                        <p>Please check your input and try again.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="goBackToSectionForm()">Go Back to Form</button>
+                    <button type="button" class="btn" onclick="closeModal('duplicate-section-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Delete Confirmation Dialog -->
         <div class="delete-confirmation" id="deleteConfirmation">
             <div class="confirmation-dialog">
@@ -698,7 +741,61 @@ $day_patterns = ['M', 'T', 'W', 'Th', 'F', 'S'];
                     confirmButtonText: 'OK'
                 });
             <?php endif; ?>
+
+            // Handle duplicate errors modal
+            <?php if (isset($_SESSION['duplicate_errors'])): ?>
+                const duplicateErrors = <?php echo json_encode($_SESSION['duplicate_errors']); ?>;
+                const formData = <?php echo isset($_SESSION['form_data']) ? json_encode($_SESSION['form_data']) : 'null'; ?>;
+
+                // Populate duplicate errors list
+                const errorList = document.getElementById('duplicateSectionErrorList');
+                if (errorList && duplicateErrors) {
+                    errorList.innerHTML = '';
+                    duplicateErrors.forEach(error => {
+                        const li = document.createElement('li');
+                        li.textContent = error;
+                        errorList.appendChild(li);
+                    });
+                }
+
+                // Show duplicate modal
+                const duplicateModal = document.getElementById('duplicate-section-modal');
+                if (duplicateModal) {
+                    duplicateModal.style.display = 'block';
+                    setTimeout(() => {
+                        duplicateModal.classList.add('modal-show');
+                    }, 10);
+                }
+
+                // Clear session data
+                <?php unset($_SESSION['duplicate_errors'], $_SESSION['form_data']); ?>
+            <?php endif; ?>
         });
+
+        // Function to close modal
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('modal-show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        // Function to go back to section form
+        function goBackToSectionForm() {
+            closeModal('duplicate-section-modal');
+            setTimeout(() => {
+                const modal = document.getElementById('sectionModal');
+                if (modal) {
+                    modal.style.display = 'block';
+                    setTimeout(() => {
+                        modal.classList.add('modal-show');
+                    }, 10);
+                }
+            }, 300);
+        }
     </script>
 </body>
 </html>

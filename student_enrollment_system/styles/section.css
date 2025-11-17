@@ -189,13 +189,13 @@ body {
     flex-wrap: wrap;
 }
 
+/* Section Status Toggle */
 .section-status-toggle {
-        display: flex;
-        margin-bottom: 20px;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid #ddd;
-        
+    display: flex;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #ddd;
 }
 
 .status-btn {
@@ -208,7 +208,6 @@ body {
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
-    
 }
 
 .status-btn:hover {
@@ -239,7 +238,6 @@ body {
 .table-container {
     margin-top: 0;
 }
-
 
 /* Toast Notifications */
 .toast-container {
@@ -609,20 +607,20 @@ body {
         margin: 5% auto;
         width: 95%;
     }
-    
+
     .modal-body {
         padding: 1.5rem;
     }
-    
+
     .modal .form-row {
         grid-template-columns: 1fr;
         gap: 0;
     }
-    
+
     .modal .form-actions {
         flex-direction: column;
     }
-    
+
     .modal .btn {
         width: 100%;
         justify-content: center;
@@ -1178,54 +1176,218 @@ table td {
         gap: 1rem;
         align-items: flex-start;
     }
-    
+
     .search-container {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .search-box {
         min-width: auto;
     }
-    
+
     .search-btn {
         width: 100%;
     }
-    
+
     .form-actions {
         flex-direction: column;
     }
-    
+
     .form-row {
         grid-template-columns: 1fr;
     }
-    
+
     .actions {
         flex-direction: column;
     }
-    
+
     .section-header-global {
         flex-direction: column;
         gap: 0.5rem;
         align-items: flex-start;
     }
-    
+
     .table-container {
         margin: 0 1rem 1rem 1rem;
         padding: 1rem;
     }
-    
+
     .modal-content {
         margin: 10% auto;
         width: 95%;
     }
-    
+
     .modal-body {
         padding: 1rem;
     }
-    
+
     table {
         display: block;
         overflow-x: auto;
+    }
+}
+
+/* Duplicate Section Modal Styles */
+#duplicate-section-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#duplicate-section-modal.modal-show {
+    display: block;
+    opacity: 1;
+}
+
+#duplicate-section-modal .modal-content {
+    background-color: #ffffff;
+    margin: 5% auto;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#duplicate-section-modal.modal-show .modal-content {
+    transform: translateY(0);
+}
+
+#duplicate-section-modal .modal-header {
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 12px 12px 0 0;
+}
+
+#duplicate-section-modal .modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+}
+
+#duplicate-section-modal .close-modal {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+#duplicate-section-modal .close-modal:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+#duplicate-section-modal .modal-body {
+    padding: 2rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+#duplicate-section-modal .duplicate-errors {
+    text-align: center;
+}
+
+#duplicate-section-modal .duplicate-errors p {
+    margin-bottom: 1rem;
+    color: #374151;
+    font-size: 1rem;
+}
+
+#duplicate-section-modal .duplicate-errors ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#duplicate-section-modal .duplicate-errors li {
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 6px;
+    border-left: 4px solid #dc2626;
+    text-align: left;
+}
+
+#duplicate-section-modal .modal-footer {
+    padding: 1.5rem 2rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+#duplicate-section-modal .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    justify-content: center;
+}
+
+#duplicate-section-modal .btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+#duplicate-section-modal .btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+#duplicate-section-modal .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive duplicate modal */
+@media (max-width: 768px) {
+    #duplicate-section-modal .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+
+    #duplicate-section-modal .modal-body {
+        padding: 1.5rem;
+    }
+
+    #duplicate-section-modal .modal-footer {
+        padding: 1rem 1.5rem;
+        flex-direction: column;
+    }
+
+    #duplicate-section-modal .btn {
+        width: 100%;
     }
 }
