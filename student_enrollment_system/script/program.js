@@ -9,6 +9,7 @@ const ProgramManager = {
         this.initializeDeleteConfirmation();
         this.setupEventListeners();
         this.showNotifications();
+        this.initializeDuplicateModal();
     },
 
     // Modal functionality
@@ -450,6 +451,50 @@ const ProgramManager = {
                 notification.classList.add('show');
             }, 100);
         });
+    },
+
+    // Duplicate Program Modal functionality
+    initializeDuplicateModal: function() {
+        this.duplicateModal = document.getElementById('duplicate-program-modal');
+        this.goBackBtn = document.querySelector('.btn-primary[onclick="goBackToProgramForm()"]');
+        this.cancelDuplicateBtn = document.querySelector('.btn[onclick="closeModal(\'duplicate-program-modal\')"]');
+
+        this.setupDuplicateModalEvents();
+    },
+
+    setupDuplicateModalEvents: function() {
+        // Go back to form button
+        if (this.goBackBtn) {
+            this.goBackBtn.addEventListener('click', () => {
+                this.closeDuplicateModal();
+                this.openAddProgramModal();
+            });
+        }
+
+        // Cancel button
+        if (this.cancelDuplicateBtn) {
+            this.cancelDuplicateBtn.addEventListener('click', () => {
+                this.closeDuplicateModal();
+            });
+        }
+
+        // Close modal when clicking outside
+        if (this.duplicateModal) {
+            this.duplicateModal.addEventListener('click', (e) => {
+                if (e.target === this.duplicateModal) {
+                    this.closeDuplicateModal();
+                }
+            });
+        }
+    },
+
+    closeDuplicateModal: function() {
+        if (this.duplicateModal) {
+            this.duplicateModal.classList.remove('show');
+            setTimeout(() => {
+                this.duplicateModal.style.display = 'none';
+            }, 300);
+        }
     }
 };
 
@@ -467,16 +512,19 @@ document.addEventListener('keydown', function(e) {
         const programModal = document.getElementById('programModal');
         const deleteModal = document.getElementById('deleteModal');
         const deleteConfirmation = document.getElementById('deleteConfirmation');
-        
+        const duplicateModal = document.getElementById('duplicate-program-modal');
+
         if (programModal && programModal.style.display === 'block') {
             ProgramManager.closeModals();
         } else if (deleteModal && deleteModal.style.display === 'block') {
             ProgramManager.closeModals();
         } else if (deleteConfirmation && deleteConfirmation.classList.contains('show')) {
             ProgramManager.hideDeleteConfirmation();
+        } else if (duplicateModal && duplicateModal.style.display === 'block') {
+            ProgramManager.closeDuplicateModal();
         }
     }
-    
+
     // Ctrl/Cmd + F to focus search
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
@@ -485,7 +533,7 @@ document.addEventListener('keydown', function(e) {
             searchInput.focus();
         }
     }
-    
+
     // Ctrl/Cmd + N to open new program modal
     if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
@@ -518,9 +566,47 @@ document.addEventListener('DOMContentLoaded', function() {
 function exportData(type) {
     // Build export URL
     let exportUrl = `program_export_${type}.php`;
-    
+
     console.log('Export URL:', exportUrl); // Debug log
-    
+
     // Open export in new window
     window.open(exportUrl, '_blank');
+}
+
+// Global functions for duplicate modal handling
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'block';
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
+}
+
+function goBackToProgramForm() {
+    closeModal('duplicate-program-modal');
+    ProgramManager.openAddProgramModal();
+}
+
+function populateDuplicateErrors(errors) {
+    const errorList = document.getElementById('duplicateProgramErrorList');
+    if (errorList) {
+        errorList.innerHTML = '';
+        errors.forEach(error => {
+            const li = document.createElement('li');
+            li.textContent = error;
+            errorList.appendChild(li);
+        });
+    }
 }

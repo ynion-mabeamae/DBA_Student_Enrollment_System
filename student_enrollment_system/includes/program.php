@@ -1,6 +1,9 @@
-<?php
+    <?php
 session_start();
 require_once '../includes/config.php';
+
+// Retrieve existing program data from session if available
+$existing_program = isset($_SESSION['existing_program']) ? $_SESSION['existing_program'] : null;
 
 // Handle logout
 if (isset($_GET['logout'])) {
@@ -33,20 +36,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $program_code = $_POST['program_code'];
         $program_name = $_POST['program_name'];
         $dept_id = $_POST['dept_id'] ?? null;
-        
-        $sql = "INSERT INTO tblprogram (program_code, program_name, dept_id) 
-                VALUES (?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssi", $program_code, $program_name, $dept_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Program added successfully!";
-        } else {
-            $_SESSION['message'] = "error::Error adding program: " . $conn->error;
+
+        // Check for duplicate program code
+        $duplicate_errors = [];
+        $existing_program = null;
+        $check_sql = "SELECT p.*, d.dept_name
+                      FROM tblprogram p
+                      LEFT JOIN tbldepartment d ON p.dept_id = d.dept_id
+                      WHERE p.program_code = ? AND p.is_active = TRUE";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("s", $program_code);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            $existing_program = $check_result->fetch_assoc();
+            $duplicate_errors[] = "Program code '$program_code' already exists.";
+            // Store existing program data for modal display
+            $_SESSION['existing_program'] = $existing_program;
         }
-        
-        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
-        exit();
+
+        if (empty($duplicate_errors)) {
+            $sql = "INSERT INTO tblprogram (program_code, program_name, dept_id)
+                    VALUES (?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssi", $program_code, $program_name, $dept_id);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "success::Program added successfully!";
+                header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+                exit();
+            } else {
+                $_SESSION['message'] = "error::Error adding program: " . $conn->error;
+            }
+        } else {
+            // Store duplicate errors and form data for modal display
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST;
+            $_SESSION['existing_program'] = $existing_program;
+            $_SESSION['show_duplicate_modal'] = true;
+        }
     }
     
     if (isset($_POST['update_program'])) {
@@ -331,6 +360,50 @@ $total_programs = $show_archived ? $archived_programs_count : $active_programs_c
             </div>
         </div>
 
+        <!-- Duplicate Program Modal -->
+        <div id="duplicate-program-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Duplicate Program Detected</h2>
+                    <button class="close-modal" onclick="closeModal('duplicate-program-modal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="duplicate-errors">
+                        <p>The following duplicate entries were found:</p>
+                        <ul id="duplicateProgramErrorList">
+                            <!-- Errors will be populated by JavaScript -->
+                        </ul>
+                    </div>
+
+                    <?php if (isset($existing_program)): ?>
+                    <div class="existing-program-info">
+                        <h3>Existing Program Details:</h3>
+                        <div class="program-details">
+                            <div class="detail-row">
+                                <strong>Program Code:</strong> <span><?php echo htmlspecialchars($existing_program['program_code']); ?></span>
+                            </div>
+                            <div class="detail-row">
+                                <strong>Program Name:</strong> <span><?php echo htmlspecialchars($existing_program['program_name']); ?></span>
+                            </div>
+                            <div class="detail-row">
+                                <strong>Department:</strong> <span><?php echo htmlspecialchars($existing_program['dept_name'] ?? 'Not Assigned'); ?></span>
+                            </div>
+                        </div>
+                        <p class="duplicate-note">A program with this code already exists. Please choose a different code or check if you meant to edit the existing program.</p>
+                    </div>
+                    <?php
+                    // Unset the session variable after displaying
+                    unset($_SESSION['existing_program']);
+                    ?>
+                    <?php endif; ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="goBackToProgramForm()">Go Back to Form</button>
+                    <button type="button" class="btn" onclick="closeModal('duplicate-program-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Delete Confirmation Dialog -->
         <div class="delete-confirmation" id="deleteConfirmation">
             <div class="confirmation-dialog">
@@ -537,6 +610,32 @@ $total_programs = $show_archived ? $archived_programs_count : $active_programs_c
                 });
             <?php endif; ?>
         });
+
+        // Duplicate Program Modal Script
+        <?php if (isset($_SESSION['show_duplicate_modal']) && $_SESSION['show_duplicate_modal']): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                <?php if (isset($_SESSION['duplicate_errors'])): ?>
+                populateDuplicateErrors(<?php echo json_encode($_SESSION['duplicate_errors']); ?>);
+                <?php endif; ?>
+                openModal('duplicate-program-modal');
+                <?php if (isset($_SESSION['form_data'])): ?>
+                // Populate form with previous data
+                const formData = <?php echo json_encode($_SESSION['form_data']); ?>;
+                for (const [key, value] of Object.entries(formData)) {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = value;
+                    }
+                }
+                <?php endif; ?>
+            });
+            <?php
+            unset($_SESSION['show_duplicate_modal']);
+            unset($_SESSION['duplicate_errors']);
+            unset($_SESSION['form_data']);
+            unset($_SESSION['existing_program']);
+            ?>
+        <?php endif; ?>
 
                 // Logout modal functions
         function openLogoutModal() {
