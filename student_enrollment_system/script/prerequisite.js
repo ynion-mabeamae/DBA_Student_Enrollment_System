@@ -1,4 +1,4 @@
-    document.addEventListener('DOMContentLoaded', function() {
+e    document.addEventListener('DOMContentLoaded', function() {
         // Modal elements
         const modal = document.getElementById('prerequisiteModal');
         const openModalBtn = document.getElementById('openPrerequisiteModal');
@@ -12,7 +12,7 @@
         // Duplicate prerequisite modal elements
         const duplicateModal = document.getElementById('duplicate-prerequisite-modal');
         const duplicateCloseBtn = duplicateModal.querySelector('.close-modal');
-        const duplicateCancelBtn = duplicateModal.querySelector('.close-modal');
+        const duplicateCancelBtn = document.getElementById('cancelDuplicateBtn');
         const duplicateErrorsList = document.getElementById('duplicate-errors-list');
         
         // Delete confirmation elements
