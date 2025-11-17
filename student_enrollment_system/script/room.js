@@ -77,10 +77,15 @@ const RoomManager = {
             }
         });
 
-        // Close modals on successful form submission
+        // Form submission with validation
         const roomForm = document.getElementById('roomForm');
         if (roomForm) {
-            roomForm.addEventListener('submit', () => {
+            roomForm.addEventListener('submit', (e) => {
+                if (!this.validateForm()) {
+                    e.preventDefault(); // Prevent form submission if validation fails
+                    return false;
+                }
+                // Close modal after successful submission
                 setTimeout(() => {
                     this.closeModals();
                 }, 1000);
@@ -128,15 +133,18 @@ const RoomManager = {
         if (roomForm) {
             roomForm.reset();
         }
-        
+
+        // Clear any previous error states
+        this.clearFormErrors();
+
         // Update modal title and buttons
         document.getElementById('roomModalTitle').textContent = 'Add New Room';
         document.getElementById('addRoomBtn').style.display = 'block';
         document.getElementById('updateRoomBtn').style.display = 'none';
-        
+
         // Clear hidden room_id
         document.getElementById('room_id').value = '';
-        
+
         this.showModal(this.roomModal);
     },
 
@@ -202,7 +210,7 @@ const RoomManager = {
         if (modal) {
             modal.style.display = "block";
             setTimeout(() => {
-                modal.classList.add('show');
+                modal.classList.add('modal-show');
             }, 10);
         }
     },
@@ -210,12 +218,12 @@ const RoomManager = {
     closeModals: function() {
         // Close room modal
         if (this.roomModal) {
-            this.roomModal.classList.remove('show');
+            this.roomModal.classList.remove('modal-show');
             setTimeout(() => {
                 this.roomModal.style.display = "none";
             }, 300);
         }
-        
+
         // Also close delete confirmation
         this.hideDeleteConfirmation();
     },
@@ -460,6 +468,80 @@ const RoomManager = {
                 notification.classList.add('show');
             }, 100);
         });
+    },
+
+    // Form validation and error handling
+    clearFormErrors: function() {
+        // Remove error classes from form groups
+        const formGroups = document.querySelectorAll('.form-group');
+        formGroups.forEach(group => {
+            group.classList.remove('error');
+        });
+
+        // Remove error messages
+        const errorMessages = document.querySelectorAll('.error-message');
+        errorMessages.forEach(msg => {
+            msg.remove();
+        });
+    },
+
+    showFieldError: function(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            const formGroup = field.closest('.form-group');
+            if (formGroup) {
+                formGroup.classList.add('error');
+
+                // Remove existing error message
+                const existingError = formGroup.querySelector('.error-message');
+                if (existingError) {
+                    existingError.remove();
+                }
+
+                // Add new error message
+                const errorMsg = document.createElement('span');
+                errorMsg.className = 'error-message';
+                errorMsg.textContent = message;
+                formGroup.appendChild(errorMsg);
+            }
+        }
+    },
+
+    validateForm: function() {
+        let isValid = true;
+        this.clearFormErrors();
+
+        // Validate building
+        const building = document.getElementById('building').value.trim();
+        if (!building) {
+            this.showFieldError('building', 'Building name is required');
+            isValid = false;
+        } else if (building.length > 50) {
+            this.showFieldError('building', 'Building name must be 50 characters or less');
+            isValid = false;
+        }
+
+        // Validate room code
+        const roomCode = document.getElementById('room_code').value.trim();
+        if (!roomCode) {
+            this.showFieldError('room_code', 'Room code is required');
+            isValid = false;
+        } else if (roomCode.length > 20) {
+            this.showFieldError('room_code', 'Room code must be 20 characters or less');
+            isValid = false;
+        }
+
+        // Validate capacity
+        const capacity = document.getElementById('capacity').value;
+        if (!capacity) {
+            this.showFieldError('capacity', 'Capacity is required');
+            isValid = false;
+        } else if (capacity < 1 || capacity > 1000) {
+            this.showFieldError('capacity', 'Capacity must be between 1 and 1000');
+            isValid = false;
+        }
+
+        return isValid;
     }
 };
 

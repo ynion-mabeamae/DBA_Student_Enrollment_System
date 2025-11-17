@@ -25,19 +25,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $building = $_POST['building'];
         $room_code = $_POST['room_code'];
         $capacity = $_POST['capacity'];
-        
-        $sql = "INSERT INTO tblroom (building, room_code, capacity) VALUES (?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssi", $building, $room_code, $capacity);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "success::Room added successfully!";
-        } else {
-            $_SESSION['message'] = "error::Error adding room: " . $conn->error;
+
+        // Check for duplicate room code
+        $duplicate_errors = [];
+        $check_sql = "SELECT room_id FROM tblroom WHERE room_code = ? AND is_active = TRUE";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("s", $room_code);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            $duplicate_errors[] = "Room code '$room_code' already exists.";
         }
-        
-        header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
-        exit();
+
+        if (empty($duplicate_errors)) {
+            $sql = "INSERT INTO tblroom (building, room_code, capacity) VALUES (?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssi", $building, $room_code, $capacity);
+
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "success::Room added successfully!";
+            } else {
+                $_SESSION['message'] = "error::Error adding room: " . $conn->error;
+            }
+
+            header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+            exit();
+        } else {
+            // Store duplicate errors and form data for modal display
+            $_SESSION['duplicate_errors'] = $duplicate_errors;
+            $_SESSION['form_data'] = $_POST;
+            header("Location: " . $_SERVER['PHP_SELF'] . ($show_archived ? '?show_archived=true' : ''));
+            exit();
+        }
     }
     
     if (isset($_POST['update_room'])) {
@@ -316,6 +336,29 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
             <input type="hidden" name="delete_room" value="1">
         </form>
 
+        <!-- Duplicate Room Modal -->
+        <div id="duplicate-room-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Duplicate Room Detected</h2>
+                    <button class="close-modal" onclick="closeModal('duplicate-room-modal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="duplicate-errors">
+                        <p>The following duplicate entries were found:</p>
+                        <ul id="duplicateRoomErrorList">
+                            <!-- Errors will be populated by JavaScript -->
+                        </ul>
+                        <p>Please check your input and try again.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="goBackToRoomForm()">Go Back to Form</button>
+                    <button type="button" class="btn" onclick="closeModal('duplicate-room-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Rooms Table -->
         <div class="table-container">
             
@@ -505,44 +548,79 @@ $buildings = $conn->query("SELECT DISTINCT building FROM tblroom ORDER BY buildi
 
     <script src="../script/room.js"></script>
 
-    <!-- SweetAlert Notifications -->
-    <?php if (isset($_SESSION['message'])): ?>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const fullMessage = <?php echo json_encode($_SESSION['message']); ?>;
-                const parts = fullMessage.split('::');
-                const type = parts[0];
-                const message = parts[1];
+    <script>
+        // SweetAlert notification handling
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if (isset($_SESSION['message'])): ?>
+                <?php
+                $message = $_SESSION['message'];
+                list($type, $text) = explode('::', $message, 2);
+                unset($_SESSION['message']);
+                ?>
+                Swal.fire({
+                    icon: '<?php echo $type; ?>',
+                    title: '<?php echo ucfirst($type); ?>',
+                    text: '<?php echo $text; ?>',
+                    confirmButtonText: 'OK'
+                });
+            <?php endif; ?>
 
-                let icon = 'info';
-                let title = 'Notification';
-                if (type === 'success') {
-                    icon = 'success';
-                    title = 'Success';
-                } else if (type === 'error') {
-                    icon = 'error';
-                    title = 'Error';
-                } else if (type === 'warning') {
-                    icon = 'warning';
-                    title = 'Warning';
+            // Handle duplicate errors modal
+            <?php if (isset($_SESSION['duplicate_errors'])): ?>
+                const duplicateErrors = <?php echo json_encode($_SESSION['duplicate_errors']); ?>;
+                const formData = <?php echo isset($_SESSION['form_data']) ? json_encode($_SESSION['form_data']) : 'null'; ?>;
+
+                // Populate duplicate errors list
+                const errorList = document.getElementById('duplicateRoomErrorList');
+                if (errorList && duplicateErrors) {
+                    errorList.innerHTML = '';
+                    duplicateErrors.forEach(error => {
+                        const li = document.createElement('li');
+                        li.textContent = error;
+                        errorList.appendChild(li);
+                    });
                 }
 
-                Swal.fire({
-                    icon: icon,
-                    title: title,
-                    text: message,
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#4361ee'
-                });
-            });
-        </script>
-        <?php
-        unset($_SESSION['message']);
-        ?>
-    <?php endif; ?>
+                // Show duplicate modal
+                const duplicateModal = document.getElementById('duplicate-room-modal');
+                if (duplicateModal) {
+                    duplicateModal.style.display = 'block';
+                    setTimeout(() => {
+                        duplicateModal.classList.add('modal-show');
+                    }, 10);
+                }
 
-    <script>
-                // Logout modal functions
+                // Clear session data
+                <?php unset($_SESSION['duplicate_errors'], $_SESSION['form_data']); ?>
+            <?php endif; ?>
+        });
+
+        // Function to close modal
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('modal-show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        // Function to go back to room form
+        function goBackToRoomForm() {
+            closeModal('duplicate-room-modal');
+            setTimeout(() => {
+                const modal = document.getElementById('roomModal');
+                if (modal) {
+                    modal.style.display = 'block';
+                    setTimeout(() => {
+                        modal.classList.add('modal-show');
+                    }, 10);
+                }
+            }, 300);
+        }
+
+        // Logout modal functions
         function openLogoutModal() {
             const modal = document.getElementById('logoutConfirmation');
             modal.style.display = 'flex';
