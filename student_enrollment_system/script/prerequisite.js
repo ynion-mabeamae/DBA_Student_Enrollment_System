@@ -1,4 +1,4 @@
-e    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
         // Modal elements
         const modal = document.getElementById('prerequisiteModal');
         const openModalBtn = document.getElementById('openPrerequisiteModal');
