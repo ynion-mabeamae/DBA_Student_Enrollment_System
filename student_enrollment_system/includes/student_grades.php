@@ -235,7 +235,7 @@ foreach ($grades_by_term as $term => $enrollments) {
         </div>
 
         <!-- Grade Distribution Chart -->
-        <div class="grades-section">
+        <!-- <div class="grades-section">
             <div class="section-header">
                 <h2>Grade Distribution</h2>
             </div>
@@ -251,7 +251,7 @@ foreach ($grades_by_term as $term => $enrollments) {
                 </div>
                 <?php endforeach; ?>
             </div>
-        </div>
+        </div> -->
 
         <!-- All Grades Table -->
         <div class="grades-section">
@@ -336,7 +336,7 @@ foreach ($grades_by_term as $term => $enrollments) {
         </div>
         <?php endif; ?>
 
-        <!-- Academic Standing -->
+        <!-- Academic Standing
         <div class="grades-section">
             <div class="section-header">
                 <h2>Academic Standing</h2>
@@ -381,7 +381,7 @@ foreach ($grades_by_term as $term => $enrollments) {
                         <li><span class="req-probation">2.5 and above:</span> Academic Probation</li>
                     </ul>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
 
