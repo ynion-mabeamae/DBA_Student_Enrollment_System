@@ -4,7 +4,7 @@ require_once 'config.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'instructor') {
-    header("Location: dashboard.php");
+    header("Location: instructor_dashboard.php");
     exit();
 }
 
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
                 $_SESSION['last_name'] = $user['last_name'];
                 $_SESSION['login_time'] = time();
 
-                header("Location: dashboard.php");
+                header("Location: instructor_dashboard.php");
                 exit();
             } else {
                 $error = "Invalid username or password.";
