@@ -604,3 +604,42 @@ body {
         width: 100%;
     }
 }
+
+/* Teaching Schedule Table Custom Design */
+.schedule-table-container {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(67, 97, 238, 0.08);
+    padding: 24px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+.schedule-table-container table.enrollments-table {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(67, 97, 238, 0.07);
+    background: #f8f9fa;
+}
+.schedule-table-container th {
+    background: linear-gradient(90deg, #4361ee 60%, #4cc9f0 100%);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    font-size: 1rem;
+    padding: 14px 10px;
+}
+.schedule-table-container td {
+    background: #fff;
+    color: #212529;
+    font-size: 0.98rem;
+    padding: 12px 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+.schedule-table-container tr:last-child td {
+    border-bottom: none;
+}
+.schedule-table-container tbody tr:hover {
+    background: #e7f0fd;
+    transition: background 0.2s;
+}
+}
