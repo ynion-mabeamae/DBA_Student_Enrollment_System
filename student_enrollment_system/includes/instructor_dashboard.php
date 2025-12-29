@@ -69,6 +69,27 @@ $completed_count = 0;
 $current_term_query = "SELECT * FROM tblterm ORDER BY term_id DESC LIMIT 1";
 $current_term = $conn->query($current_term_query)->fetch_assoc();
 
+// Fetch instructor schedule
+$schedule = [];
+if ($real_instructor_id) {
+    $schedule_query = "
+        SELECT sec.section_code, c.course_code, c.course_title, t.term_code, sec.day_pattern, sec.start_time, sec.end_time, r.room_code, r.building
+        FROM tblsection sec
+        JOIN tblcourse c ON sec.course_id = c.course_id
+        JOIN tblroom r ON sec.room_id = r.room_id
+        JOIN tblterm t ON sec.term_id = t.term_id
+        WHERE sec.instructor_id = ? AND sec.is_active = 1
+        ORDER BY sec.day_pattern, sec.start_time
+    ";
+    $stmt_sched = $conn->prepare($schedule_query);
+    $stmt_sched->bind_param("i", $real_instructor_id);
+    $stmt_sched->execute();
+    $sched_result = $stmt_sched->get_result();
+    while ($row = $sched_result->fetch_assoc()) {
+        $schedule[] = $row;
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -176,6 +197,50 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                 </div>
             </div>
         </div>
+
+            <!-- Instructor Schedule Section -->
+            <div class="section-container" style="margin-bottom:30px;">
+                <div class="section-header">
+                    <h2 style="display:flex;align-items:center;gap:10px;">
+                        <i class="fas fa-calendar-alt" style="color:var(--primary-color);"></i> Teaching Schedule
+                    </h2>
+                </div>
+                <?php if (!empty($schedule)): ?>
+                <div class="schedule-table-container" style="overflow-x:auto;">
+                    <table class="enrollments-table" style="min-width:700px;">
+                        <thead>
+                            <tr>
+                                <th style="background:var(--light-bg);color:var(--primary-color);">Section</th>
+                                <th style="background:var(--light-bg);color:var(--primary-color);">Course</th>
+                                <th style="background:var(--light-bg);color:var(--primary-color);">Title</th>
+                                <th style="background:var(--light-bg);color:var(--primary-color);">Term</th>
+                                <th style="background:var(--light-bg);color:var(--primary-color);">Day</th>
+                                <th style="background:var(--light-bg);color:var(--primary-color);">Time</th>
+                                <th style="background:var(--light-bg);color:var(--primary-color);">Room</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($schedule as $sched): ?>
+                            <tr style="border-bottom:1px solid var(--border-color);">
+                                <td><?php echo htmlspecialchars($sched['section_code']); ?></td>
+                                <td><?php echo htmlspecialchars($sched['course_code']); ?></td>
+                                <td><?php echo htmlspecialchars($sched['course_title']); ?></td>
+                                <td><?php echo htmlspecialchars($sched['term_code']); ?></td>
+                                <td><?php echo htmlspecialchars($sched['day_pattern']); ?></td>
+                                <td><?php echo htmlspecialchars(date('h:i A', strtotime($sched['start_time'])) . ' - ' . date('h:i A', strtotime($sched['end_time']))); ?></td>
+                                <td><?php echo htmlspecialchars($sched['room_code'] . ' (' . $sched['building'] . ')'); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php else: ?>
+                    <div class="no-data">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>No schedule found for you this term.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
 
         <!-- Quick Actions -->
         <div class="quick-actions">
