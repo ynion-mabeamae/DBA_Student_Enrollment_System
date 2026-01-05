@@ -22,7 +22,8 @@ if (isset($_POST['backup'])) {
     $backup_name = 'dbenrollment_backup_' . date('Ymd_His') . '.sql';
     $tmp_file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $backup_name;
     
-    $command = "\"{$mysqldump_path}\" --user={$username} --password={$password} --host={$servername} {$dbname} > \"{$tmp_file}\" 2>&1";
+    $command = "\"{$mysqldump_path}\" --user={$username} --password={$password}
+      --host={$servername} {$dbname} > \"{$tmp_file}\" 2>&1";
     
     exec($command, $output, $result);
     
