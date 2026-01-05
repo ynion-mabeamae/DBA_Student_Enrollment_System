@@ -36,6 +36,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $duplicate_errors[] = "Student is already enrolled in the selected section.";
       }
     }
+    
+    // Check for failed/incomplete prerequisites
+    if (empty($duplicate_errors)) {
+        // Get course_id from section
+        $course_query = "SELECT course_id FROM tblsection WHERE section_id = ?";
+        $stmt_course = $conn->prepare($course_query);
+        $stmt_course->bind_param("i", $section_id);
+        $stmt_course->execute();
+        $course_result = $stmt_course->get_result();
+        $course_data = $course_result->fetch_assoc();
+        $course_id = $course_data['course_id'];
+        
+        // Get prerequisites for this course
+        $prereq_query = "
+            SELECT prereq_course_id, c.course_code, c.course_title
+            FROM tblcourse_prerequisite cp
+            JOIN tblcourse c ON cp.prereq_course_id = c.course_id
+            WHERE cp.course_id = ? AND cp.is_active = TRUE
+        ";
+        $stmt_prereq = $conn->prepare($prereq_query);
+        $stmt_prereq->bind_param("i", $course_id);
+        $stmt_prereq->execute();
+        $prereqs = $stmt_prereq->get_result();
+        
+        while ($prereq = $prereqs->fetch_assoc()) {
+            $prereq_course_id = $prereq['prereq_course_id'];
+            
+            // Check if student has failed (5.0) or incomplete (INC) in this prerequisite
+            $failed_check = "
+                SELECT letter_grade 
+                FROM tblenrollment e
+                JOIN tblsection sec ON e.section_id = sec.section_id
+                WHERE e.student_id = ? 
+                AND sec.course_id = ?
+                AND e.is_active = TRUE
+                AND (e.letter_grade = '5.0' OR e.letter_grade = '5.00' OR e.letter_grade = 'INC')
+                LIMIT 1
+            ";
+            $stmt_failed = $conn->prepare($failed_check);
+            $stmt_failed->bind_param("ii", $student_id, $prereq_course_id);
+            $stmt_failed->execute();
+            $failed_result = $stmt_failed->get_result();
+            
+            if ($failed_result->num_rows > 0) {
+                $failed_grade = $failed_result->fetch_assoc()['letter_grade'];
+                $duplicate_errors[] = "Cannot enroll: Student has grade " . $failed_grade . " in prerequisite " . $prereq['course_code'] . " - " . $prereq['course_title'] . ". Must retake and pass first.";
+            }
+        }
+    }
 
     if (empty($duplicate_errors)) {
       $sql = "INSERT INTO tblenrollment (student_id, section_id, date_enrolled, status, letter_grade)
