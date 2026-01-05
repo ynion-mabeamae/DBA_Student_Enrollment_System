@@ -168,13 +168,13 @@ body {
 }
 
 /* Enrollments Section */
-.enrollments-section {
+/* .enrollments-section {
     background: white;
     border-radius: 12px;
     padding: 25px;
     margin-bottom: 30px;
     box-shadow: var(--shadow);
-}
+} */
 
 .section-header {
     display: flex;

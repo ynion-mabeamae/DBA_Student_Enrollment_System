@@ -141,6 +141,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                 <i class="fas fa-user"></i>
                 <span>My Profile</span>
             </a>
+            <a href="student_enroll_subjects.php" class="menu-item">
+                <i class="fas fa-plus-circle"></i>
+                <span>Enroll Subjects</span>
+            </a>
             <a href="student_enrollments.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>My Schedule</span>

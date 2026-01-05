@@ -62,20 +62,34 @@ while ($enrollment = $grades_result->fetch_assoc()) {
     $units = $enrollment['units'];
     $course_code = $enrollment['course_code'];
     
-    // Skip NSTP courses and non-numeric grades for GPA calculation
+    // Skip NSTP courses, PathFit courses, and non-numeric grades for GPA calculation
     $nstp_courses = ['CWTS 001', 'CWTS 002', 'NSTP', 'ROTC'];
-    $is_nstp = false;
+    $pathfit_courses = ['PATHFIT 1', 'PATHFIT 2', 'PATHFIT 3', 'PATHFIT 4', 'PATHFIT'];
+    
+    $is_excluded = false;
+    
+    // Check NSTP courses
     foreach ($nstp_courses as $nstp) {
         if (stripos($course_code, $nstp) !== false) {
-            $is_nstp = true;
+            $is_excluded = true;
             break;
+        }
+    }
+    
+    // Check PathFit courses
+    if (!$is_excluded) {
+        foreach ($pathfit_courses as $pathfit) {
+            if (stripos($course_code, $pathfit) !== false) {
+                $is_excluded = true;
+                break;
+            }
         }
     }
     
     // Only count numeric grades
     $numeric_grades = ['1.0', '1.25', '1.5', '1.50', '1.75', '2.0', '2.25', '2.5', '2.50', '2.75', '3.0'];
     
-    if (!$is_nstp && in_array($grade, $numeric_grades) && $grade) {
+    if (!$is_excluded && in_array($grade, $numeric_grades) && $grade) {
         if (isset($grade_distribution[$grade])) {
             $grade_distribution[$grade]++;
         }
@@ -101,6 +115,34 @@ while ($enrollment = $grades_result->fetch_assoc()) {
     }
     $grades_by_term[$term][] = $enrollment;
 }
+
+// Sort terms chronologically (extract year and semester info)
+function sortTerms($a, $b) {
+    // Extract school year from term code (e.g., SY2425-Second -> 2425)
+    preg_match('/SY(\d+)-/', $a, $matches_a);
+    preg_match('/SY(\d+)-/', $b, $matches_b);
+    
+    $year_a = isset($matches_a[1]) ? intval($matches_a[1]) : 0;
+    $year_b = isset($matches_b[1]) ? intval($matches_b[1]) : 0;
+    
+    if ($year_a != $year_b) {
+        return $year_a - $year_b; // Sort by year ascending
+    }
+    
+    // If same year, sort by semester (First < Second < Summer)
+    $sem_order = ['First' => 1, 'Second' => 2, 'Summer' => 3];
+    
+    $sem_a = 0;
+    $sem_b = 0;
+    foreach ($sem_order as $sem => $order) {
+        if (stripos($a, $sem) !== false) $sem_a = $order;
+        if (stripos($b, $sem) !== false) $sem_b = $order;
+    }
+    
+    return $sem_a - $sem_b;
+}
+
+uksort($grades_by_term, 'sortTerms');
 
 // Calculate term GPAs
 $term_gpas = [];
@@ -167,6 +209,10 @@ foreach ($grades_by_term as $term => $enrollments) {
                 <i class="fas fa-user"></i>
                 <span>My Profile</span>
             </a>
+            <a href="student_enroll_subjects.php" class="menu-item">
+                <i class="fas fa-plus-circle"></i>
+                <span>Enroll Subjects</span>
+            </a>
             <a href="student_enrollments.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>My Schedule</span>
@@ -199,25 +245,39 @@ foreach ($grades_by_term as $term => $enrollments) {
                             GPA: 
                             <strong>
                             <?php 
-                                // Calculate term GPA (exclude NSTP and non-numeric grades)
+                                // Calculate term GPA (exclude NSTP, PathFit, and non-numeric grades)
                                 $term_points = 0;
                                 $term_units = 0;
                                 foreach ($enrollments as $enroll) {
                                     $grade = $enroll['letter_grade'];
                                     $course_code = $enroll['course_code'];
                                     
-                                    // Skip NSTP
+                                    // Skip NSTP courses
                                     $nstp_courses = ['CWTS 001', 'CWTS 002', 'NSTP', 'ROTC'];
-                                    $is_nstp = false;
+                                    $pathfit_courses = ['PATHFIT 1', 'PATHFIT 2', 'PATHFIT 3', 'PATHFIT 4', 'PATHFIT'];
+                                    
+                                    $is_excluded = false;
+                                    
+                                    // Check NSTP
                                     foreach ($nstp_courses as $nstp) {
                                         if (stripos($course_code, $nstp) !== false) {
-                                            $is_nstp = true;
+                                            $is_excluded = true;
                                             break;
                                         }
                                     }
                                     
+                                    // Check PathFit
+                                    if (!$is_excluded) {
+                                        foreach ($pathfit_courses as $pathfit) {
+                                            if (stripos($course_code, $pathfit) !== false) {
+                                                $is_excluded = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    
                                     $numeric_grades = ['1.0', '1.25', '1.5', '1.50', '1.75', '2.0', '2.25', '2.5', '2.50', '2.75', '3.0'];
-                                    if (!$is_nstp && in_array($grade, $numeric_grades) && $grade) {
+                                    if (!$is_excluded && in_array($grade, $numeric_grades) && $grade) {
                                         $term_points += (floatval($grade) * $enroll['units']);
                                         $term_units += $enroll['units'];
                                     }
@@ -225,7 +285,7 @@ foreach ($grades_by_term as $term => $enrollments) {
                                 echo $term_units > 0 ? number_format($term_points / $term_units, 2) : 'N/A';
                             ?>
                             </strong>
-                            <span class="gpa-note">(excludes NSTP and subjects with non-numeric ratings)</span>
+                            <span class="gpa-note">(excludes NSTP, PathFit, and subjects with non-numeric ratings)</span>
                         </span>
                     </div>
                 </div>
