@@ -224,21 +224,49 @@ while ($section = $all_sections->fetch_assoc()) {
     $prereqs = $stmt->get_result();
     
     $missing_prereqs = [];
+    $failed_prereqs = [];
     $can_enroll_prereq = true;
     
     while ($prereq = $prereqs->fetch_assoc()) {
-        if (!in_array($prereq['prereq_course_id'], $completed_course_ids)) {
+        $prereq_course_id = $prereq['prereq_course_id'];
+        
+        // Check if student has failed (5.0) or incomplete (INC) in this prerequisite
+        $failed_check = "
+            SELECT letter_grade 
+            FROM tblenrollment e
+            JOIN tblsection sec ON e.section_id = sec.section_id
+            WHERE e.student_id = ? 
+            AND sec.course_id = ?
+            AND e.is_active = TRUE
+            AND (e.letter_grade = '5.0' OR e.letter_grade = '5.00' OR e.letter_grade = 'INC')
+            LIMIT 1
+        ";
+        $stmt_failed = $conn->prepare($failed_check);
+        $stmt_failed->bind_param("ii", $student['student_id'], $prereq_course_id);
+        $stmt_failed->execute();
+        $failed_result = $stmt_failed->get_result();
+        
+        if ($failed_result->num_rows > 0) {
+            // Student has failed or incomplete in this prerequisite
+            $failed_grade = $failed_result->fetch_assoc()['letter_grade'];
+            $can_enroll_prereq = false;
+            $failed_prereqs[] = $prereq['course_code'] . ' - ' . $prereq['course_title'] . ' (Grade: ' . $failed_grade . ' - Must retake and pass)';
+        } elseif (!in_array($prereq_course_id, $completed_course_ids)) {
+            // Prerequisite not completed with passing grade
             $can_enroll_prereq = false;
             $missing_prereqs[] = $prereq['course_code'] . ' - ' . $prereq['course_title'];
         }
     }
     
+    // Combine all prerequisite issues
+    $all_prereq_issues = array_merge($failed_prereqs, $missing_prereqs);
+    
     // Add term restriction to missing prereqs if applicable
     if (!$can_enroll_term && $term_restriction_message) {
-        $missing_prereqs[] = $term_restriction_message;
+        $all_prereq_issues[] = $term_restriction_message;
     }
     
-    $section['missing_prereqs'] = $missing_prereqs;
+    $section['missing_prereqs'] = $all_prereq_issues;
     
     // Can enroll if both term and prerequisite requirements are met
     if ($can_enroll_term && $can_enroll_prereq) {
