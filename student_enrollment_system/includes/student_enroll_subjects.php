@@ -2,9 +2,25 @@
 session_start();
 require_once 'config.php';
 
-// Check if user is logged in and is a student
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
+// Check if user is logged in (either student or admin)
+if (!isset($_SESSION['user_id'])) {
     header("Location: ../includes/student_login.php");
+    exit();
+}
+
+// Determine if admin is enrolling on behalf of student or student is self-enrolling
+$is_admin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+$target_student_id = null;
+
+if ($is_admin && isset($_GET['student_id'])) {
+    // Admin enrolling for a specific student
+    $target_student_id = $_GET['student_id'];
+} elseif ($_SESSION['role'] === 'student') {
+    // Student enrolling themselves
+    $target_student_id = $_SESSION['user_id'];
+} else {
+    // Invalid access
+    header("Location: " . ($is_admin ? "dashboard.php" : "../includes/student_login.php"));
     exit();
 }
 
@@ -16,7 +32,6 @@ if (isset($_GET['logout'])) {
 }
 
 // Get student information
-$user_id = $_SESSION['user_id'];
 $student_query = "
     SELECT s.*, p.program_name, p.program_code
     FROM tblstudent s
@@ -24,10 +39,15 @@ $student_query = "
     WHERE s.student_id = ? AND s.is_active = TRUE
 ";
 $stmt = $conn->prepare($student_query);
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $target_student_id);
 $stmt->execute();
 $student_result = $stmt->get_result();
 $student = $student_result->fetch_assoc();
+
+if (!$student) {
+    header("Location: " . ($is_admin ? "enrollment_eligibility.php" : "student_dashboard.php"));
+    exit();
+}
 
 // Handle enrollment submission
 $message = '';
@@ -49,19 +69,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enroll_section'])) {
         $message_type = "error";
     } else {
         // Insert enrollment
-        $enroll_query = "INSERT INTO tblenrollment (student_id, section_id, enrollment_date, status, is_active) VALUES (?, ?, NOW(), 'Pending', TRUE)";
+        $enroll_query = "INSERT INTO tblenrollment (student_id, section_id, date_enrolled, status, is_active) VALUES (?, ?, NOW(), 'Pending', TRUE)";
         $stmt = $conn->prepare($enroll_query);
         $stmt->bind_param("ii", $student_id, $section_id);
         
         if ($stmt->execute()) {
-            $message = "Successfully enrolled! Your enrollment is pending approval.";
-            $message_type = "success";
+            $_SESSION['enrollment_success'] = true;
+            $_SESSION['enrolled_term'] = 'S.Y. 2526 - First Semester';
+            // Redirect with appropriate student_id parameter
+            $redirect_url = $_SERVER['PHP_SELF'];
+            if ($is_admin && isset($_GET['student_id'])) {
+                $redirect_url .= "?student_id=" . $_GET['student_id'];
+            }
+            header("Location: " . $redirect_url);
+            exit();
         } else {
             $message = "Failed to enroll. Please try again.";
             $message_type = "error";
         }
     }
 }
+
+// Check if enrollment was successful
+$show_success_message = false;
+$enrolled_term = '';
+if (isset($_SESSION['enrollment_success']) && $_SESSION['enrollment_success']) {
+    $show_success_message = true;
+    $enrolled_term = $_SESSION['enrolled_term'] ?? 'S.Y. 2526 - First Semester';
+    unset($_SESSION['enrollment_success']);
+    unset($_SESSION['enrolled_term']);
+}
+
+// Debug - remove this after testing
+// error_log("Show success: " . ($show_success_message ? 'YES' : 'NO'));
 
 // Get completed courses by student (with their terms)
 $completed_courses_query = "
@@ -217,6 +257,83 @@ while ($section = $all_sections->fetch_assoc()) {
     <title>Enroll Subjects - <?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/student_enroll_subjects.css">
+    <style>
+        .enrollment-success-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: scaleIn 0.6s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .success-content h2 {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .term-info {
+            font-size: 20px;
+            margin: 10px 0 20px 0;
+            opacity: 0.95;
+        }
+
+        .btn-download-cor {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-download-cor:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            background: #f8f9fa;
+        }
+
+        .btn-download-cor i {
+            font-size: 18px;
+        }
+    </style>
 </head>
 <body>
 
@@ -292,7 +409,6 @@ while ($section = $all_sections->fetch_assoc()) {
                             <th>Section</th>
                             <th>Schedule</th>
                             <th>Instructor</th>
-                            <th>Slots</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -349,25 +465,12 @@ while ($section = $all_sections->fetch_assoc()) {
                                 ?>
                             </td>
                             <td class="text-center">
-                                <?php 
-                                    $slots_left = $section['max_capacity'] - $section['enrolled_count'];
-                                    $slots_class = $slots_left > 10 ? 'slots-available' : ($slots_left > 0 ? 'slots-limited' : 'slots-full');
-                                ?>
-                                <span class="slots-badge <?php echo $slots_class; ?>">
-                                    <?php echo $slots_left; ?>/<?php echo $section['max_capacity']; ?>
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <?php if ($slots_left > 0): ?>
                                 <form method="POST" style="display: inline;">
                                     <input type="hidden" name="section_id" value="<?php echo $section['section_id']; ?>">
                                     <button type="submit" name="enroll_section" class="btn-enroll">
                                         <i class="fas fa-plus"></i> Enroll
                                     </button>
                                 </form>
-                                <?php else: ?>
-                                <span class="text-muted">Full</span>
-                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -376,8 +479,22 @@ while ($section = $all_sections->fetch_assoc()) {
             </div>
             <?php else: ?>
             <div class="no-data">
-                <i class="fas fa-graduation-cap"></i>
-                <p>No available subjects to enroll at this time. Please check back later or contact the registrar.</p>
+                <!-- Success Banner - Enrolled Message -->
+                <div class="enrollment-success-banner" style="margin: 20px auto; max-width: 600px;">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="success-content">
+                        <h2>You are officially enrolled.</h2>
+                        <p class="term-info">(S.Y. 2526 - First Semester)</p>
+                        <form method="POST" action="generate_cor_pdf.php" style="margin-top: 20px;">
+                            <input type="hidden" name="student_id" value="<?php echo $student['student_id']; ?>">
+                            <button type="submit" class="btn-download-cor">
+                                <i class="fas fa-file-pdf"></i> Download Certificate of Registration (COR)
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
             <?php endif; ?>
         </div>

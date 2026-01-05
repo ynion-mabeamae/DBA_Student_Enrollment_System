@@ -452,7 +452,6 @@ while ($row = $enrolled_result->fetch_assoc()) {
                         <th>Completed Courses</th>
                         <th>Completed Terms</th>
                         <th>Enrollment Status</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -475,13 +474,6 @@ while ($row = $enrolled_result->fetch_assoc()) {
                                     Not Enrolled Yet
                                 </span>
                             <?php endif; ?>
-                        </td>
-                        <td>
-                            <a href="student_enroll_subjects.php?student_id=<?php echo $student['student_id']; ?>" 
-                               class="action-btn" target="_blank">
-                                <i class="fas fa-external-link-alt"></i>
-                                View Available Subjects
-                            </a>
                         </td>
                     </tr>
                     <?php endwhile; ?>
