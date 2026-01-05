@@ -165,6 +165,10 @@ foreach ($grades_by_term as $term => $enrollments) {
                 <i class="fas fa-book"></i>
                 <span>My Enrollments</span>
             </a>
+            <a href="student_schedule.php" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>My Schedule</span>
+            </a>
             <a href="student_grades.php" class="menu-item active">
                 <i class="fas fa-chart-line"></i>
                 <span>My Grades</span>

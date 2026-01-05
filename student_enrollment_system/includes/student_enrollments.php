@@ -32,12 +32,14 @@ $student = $student_result->fetch_assoc();
 // Get current enrollments
 $current_enrollments_query = "
     SELECT e.*, c.course_code, c.course_title, c.units, sec.section_code, t.term_code,
-           i.first_name as instructor_first, i.last_name as instructor_last
+           i.first_name as instructor_first, i.last_name as instructor_last,
+           sec.day_pattern, sec.start_time, sec.end_time, r.room_code, r.building
     FROM tblenrollment e
     JOIN tblsection sec ON e.section_id = sec.section_id
     JOIN tblcourse c ON sec.course_id = c.course_id
     JOIN tblterm t ON sec.term_id = t.term_id
     LEFT JOIN tblinstructor i ON sec.instructor_id = i.instructor_id
+    LEFT JOIN tblroom r ON sec.room_id = r.room_id
     WHERE e.student_id = ? AND e.is_active = TRUE AND e.status IN ('Enrolled', 'Pending')
     ORDER BY c.course_code ASC
 ";
@@ -112,6 +114,10 @@ while ($enrollment = $completed_enrollments->fetch_assoc()) {
             <a href="student_enrollments.php" class="menu-item active">
                 <i class="fas fa-book"></i>
                 <span>My Enrollments</span>
+            </a>
+            <a href="student_schedule.php" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>My Schedule</span>
             </a>
             <a href="student_grades.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
@@ -189,7 +195,34 @@ while ($enrollment = $completed_enrollments->fetch_assoc()) {
                         </div>
                         <?php endif; ?>
 
-                        <!-- Schedule information removed due to missing tblschedule table -->
+                        <?php if ($enrollment['day_pattern'] || $enrollment['start_time'] || $enrollment['end_time']): ?>
+                        <div class="schedule-info">
+                            <i class="fas fa-calendar-week"></i>
+                            <span>
+                                <?php 
+                                    $days_map = [
+                                        'M' => 'Monday',
+                                        'T' => 'Tuesday', 
+                                        'W' => 'Wednesday',
+                                        'Th' => 'Thursday',
+                                        'F' => 'Friday',
+                                        'S' => 'Saturday',
+                                        'Su' => 'Sunday'
+                                    ];
+                                    $day_display = isset($days_map[$enrollment['day_pattern']]) ? $days_map[$enrollment['day_pattern']] : $enrollment['day_pattern'];
+                                    echo htmlspecialchars($day_display);
+                                ?>
+                                <?php if ($enrollment['start_time'] && $enrollment['end_time']): ?>
+                                    <?php 
+                                        echo ' ' . date('g:i A', strtotime($enrollment['start_time'])) . ' - ' . date('g:i A', strtotime($enrollment['end_time']));
+                                    ?>
+                                <?php endif; ?>
+                                <?php if ($enrollment['room_code']): ?>
+                                    | Room: <?php echo htmlspecialchars($enrollment['room_code']); ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <?php endwhile; ?>
                 </div>
@@ -199,17 +232,6 @@ while ($enrollment = $completed_enrollments->fetch_assoc()) {
                     <p>You are not enrolled in any courses for the current semester.</p>
                 </div>
             <?php endif; ?>
-        </div>
-
-        <!-- Weekly Schedule Section - Disabled due to missing tblschedule table -->
-        <div class="schedule-section">
-            <div class="section-header">
-                <h2>Weekly Schedule</h2>
-            </div>
-            <div class="no-data">
-                <i class="fas fa-calendar-alt"></i>
-                <p>Schedule information is not available at this time.</p>
-            </div>
         </div>
 
         <!-- Completed Courses Section -->
