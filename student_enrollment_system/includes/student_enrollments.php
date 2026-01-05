@@ -31,7 +31,8 @@ $student = $student_result->fetch_assoc();
 
 // Get current enrollments
 $current_enrollments_query = "
-    SELECT e.*, c.course_code, c.course_title, c.units, sec.section_code, t.term_code,
+    SELECT e.*, c.course_code, c.course_title, c.units, c.lecture_hours, c.lab_hours,
+           sec.section_code, t.term_code,
            i.first_name as instructor_first, i.last_name as instructor_last,
            sec.day_pattern, sec.start_time, sec.end_time, r.room_code, r.building
     FROM tblenrollment e
@@ -47,6 +48,30 @@ $stmt = $conn->prepare($current_enrollments_query);
 $stmt->bind_param("i", $student['student_id']);
 $stmt->execute();
 $current_enrollments = $stmt->get_result();
+
+// Build schedule data array for table display
+$schedule_data = [];
+while ($enrollment = $current_enrollments->fetch_assoc()) {
+    $schedule_data[] = [
+        'course_code' => $enrollment['course_code'],
+        'course_title' => $enrollment['course_title'],
+        'lecture_hours' => $enrollment['lecture_hours'] ?? 0,
+        'lab_hours' => $enrollment['lab_hours'] ?? 0,
+        'units' => $enrollment['units'],
+        'day_pattern' => $enrollment['day_pattern'],
+        'start_time' => $enrollment['start_time'],
+        'end_time' => $enrollment['end_time'],
+        'room' => $enrollment['room_code'],
+        'building' => $enrollment['building'],
+        'instructor' => trim($enrollment['instructor_first'] . ' ' . $enrollment['instructor_last']),
+        'section' => $enrollment['section_code']
+    ];
+}
+
+$has_schedule = !empty($schedule_data);
+
+// Reset for card display
+$current_enrollments->data_seek(0);
 
 // Get completed courses
 $completed_enrollments_query = "
@@ -115,10 +140,6 @@ while ($enrollment = $completed_enrollments->fetch_assoc()) {
                 <i class="fas fa-book"></i>
                 <span>My Enrollments</span>
             </a>
-            <a href="student_schedule.php" class="menu-item">
-                <i class="fas fa-calendar-alt"></i>
-                <span>My Schedule</span>
-            </a>
             <a href="student_grades.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
                 <span>My Grades</span>
@@ -145,148 +166,105 @@ while ($enrollment = $completed_enrollments->fetch_assoc()) {
             </div>
         </div>
 
-        <!-- Current Enrollments Section -->
+        <!-- Weekly Schedule Table Section -->
         <div class="enrollments-section">
             <div class="section-header">
                 <h2>Current Semester</h2>
-                <div class="section-stats">
-                    <span class="stat-item"><?php echo $current_enrollments->num_rows; ?> courses</span>
-                    <span class="stat-item"><?php echo $total_current_units; ?> units</span>
-                </div>
             </div>
 
-            <?php if ($current_enrollments->num_rows > 0): ?>
-                <div class="enrollment-cards">
-                    <?php
-                    $current_enrollments->data_seek(0);
-                    while ($enrollment = $current_enrollments->fetch_assoc()):
-                    ?>
-                    <div class="enrollment-card">
-                        <div class="card-header">
-                            <div class="course-code"><?php echo htmlspecialchars($enrollment['course_code']); ?></div>
-                            <div class="status-badge status-<?php echo strtolower($enrollment['status']); ?>">
-                                <?php echo htmlspecialchars($enrollment['status']); ?>
-                            </div>
-                        </div>
-
-                        <div class="course-title"><?php echo htmlspecialchars($enrollment['course_title']); ?></div>
-
-                        <div class="enrollment-details">
-                            <div class="detail-item">
-                                <i class="fas fa-users"></i>
-                                <span>Section: <?php echo htmlspecialchars($enrollment['section_code']); ?></span>
-                            </div>
-
-                            <div class="detail-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span>Term: <?php echo htmlspecialchars($enrollment['term_code']); ?></span>
-                            </div>
-
-                            <div class="detail-item">
-                                <i class="fas fa-clock"></i>
-                                <span><?php echo $enrollment['units']; ?> units</span>
-                            </div>
-                        </div>
-
-                        <?php if ($enrollment['instructor_first'] || $enrollment['instructor_last']): ?>
-                        <div class="instructor-info">
-                            <i class="fas fa-user-tie"></i>
-                            <span>Instructor: <?php echo htmlspecialchars($enrollment['instructor_first'] . ' ' . $enrollment['instructor_last']); ?></span>
-                        </div>
-                        <?php endif; ?>
-
-                        <?php if ($enrollment['day_pattern'] || $enrollment['start_time'] || $enrollment['end_time']): ?>
-                        <div class="schedule-info">
-                            <i class="fas fa-calendar-week"></i>
-                            <span>
-                                <?php 
-                                    $days_map = [
-                                        'M' => 'Monday',
-                                        'T' => 'Tuesday', 
-                                        'W' => 'Wednesday',
-                                        'Th' => 'Thursday',
-                                        'F' => 'Friday',
-                                        'S' => 'Saturday',
-                                        'Su' => 'Sunday'
-                                    ];
-                                    $day_display = isset($days_map[$enrollment['day_pattern']]) ? $days_map[$enrollment['day_pattern']] : $enrollment['day_pattern'];
-                                    echo htmlspecialchars($day_display);
-                                ?>
-                                <?php if ($enrollment['start_time'] && $enrollment['end_time']): ?>
+            <?php if ($has_schedule): ?>
+            <div class="schedule-table-container">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Subject Code</th>
+                            <th>Subject Name</th>
+                            <th>Lecture Units</th>
+                            <th>Lab Units</th>
+                            <th>Total Units</th>
+                            <th>Schedule</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($schedule_data as $class): ?>
+                        <tr>
+                            <td class="subject-code">
+                                <strong><?php echo htmlspecialchars($class['course_code']); ?></strong>
+                            </td>
+                            <td class="subject-name">
+                                <?php echo htmlspecialchars($class['course_title']); ?>
+                            </td>
+                            <td class="text-center">
+                                <?php echo $class['lecture_hours']; ?>
+                            </td>
+                            <td class="text-center">
+                                <?php echo $class['lab_hours']; ?>
+                            </td>
+                            <td class="text-center">
+                                <span class="units-badge"><?php echo $class['units']; ?></span>
+                            </td>
+                            <td class="schedule-cell">
+                                <?php if ($class['instructor']): ?>
+                                <div class="schedule-info-row">
+                                    <i class="fas fa-user-tie"></i>
+                                    <strong><?php echo htmlspecialchars($class['instructor']); ?></strong>
+                                </div>
+                                <?php endif; ?>
+                                <?php if ($class['day_pattern'] && $class['start_time'] && $class['end_time']): ?>
+                                <div class="schedule-info-row">
+                                    <i class="fas fa-clock"></i>
                                     <?php 
-                                        echo ' ' . date('g:i A', strtotime($enrollment['start_time'])) . ' - ' . date('g:i A', strtotime($enrollment['end_time']));
+                                        $days_map_table = [
+                                            'M' => 'Mon',
+                                            'T' => 'Tue',
+                                            'W' => 'Wed',
+                                            'Th' => 'Thu',
+                                            'F' => 'Fri',
+                                            'S' => 'Sat',
+                                            'Su' => 'Sun'
+                                        ];
+                                        $day_display = isset($days_map_table[$class['day_pattern']]) ? $days_map_table[$class['day_pattern']] : $class['day_pattern'];
+                                        echo htmlspecialchars($day_display);
                                     ?>
+                                    <?php echo date('g:i A', strtotime($class['start_time'])); ?> - 
+                                    <?php echo date('g:i A', strtotime($class['end_time'])); ?>
+                                </div>
                                 <?php endif; ?>
-                                <?php if ($enrollment['room_code']): ?>
-                                    | Room: <?php echo htmlspecialchars($enrollment['room_code']); ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                    <?php endwhile; ?>
-                </div>
-            <?php else: ?>
-                <div class="no-data">
-                    <i class="fas fa-book-open"></i>
-                    <p>You are not enrolled in any courses for the current semester.</p>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Completed Courses Section -->
-        <div class="enrollments-section">
-            <div class="section-header">
-                <h2>Completed Courses</h2>
-                <div class="section-stats">
-                    <span class="stat-item"><?php echo $completed_enrollments->num_rows; ?> courses</span>
-                    <span class="stat-item"><?php echo $total_completed_units; ?> units</span>
-                </div>
-            </div>
-
-            <?php if ($completed_enrollments->num_rows > 0): ?>
-                <div class="completed-courses-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Course Code</th>
-                                <th>Course Title</th>
-                                <th>Units</th>
-                                <th>Section</th>
-                                <th>Term</th>
-                                <th>Grade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $completed_enrollments->data_seek(0);
-                            while ($enrollment = $completed_enrollments->fetch_assoc()):
-                            ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($enrollment['course_code']); ?></td>
-                                <td><?php echo htmlspecialchars($enrollment['course_title']); ?></td>
-                                <td><?php echo htmlspecialchars($enrollment['units']); ?></td>
-                                <td><?php echo htmlspecialchars($enrollment['section_code']); ?></td>
-                                <td><?php echo htmlspecialchars($enrollment['term_code']); ?></td>
-                                <td>
-                                    <?php if ($enrollment['letter_grade']): ?>
-                                        <span class="grade-badge grade-<?php echo str_replace('.', '-', $enrollment['letter_grade']); ?>">
-                                            <?php echo htmlspecialchars($enrollment['letter_grade']); ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="grade-pending">Not Graded</span>
+                                <?php if ($class['room']): ?>
+                                <div class="schedule-info-row">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <?php echo htmlspecialchars($class['room']); ?>
+                                    <?php if ($class['building']): ?>
+                                        <span class="text-muted">(<?php echo htmlspecialchars($class['building']); ?>)</span>
                                     <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
+                                </div>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="2" class="text-right"><strong>Total:</strong></td>
+                            <td class="text-center">
+                                <strong><?php echo array_sum(array_column($schedule_data, 'lecture_hours')); ?></strong>
+                            </td>
+                            <td class="text-center">
+                                <strong><?php echo array_sum(array_column($schedule_data, 'lab_hours')); ?></strong>
+                            </td>
+                            <td class="text-center">
+                                <strong><?php echo array_sum(array_column($schedule_data, 'units')); ?></strong>
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
             <?php else: ?>
-                <div class="no-data">
-                    <i class="fas fa-graduation-cap"></i>
-                    <p>No completed courses yet.</p>
-                </div>
+            <div class="no-data">
+                <i class="fas fa-calendar-times"></i>
+                <p>No schedule information available for your enrolled courses.</p>
+            </div>
             <?php endif; ?>
         </div>
     </div>
