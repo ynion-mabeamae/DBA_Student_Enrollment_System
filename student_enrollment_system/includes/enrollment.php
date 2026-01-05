@@ -187,6 +187,7 @@ $total_students_query = "
     JOIN tblcourse c ON sec.course_id = c.course_id
     JOIN tblterm t ON sec.term_id = t.term_id
     WHERE $status_condition $search_condition
+    AND NOT (e.status = 'Completed' AND e.letter_grade IS NOT NULL AND e.letter_grade != '')
 ";
 $total_students_result = $conn->query($total_students_query);
 $total_students = $total_students_result->fetch_assoc()['total'];
@@ -201,6 +202,7 @@ $current_student_query = "
     JOIN tblcourse c ON sec.course_id = c.course_id
     JOIN tblterm t ON sec.term_id = t.term_id
     WHERE $status_condition $search_condition
+    AND NOT (e.status = 'Completed' AND e.letter_grade IS NOT NULL AND e.letter_grade != '')
     ORDER BY s.last_name, s.first_name
     LIMIT 1 OFFSET $offset
 ";
@@ -246,6 +248,7 @@ $enrollments_query = "
     JOIN tblcourse c ON sec.course_id = c.course_id
     JOIN tblterm t ON sec.term_id = t.term_id
     WHERE $status_condition $search_condition
+    AND NOT (e.status = 'Completed' AND e.letter_grade IS NOT NULL AND e.letter_grade != '')
     ORDER BY e.enrollment_id DESC
 ";
 
@@ -377,6 +380,9 @@ $grade_options = ['1.0', '1.25', '1.50', '1.75', '2.0', '2.25', '2.50', '2.75', 
         <?php endif; ?>
         
         <div class="export-buttons">
+          <a href="enrollment_eligibility.php" class="btn btn-eligibility">
+            <i class="fas fa-user-check"></i> Enrollment Eligibility Monitor
+          </a>
           <form method="POST" style="display: inline;">
             <button type="submit" name="export_pdf" class="btn btn-pdf">
               <i class="fas fa-file-pdf"></i> Export PDF
