@@ -279,6 +279,11 @@ if ($result && $result->num_rows > 0) {
                 <h3>View Enrollments</h3>
                 <p>Check student enrollments</p>
             </div>
+               <div class="action-card" onclick="window.location.href='backup_restore.php'">
+                   <i class="fas fa-database"></i>
+                   <h3>Backup & Restore</h3>
+                   <p>Access backup and restore database</p>
+               </div>
         </div>
 
         <!-- Programs/Sections Distribution -->
