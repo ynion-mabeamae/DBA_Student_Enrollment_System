@@ -230,6 +230,149 @@ body {
     box-shadow: var(--shadow);
 }
 
+/* Term Header */
+.term-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.term-header h2 {
+    font-size: 1.8rem;
+    color: var(--dark-text);
+    margin-bottom: 10px;
+}
+
+.term-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.course-program {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.gpa-display {
+    font-size: 1rem;
+    color: var(--dark-text);
+}
+
+.gpa-display strong {
+    color: var(--success-color);
+    font-size: 1.3rem;
+}
+
+.gpa-note {
+    font-size: 0.85rem;
+    color: var(--light-text);
+    font-style: italic;
+    margin-left: 10px;
+}
+
+/* Schedule Table Styles for Grades */
+.schedule-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.schedule-table thead {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.schedule-table th {
+    padding: 18px 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.schedule-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.schedule-table tbody tr:hover {
+    background: #f0f7ff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: scale(1.01);
+}
+
+.schedule-table td {
+    padding: 16px 15px;
+    vertical-align: middle;
+}
+
+.subject-code {
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.subject-name {
+    color: var(--dark-text);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--light-text);
+    font-size: 0.85rem;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.status-completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-enrolled {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-dropped {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.grade-pending {
+    color: var(--light-text);
+    font-style: italic;
+}
+
 .section-header h2 {
     font-size: 1.5rem;
     color: var(--dark-text);
@@ -511,6 +654,52 @@ body {
 
     .academic-standing {
         grid-template-columns: 1fr;
+    }
+
+    /* Make table responsive */
+    .schedule-table-container {
+        overflow-x: auto;
+    }
+
+    .schedule-table {
+        min-width: 900px;
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+        padding: 12px 10px;
+        font-size: 0.85rem;
+    }
+
+    .term-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .term-header h2 {
+        font-size: 1.4rem;
+    }
+}
+
+/* Tablet responsive */
+@media (max-width: 1200px) and (min-width: 769px) {
+    .main-content {
+        padding: 20px;
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+        padding: 14px 12px;
+    }
+}
+
+@media (max-width: 992px) and (min-width: 769px) {
+    .schedule-table-container {
+        overflow-x: auto;
+    }
+
+    .schedule-table {
+        min-width: 800px;
     }
 }
 

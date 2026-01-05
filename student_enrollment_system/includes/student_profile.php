@@ -142,8 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                 <span>My Profile</span>
             </a>
             <a href="student_enrollments.php" class="menu-item">
-                <i class="fas fa-book"></i>
-                <span>My Enrollments</span>
+                <i class="fas fa-calendar-alt"></i>
+                <span>My Schedule</span>
             </a>
             <a href="student_grades.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
@@ -161,10 +161,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 
     <!-- Main Content -->
     <div class="main-content">
-        <div class="header">
-            <h1>My Profile</h1>
-        </div>
-
         <?php if (isset($error)): ?>
             <div class="alert alert-error">
                 <i class="fas fa-exclamation-triangle"></i>

@@ -169,8 +169,8 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                 <span>My Profile</span>
             </a>
             <a href="student_enrollments.php" class="menu-item">
-                <i class="fas fa-book"></i>
-                <span>My Enrollments</span>
+                <i class="fas fa-calendar-alt"></i>
+                <span>My Schedule</span>
             </a>
             <a href="student_grades.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>

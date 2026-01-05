@@ -108,7 +108,7 @@ while ($enrollment = $completed_enrollments->fetch_assoc()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Enrollments - <?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></title>
+    <title>My Schedule - <?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/student_enrollments.css">
 </head>
@@ -137,8 +137,8 @@ while ($enrollment = $completed_enrollments->fetch_assoc()) {
                 <span>My Profile</span>
             </a>
             <a href="student_enrollments.php" class="menu-item active">
-                <i class="fas fa-book"></i>
-                <span>My Enrollments</span>
+                <i class="fas fa-calendar-alt"></i>
+                <span>My Schedule</span>
             </a>
             <a href="student_grades.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
@@ -156,16 +156,6 @@ while ($enrollment = $completed_enrollments->fetch_assoc()) {
 
     <!-- Main Content -->
     <div class="main-content">
-        <div class="header">
-            <h1>My Enrollments</h1>
-            <div class="header-info">
-                <div class="units-info">
-                    <span class="current-units">Current Units: <?php echo $total_current_units; ?></span>
-                    <span class="completed-units">Total Completed: <?php echo $total_completed_units; ?> units</span>
-                </div>
-            </div>
-        </div>
-
         <!-- Weekly Schedule Table Section -->
         <div class="enrollments-section">
             <div class="section-header">

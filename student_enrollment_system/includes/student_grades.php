@@ -29,14 +29,16 @@ $stmt->execute();
 $student_result = $stmt->get_result();
 $student = $student_result->fetch_assoc();
 
-// Get all enrollments with grades
+// Get all enrollments with grades and instructor info
 $grades_query = "
-    SELECT e.*, c.course_code, c.course_title, c.units, sec.section_code, t.term_code, e.letter_grade
+    SELECT e.*, c.course_code, c.course_title, c.units, sec.section_code, t.term_code, e.letter_grade,
+           i.first_name as instructor_first, i.last_name as instructor_last
     FROM tblenrollment e
     JOIN tblsection sec ON e.section_id = sec.section_id
     JOIN tblcourse c ON sec.course_id = c.course_id
     JOIN tblterm t ON sec.term_id = t.term_id
-    WHERE e.student_id = ? AND e.is_active = TRUE AND e.status = 'Completed' AND e.letter_grade IS NOT NULL
+    LEFT JOIN tblinstructor i ON sec.instructor_id = i.instructor_id
+    WHERE e.student_id = ? AND e.is_active = TRUE
     ORDER BY t.term_code DESC, c.course_code ASC
 ";
 $stmt = $conn->prepare($grades_query);
@@ -44,7 +46,7 @@ $stmt->bind_param("i", $student['student_id']);
 $stmt->execute();
 $grades_result = $stmt->get_result();
 
-// Calculate GPA and statistics
+// Calculate GPA and statistics (exclude NSTP and non-numeric grades)
 $gpa = 0;
 $total_points = 0;
 $total_units = 0;
@@ -58,27 +60,31 @@ $grades_result->data_seek(0);
 while ($enrollment = $grades_result->fetch_assoc()) {
     $grade = $enrollment['letter_grade'];
     $units = $enrollment['units'];
-
-    if (isset($grade_distribution[$grade])) {
-        $grade_distribution[$grade]++;
+    $course_code = $enrollment['course_code'];
+    
+    // Skip NSTP courses and non-numeric grades for GPA calculation
+    $nstp_courses = ['CWTS 001', 'CWTS 002', 'NSTP', 'ROTC'];
+    $is_nstp = false;
+    foreach ($nstp_courses as $nstp) {
+        if (stripos($course_code, $nstp) !== false) {
+            $is_nstp = true;
+            break;
+        }
     }
+    
+    // Only count numeric grades
+    $numeric_grades = ['1.0', '1.25', '1.5', '1.50', '1.75', '2.0', '2.25', '2.5', '2.50', '2.75', '3.0'];
+    
+    if (!$is_nstp && in_array($grade, $numeric_grades) && $grade) {
+        if (isset($grade_distribution[$grade])) {
+            $grade_distribution[$grade]++;
+        }
 
-    // Calculate GPA points
-    $points = 0;
-    switch ($grade) {
-        case '1.0': $points = 1.0; break;
-        case '1.25': $points = 1.25; break;
-        case '1.50': $points = 1.50; break;
-        case '1.75': $points = 1.75; break;
-        case '2.0': $points = 2.0; break;
-        case '2.25': $points = 2.25; break;
-        case '2.50': $points = 2.50; break;
-        case '2.75': $points = 2.75; break;
-        case '3.0': $points = 3.0; break;
+        // Calculate GPA points
+        $points = floatval($grade);
+        $total_points += ($points * $units);
+        $total_units += $units;
     }
-
-    $total_points += ($points * $units);
-    $total_units += $units;
 }
 
 if ($total_units > 0) {
@@ -162,8 +168,8 @@ foreach ($grades_by_term as $term => $enrollments) {
                 <span>My Profile</span>
             </a>
             <a href="student_enrollments.php" class="menu-item">
-                <i class="fas fa-book"></i>
-                <span>My Enrollments</span>
+                <i class="fas fa-calendar-alt"></i>
+                <span>My Schedule</span>
             </a>
             <a href="student_grades.php" class="menu-item active">
                 <i class="fas fa-chart-line"></i>
@@ -181,208 +187,123 @@ foreach ($grades_by_term as $term => $enrollments) {
 
     <!-- Main Content -->
     <div class="main-content">
-        <div class="header">
-            <h1>My Academic Record</h1>
-            <div class="header-info">
-                <div class="gpa-display">
-                    <span class="gpa-label">Overall GPA:</span>
-                    <span class="gpa-value"><?php echo $gpa > 0 ? $gpa : 'N/A'; ?></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- GPA Overview Cards -->
-        <div class="gpa-overview">
-            <div class="gpa-card">
-                <div class="gpa-icon">
-                    <i class="fas fa-trophy"></i>
-                </div>
-                <div class="gpa-info">
-                    <h3><?php echo $gpa > 0 ? $gpa : 'N/A'; ?></h3>
-                    <p>Overall GPA</p>
-                </div>
-            </div>
-
-            <div class="gpa-card">
-                <div class="gpa-icon">
-                    <i class="fas fa-book"></i>
-                </div>
-                <div class="gpa-info">
-                    <h3><?php echo $grades_result->num_rows; ?></h3>
-                    <p>Courses Completed</p>
-                </div>
-            </div>
-
-            <div class="gpa-card">
-                <div class="gpa-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="gpa-info">
-                    <h3><?php echo $total_units; ?></h3>
-                    <p>Total Units</p>
-                </div>
-            </div>
-
-            <div class="gpa-card">
-                <div class="gpa-icon">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <div class="gpa-info">
-                    <h3><?php echo $student['year_level']; ?><?php echo $student['year_level'] == 1 ? 'st' : ($student['year_level'] == 2 ? 'nd' : ($student['year_level'] == 3 ? 'rd' : 'th')); ?> Year</h3>
-                    <p>Current Level</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Grade Distribution Chart -->
-        <!-- <div class="grades-section">
-            <div class="section-header">
-                <h2>Grade Distribution</h2>
-            </div>
-
-            <div class="grade-distribution">
-                <?php foreach ($grade_distribution as $grade => $count): ?>
-                <div class="grade-bar">
-                    <div class="grade-label"><?php echo $grade; ?></div>
-                    <div class="bar-container">
-                        <div class="bar" style="width: <?php echo $grades_result->num_rows > 0 ? ($count / $grades_result->num_rows) * 100 : 0; ?>%"></div>
+        <!-- Grades by Term Section -->
+        <?php if (count($grades_by_term) > 0): ?>
+            <?php foreach ($grades_by_term as $term => $enrollments): ?>
+            <div class="grades-section">
+                <div class="term-header">
+                    <h2>School Year <?php echo htmlspecialchars($term); ?></h2>
+                    <div class="term-info">
+                        <span class="course-program"><?php echo htmlspecialchars($student['program_code']); ?> - <?php echo htmlspecialchars($student['program_name']); ?></span>
+                        <span class="gpa-display">
+                            GPA: 
+                            <strong>
+                            <?php 
+                                // Calculate term GPA (exclude NSTP and non-numeric grades)
+                                $term_points = 0;
+                                $term_units = 0;
+                                foreach ($enrollments as $enroll) {
+                                    $grade = $enroll['letter_grade'];
+                                    $course_code = $enroll['course_code'];
+                                    
+                                    // Skip NSTP
+                                    $nstp_courses = ['CWTS 001', 'CWTS 002', 'NSTP', 'ROTC'];
+                                    $is_nstp = false;
+                                    foreach ($nstp_courses as $nstp) {
+                                        if (stripos($course_code, $nstp) !== false) {
+                                            $is_nstp = true;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    $numeric_grades = ['1.0', '1.25', '1.5', '1.50', '1.75', '2.0', '2.25', '2.5', '2.50', '2.75', '3.0'];
+                                    if (!$is_nstp && in_array($grade, $numeric_grades) && $grade) {
+                                        $term_points += (floatval($grade) * $enroll['units']);
+                                        $term_units += $enroll['units'];
+                                    }
+                                }
+                                echo $term_units > 0 ? number_format($term_points / $term_units, 2) : 'N/A';
+                            ?>
+                            </strong>
+                            <span class="gpa-note">(excludes NSTP and subjects with non-numeric ratings)</span>
+                        </span>
                     </div>
-                    <div class="grade-count"><?php echo $count; ?></div>
                 </div>
-                <?php endforeach; ?>
-            </div>
-        </div> -->
 
-        <!-- All Grades Table -->
-        <div class="grades-section">
-            <div class="section-header">
-                <h2>All Grades</h2>
-            </div>
-
-            <?php if ($grades_result->num_rows > 0): ?>
-                <div class="grades-table-container">
-                    <table class="grades-table">
+                <div class="schedule-table-container">
+                    <table class="schedule-table">
                         <thead>
                             <tr>
-                                <th>Course Code</th>
-                                <th>Course Title</th>
+                                <th>Subject Code</th>
+                                <th>Subject Name</th>
+                                <th>Faculty Name</th>
                                 <th>Units</th>
-                                <th>Grade</th>
-                                <th>Term</th>
-                                <th>Points</th>
+                                <th>Section Code</th>
+                                <th>Final Grade</th>
+                                <th>Grade Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php
-                            $grades_result->data_seek(0);
-                            while ($enrollment = $grades_result->fetch_assoc()):
-                                $grade = $enrollment['letter_grade'];
-                                $points = 0;
-                                switch ($grade) {
-                                    case '1.0': $points = 1.0; break;
-                                    case '1.25': $points = 1.25; break;
-                                    case '1.50': $points = 1.50; break;
-                                    case '1.75': $points = 1.75; break;
-                                    case '2.0': $points = 2.0; break;
-                                    case '2.25': $points = 2.25; break;
-                                    case '2.50': $points = 2.50; break;
-                                    case '2.75': $points = 2.75; break;
-                                    case '3.0': $points = 3.0; break;
-                                }
-                                $weighted_points = $points * $enrollment['units'];
-                            ?>
+                            <?php foreach ($enrollments as $enrollment): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($enrollment['course_code']); ?></td>
-                                <td><?php echo htmlspecialchars($enrollment['course_title']); ?></td>
-                                <td><?php echo htmlspecialchars($enrollment['units']); ?></td>
-                                <td>
-                                    <span class="grade-badge grade-<?php echo str_replace('.', '-', $grade); ?>">
-                                        <?php echo htmlspecialchars($grade); ?>
-                                    </span>
+                                <td class="subject-code">
+                                    <strong><?php echo htmlspecialchars($enrollment['course_code']); ?></strong>
                                 </td>
-                                <td><?php echo htmlspecialchars($enrollment['term_code']); ?></td>
-                                <td><?php echo number_format($weighted_points, 2); ?></td>
+                                <td class="subject-name">
+                                    <?php echo htmlspecialchars($enrollment['course_title']); ?>
+                                </td>
+                                <td>
+                                    <?php 
+                                        if ($enrollment['instructor_first'] || $enrollment['instructor_last']) {
+                                            echo htmlspecialchars(trim($enrollment['instructor_first'] . ' ' . $enrollment['instructor_last']));
+                                        } else {
+                                            echo '<span class="text-muted">N/A</span>';
+                                        }
+                                    ?>
+                                </td>
+                                <td class="text-center">
+                                    <?php echo $enrollment['units']; ?>
+                                </td>
+                                <td class="text-center">
+                                    <?php echo htmlspecialchars($enrollment['section_code']); ?>
+                                </td>
+                                <td class="text-center">
+                                    <?php if ($enrollment['letter_grade']): ?>
+                                        <span class="grade-badge grade-<?php echo str_replace('.', '-', $enrollment['letter_grade']); ?>">
+                                            <?php echo htmlspecialchars($enrollment['letter_grade']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="grade-pending">N/A</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <?php 
+                                        $status = $enrollment['status'];
+                                        $status_class = strtolower($status);
+                                        if ($status == 'Completed' && $enrollment['letter_grade']) {
+                                            echo '<span class="status-badge status-completed">Completed</span>';
+                                        } else if ($status == 'Enrolled') {
+                                            echo '<span class="text-muted">N/A</span>';
+                                        } else if ($status == 'Pending') {
+                                            echo '<span class="status-badge status-pending">Pending</span>';
+                                        } else {
+                                            echo '<span class="status-badge status-' . $status_class . '">' . htmlspecialchars($status) . '</span>';
+                                        }
+                                    ?>
+                                </td>
                             </tr>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-            <?php else: ?>
-                <div class="no-data">
-                    <i class="fas fa-chart-line"></i>
-                    <p>No grades available yet. Grades will appear here once your courses are completed and graded.</p>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Term-by-Term GPA -->
-        <?php if (!empty($term_gpas)): ?>
-        <div class="grades-section">
-            <div class="section-header">
-                <h2>Term-by-Term GPA</h2>
             </div>
-
-            <div class="term-gpa-cards">
-                <?php foreach ($term_gpas as $term => $term_gpa): ?>
-                <div class="term-gpa-card">
-                    <div class="term-name"><?php echo htmlspecialchars($term); ?></div>
-                    <div class="term-gpa"><?php echo $term_gpa; ?></div>
-                    <div class="term-courses">
-                        <?php echo count($grades_by_term[$term]); ?> course<?php echo count($grades_by_term[$term]) > 1 ? 's' : ''; ?>
-                    </div>
-                </div>
-                <?php endforeach; ?>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="no-data">
+                <i class="fas fa-chart-line"></i>
+                <p>No grade records available yet.</p>
             </div>
-        </div>
         <?php endif; ?>
-
-        <!-- Academic Standing
-        <div class="grades-section">
-            <div class="section-header">
-                <h2>Academic Standing</h2>
-            </div>
-
-            <div class="academic-standing">
-                <?php
-                $standing = 'Good Standing';
-                $standing_class = 'good';
-                $standing_icon = 'fas fa-check-circle';
-
-                if ($gpa >= 1.0 && $gpa < 2.0) {
-                    $standing = 'Good Standing';
-                    $standing_class = 'good';
-                    $standing_icon = 'fas fa-check-circle';
-                } elseif ($gpa >= 2.0 && $gpa < 2.5) {
-                    $standing = 'Warning';
-                    $standing_class = 'warning';
-                    $standing_icon = 'fas fa-exclamation-triangle';
-                } elseif ($gpa >= 2.5) {
-                    $standing = 'Probation';
-                    $standing_class = 'probation';
-                    $standing_icon = 'fas fa-times-circle';
-                }
-                ?>
-
-                <div class="standing-card <?php echo $standing_class; ?>">
-                    <div class="standing-icon">
-                        <i class="<?php echo $standing_icon; ?>"></i>
-                    </div>
-                    <div class="standing-info">
-                        <h3><?php echo $standing; ?></h3>
-                        <p>Based on your current GPA of <?php echo $gpa > 0 ? $gpa : 'N/A'; ?></p>
-                    </div>
-                </div>
-
-                <div class="standing-requirements">
-                    <h4>GPA Requirements:</h4>
-                    <ul>
-                        <li><span class="req-good">1.0 - 1.99:</span> Good Standing</li>
-                        <li><span class="req-warning">2.0 - 2.49:</span> Academic Warning</li>
-                        <li><span class="req-probation">2.5 and above:</span> Academic Probation</li>
-                    </ul>
-                </div>
-            </div> -->
-        </div>
     </div>
 
     <!-- Logout Confirmation Modal -->
