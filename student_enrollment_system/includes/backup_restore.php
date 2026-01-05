@@ -329,10 +329,6 @@ if (isset($_POST['restore'])) {
                     <i class="fas fa-calendar-alt"></i>
                     <span>Terms</span>
                 </a>
-                <a href="backup_restore.php" class="menu-item active">
-                    <i class="fas fa-database"></i>
-                    <span>Backup & Restore</span>
-                </a>
                 <div class="logout-item">
                     <a href="dashboard.php?logout=true" class="menu-item">
                         <i class="fas fa-sign-out-alt"></i>
