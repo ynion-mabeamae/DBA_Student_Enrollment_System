@@ -262,7 +262,6 @@ img {
     height: 40px;
     margin-bottom: 20px;
     opacity: 1;
-    transition: opacity 0.3s ease;
 }
 
 .sidebar:hover .sidebar-logo-collapsed {
@@ -274,7 +273,6 @@ img {
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     opacity: 0;
-    transition: opacity 0.3s ease;
     position: absolute;
     top: 20px;
     left: 50%;
@@ -366,15 +364,20 @@ img {
     text-align: center;
 }
 
+.menu-item i.fa-database {
+    font-size: 1.05rem;
+}
+
 .sidebar:hover .menu-item i {
     position: static;
     transform: none;
     margin-right: 10px;
+    width: 20px;
+    min-width: 20px;
 }
 
 .menu-item span {
     opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .sidebar:hover .menu-item span {
