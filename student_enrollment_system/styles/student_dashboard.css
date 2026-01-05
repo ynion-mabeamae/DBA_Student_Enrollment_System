@@ -380,6 +380,12 @@ body {
     color: var(--dark-text);
 }
 
+.schedule-table th {
+    background-color: #000000;
+    color: white;
+    font-weight: 600;
+}
+
 .grades-table tbody tr:hover {
     background-color: rgba(67, 97, 238, 0.05);
 }
@@ -613,15 +619,21 @@ body {
     padding: 24px;
     margin-bottom: 20px;
     overflow-x: auto;
+    width: 100%;
 }
 .schedule-table-container table.enrollments-table {
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 10px rgba(67, 97, 238, 0.07);
     background: #f8f9fa;
+    width: 100%;
+}
+.schedule-table-container table {
+    width: 100%;
+    min-width: 800px;
 }
 .schedule-table-container th {
-    background: linear-gradient(90deg, #4361ee 60%, #4cc9f0 100%);
+    background: #000000;
     color: #fff;
     font-weight: 600;
     border: none;

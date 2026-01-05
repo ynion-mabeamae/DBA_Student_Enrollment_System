@@ -133,42 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 <body>
 
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="student-info">
-                <div class="student-avatar">
-                    <?php echo strtoupper(substr($instructor['first_name'], 0, 1)); ?>
-                </div>
-                    <div class="student-details">
-                        <div class="student-name"><?php echo htmlspecialchars($instructor['first_name'] . ' ' . $instructor['last_name']); ?></div>
-                    </div>
-            </div>
-        </div>
-        <div class="sidebar-menu">
-            <a href="instructor_dashboard.php" class="menu-item">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="instructor_profile.php" class="menu-item active">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
-            </a>
-            <a href="instructor_enrollments.php" class="menu-item">
-                <i class="fas fa-book"></i>
-                <span>Enrollments</span>
-            </a>
-            <a href="instructor_grades.php" class="menu-item">
-                <i class="fas fa-chart-line"></i>
-                <span>Grades</span>
-            </a>
-            <div class="logout-item">
-                <a href="#" class="menu-item" onclick="openLogoutModal()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </div>
-    </div>
+    <?php include 'sidebar.php'; ?>
 
     <!-- Main Content -->
     <div class="main-content">

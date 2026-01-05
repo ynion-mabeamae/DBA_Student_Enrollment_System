@@ -102,48 +102,13 @@ if ($real_instructor_id) {
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="student-info">
-                <div class="student-avatar">
-                    <?php echo strtoupper(substr($user['first_name'], 0, 1)); ?>
-                </div>
-                <div class="student-details">
-                    <div class="student-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
-                </div>
-            </div>
-        </div>
-        <div class="sidebar-menu">
-            <a href="instructor_dashboard.php" class="menu-item active">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="instructor_profile.php" class="menu-item">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
-            </a>
-            <a href="instructor_enrollments.php" class="menu-item">
-                <i class="fas fa-book"></i>
-                <span>Enrollments</span>
-            </a>
-            <a href="instructor_grades.php" class="menu-item">
-                <i class="fas fa-chart-line"></i>
-                <span>Grades</span>
-            </a>
-            <div class="logout-item">
-                <a href="#" class="menu-item" onclick="openLogoutModal()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </div>
-    </div>
+    <?php include 'sidebar.php'; ?>
 
     <!-- Main Content -->
     <div class="main-content">
         <div class="header">
-            <h1>Welcome back, <?php echo htmlspecialchars($user['first_name']); ?>!</h1>
-            <div class="header-info">
+            <div>
+                <h1 style="margin-bottom:8px;">Welcome, <?php echo htmlspecialchars($user['first_name']); ?>!</h1>
                 <div class="current-term">
                     <i class="fas fa-calendar-alt"></i>
                     Current Term: <?php echo $current_term ? htmlspecialchars($current_term['term_code']) : 'Not Set'; ?>
@@ -151,134 +116,52 @@ if ($real_instructor_id) {
             </div>
         </div>
 
-        <!-- Stats Cards -->
+        <!-- Quick Overview Cards -->
         <div class="stats-container">
-            <!-- Current Enrollments -->
             <div class="stat-card current-enrollments">
-                <div class="stat-icon">
-                    <i class="fas fa-book-open"></i>
-                </div>
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
                 <div class="stat-info">
                     <h3><?php echo $current_enrollments_count; ?></h3>
-                    <p>Current Enrollments</p>
+                    <p>Total Students</p>
                 </div>
             </div>
-
-            <!-- Completed Courses -->
             <div class="stat-card completed-courses">
-                <div class="stat-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
+                <div class="stat-icon"><i class="fas fa-book"></i></div>
                 <div class="stat-info">
-                    <h3><?php echo $completed_count; ?></h3>
-                    <p>Completed Courses</p>
+                    <h3><?php echo count($schedule); ?></h3>
+                    <p>Subjects Handled</p>
                 </div>
             </div>
-
-            <!-- GPA -->
-            <div class="stat-card gpa">
-                <div class="stat-icon">
-                    <i class="fas fa-trophy"></i>
-                </div>
-                <div class="stat-info">
-                    <h3><?php echo $gpa; ?></h3>
-                    <p>GPA</p>
-                </div>
-            </div>
-
-            <!-- Year Level Placeholder -->
             <div class="stat-card year-level">
-                <div class="stat-icon">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
+                <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
                 <div class="stat-info">
                     <h3>Instructor</h3>
-                    <p>Role</p>
+                    <p>Account Type</p>
                 </div>
             </div>
         </div>
-
-            <!-- Instructor Schedule Section -->
-            <div class="section-container" style="margin-bottom:30px;">
-                <div class="section-header">
-                    <h2 style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-calendar-alt" style="color:var(--primary-color);"></i> Teaching Schedule
-                    </h2>
-                </div>
-                <?php if (!empty($schedule)): ?>
-                <div class="schedule-table-container" style="overflow-x:auto;">
-                    <table class="enrollments-table" style="min-width:700px;">
-                        <thead>
-                            <tr>
-                                <th style="background:var(--light-bg);color:var(--primary-color);">Section</th>
-                                <th style="background:var(--light-bg);color:var(--primary-color);">Course</th>
-                                <th style="background:var(--light-bg);color:var(--primary-color);">Title</th>
-                                <th style="background:var(--light-bg);color:var(--primary-color);">Term</th>
-                                <th style="background:var(--light-bg);color:var(--primary-color);">Day</th>
-                                <th style="background:var(--light-bg);color:var(--primary-color);">Time</th>
-                                <th style="background:var(--light-bg);color:var(--primary-color);">Room</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($schedule as $sched): ?>
-                            <tr style="border-bottom:1px solid var(--border-color);">
-                                <td><?php echo htmlspecialchars($sched['section_code']); ?></td>
-                                <td><?php echo htmlspecialchars($sched['course_code']); ?></td>
-                                <td><?php echo htmlspecialchars($sched['course_title']); ?></td>
-                                <td><?php echo htmlspecialchars($sched['term_code']); ?></td>
-                                <td><?php echo htmlspecialchars($sched['day_pattern']); ?></td>
-                                <td><?php echo htmlspecialchars(date('h:i A', strtotime($sched['start_time'])) . ' - ' . date('h:i A', strtotime($sched['end_time']))); ?></td>
-                                <td><?php echo htmlspecialchars($sched['room_code'] . ' (' . $sched['building'] . ')'); ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <?php else: ?>
-                    <div class="no-data">
-                        <i class="fas fa-calendar-times"></i>
-                        <p>No schedule found for you this term.</p>
-                    </div>
-                <?php endif; ?>
-            </div>
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-            <div class="action-card" onclick="window.location.href='instructor_profile.php'">
-                <i class="fas fa-user-edit"></i>
-                <h3>Update Profile</h3>
-                <p>Manage your personal information</p>
+            <div class="action-card" onclick="window.location.href='instructor_subjects.php'">
+                <i class="fas fa-book"></i>
+                <h3>Subjects</h3>
+                <p>View all your assigned subjects</p>
             </div>
-            <div class="action-card" onclick="window.location.href='instructor_enrollments.php'">
-                <i class="fas fa-calendar-check"></i>
-                <h3>View Schedule</h3>
-                <p>Check your class schedule</p>
+            <div class="action-card" onclick="window.location.href='instructor_classlist.php'">
+                <i class="fas fa-users"></i>
+                <h3>Class List</h3>
+                <p>See enrolled students per subject</p>
             </div>
             <div class="action-card" onclick="window.location.href='instructor_grades.php'">
-                <i class="fas fa-chart-bar"></i>
-                <h3>Academic Record</h3>
-                <p>View your complete academic history</p>
+                <i class="fas fa-clipboard-list"></i>
+                <h3>Grade Encoding</h3>
+                <p>Encode and review grades</p>
             </div>
-        </div>
-
-        <!-- Placeholder sections for current enrollments and recent grades -->
-        <div class="section-container">
-            <div class="section-header">
-                <h2>Current Enrollments</h2>
-                <a href="instructor_enrollments.php" class="view-all-link">View All</a>
-            </div>
-            <div class="enrollment-cards">
-                <p>Enrollment details would be listed here.</p>
-            </div>
-        </div>
-
-        <div class="section-container">
-            <div class="section-header">
-                <h2>Recent Grades</h2>
-                <a href="instructor_grades.php" class="view-all-link">View All</a>
-            </div>
-            <div class="grades-table-container">
-                <p>Grade details would be listed here.</p>
+            <div class="action-card" onclick="window.location.href='instructor_profile.php'">
+                <i class="fas fa-user"></i>
+                <h3>Account</h3>
+                <p>Manage your profile and security</p>
             </div>
         </div>
     </div>

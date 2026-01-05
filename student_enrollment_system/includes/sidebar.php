@@ -26,10 +26,6 @@
             <i class="fas fa-clipboard-list"></i>
             <span>Grade Encoding</span>
         </a>
-        <a href="instructor_announcements.php" class="menu-item<?php if(basename($_SERVER['PHP_SELF'])=='instructor_announcements.php')echo ' active'; ?>">
-            <i class="fas fa-bullhorn"></i>
-            <span>Announcements</span>
-        </a>
         <a href="instructor_profile.php" class="menu-item<?php if(basename($_SERVER['PHP_SELF'])=='instructor_profile.php')echo ' active'; ?>">
             <i class="fas fa-user"></i>
             <span>Account</span>
