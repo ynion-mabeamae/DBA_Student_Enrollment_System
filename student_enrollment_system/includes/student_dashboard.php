@@ -166,19 +166,19 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
             </a>
             <a href="student_profile.php" class="menu-item">
                 <i class="fas fa-user"></i>
-                <span>My Profile</span>
+                <span>Profile</span>
             </a>
             <a href="student_enroll_subjects.php" class="menu-item">
                 <i class="fas fa-plus-circle"></i>
-                <span>Enroll Subjects</span>
+                <span>Enrollment</span>
             </a>
             <a href="student_enrollments.php" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
-                <span>My Schedule</span>
+                <span>Schedule</span>
             </a>
             <a href="student_grades.php" class="menu-item">
                 <i class="fas fa-chart-line"></i>
-                <span>My Grades</span>
+                <span>Grades</span>
             </a>
             <!-- Logout Item -->
             <div class="logout-item">
@@ -226,17 +226,6 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                 </div>
             </div>
 
-            <!-- GPA -->
-            <div class="stat-card gpa">
-                <div class="stat-icon">
-                    <i class="fas fa-trophy"></i>
-                </div>
-                <div class="stat-info">
-                    <h3><?php echo $gpa > 0 ? $gpa : 'N/A'; ?></h3>
-                    <p>GPA</p>
-                </div>
-            </div>
-
             <!-- Year Level -->
             <div class="stat-card year-level">
                 <div class="stat-icon">
@@ -247,11 +236,9 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                     <p>Year Level</p>
                 </div>
             </div>
-
-
         </div>
 
-                            <!-- Quick Actions -->
+        <!-- Quick Actions -->
         <div class="quick-actions">
             <div class="action-card" onclick="window.location.href='student_profile.php'">
                 <i class="fas fa-user-edit"></i>
@@ -268,96 +255,6 @@ $current_term = $conn->query($current_term_query)->fetch_assoc();
                 <h3>Academic Record</h3>
                 <p>View your complete academic history</p>
             </div>
-        </div>
-
-        <!-- Current Enrollments Section -->
-        <div class="section-container">
-            <div class="section-header">
-                <h2>Current Enrollments</h2>
-                <a href="student_enrollments.php" class="view-all-link">View All</a>
-            </div>
-
-            <?php if ($current_enrollments && $current_enrollments->num_rows > 0): ?>
-                <div class="enrollment-cards">
-                    <?php
-                    $current_enrollments->data_seek(0);
-                    $count = 0;
-                    while ($count < 3 && ($enrollment = $current_enrollments->fetch_assoc())):
-                        $count++;
-                    ?>
-                    <div class="enrollment-card">
-                        <div class="course-code"><?php echo htmlspecialchars($enrollment['course_code']); ?></div>
-                        <div class="course-title"><?php echo htmlspecialchars($enrollment['course_title']); ?></div>
-                        <div class="enrollment-details">
-                            <span class="section"><?php echo htmlspecialchars($enrollment['section_code']); ?></span>
-                            <span class="term"><?php echo htmlspecialchars($enrollment['term_code']); ?></span>
-                        </div>
-                        <div class="instructor">
-                            <i class="fas fa-user-tie"></i>
-                            <?php echo htmlspecialchars($enrollment['instructor_first'] . ' ' . $enrollment['instructor_last']); ?>
-                        </div>
-                        <div class="status-badge status-<?php echo strtolower($enrollment['status']); ?>">
-                            <?php echo htmlspecialchars($enrollment['status']); ?>
-                        </div>
-                    </div>
-                    <?php endwhile; ?>
-                </div>
-            <?php else: ?>
-                <div class="no-data">
-                    <i class="fas fa-book-open"></i>
-                    <p>No current enrollments found.</p>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Recent Grades Section -->
-        <div class="section-container">
-            <div class="section-header">
-                <h2>Recent Grades</h2>
-                <a href="student_grades.php" class="view-all-link">View All</a>
-            </div>
-
-            <?php if ($completed_count > 0): ?>
-                <div class="grades-table-container">
-                    <table class="grades-table">
-                        <thead>
-                            <tr>
-                                <th>Course</th>
-                                <th>Grade</th>
-                                <th>Term</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $completed_enrollments->data_seek(0);
-                            $grade_count = 0;
-                            while ($enrollment = $completed_enrollments->fetch_assoc() && $grade_count < 5):
-                                $grade_count++;
-                            ?>
-                            <tr>
-                                <td>
-                                    <div class="course-info">
-                                        <div class="course-code"><?php echo htmlspecialchars($enrollment['course_code']); ?></div>
-                                        <div class="course-title"><?php echo htmlspecialchars($enrollment['course_title']); ?></div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="grade-badge grade-<?php echo str_replace('.', '-', $enrollment['letter_grade']); ?>">
-                                        <?php echo htmlspecialchars($enrollment['letter_grade']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo htmlspecialchars($enrollment['term_code']); ?></td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div class="no-data">
-                    <i class="fas fa-chart-line"></i>
-                    <p>No grades available yet.</p>
-                </div>
-            <?php endif; ?>
         </div>
     </div>
 

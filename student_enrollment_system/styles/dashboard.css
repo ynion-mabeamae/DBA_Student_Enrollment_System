@@ -14,8 +14,8 @@
     --light: #f8f9fa;
     --dark: #212529;
     --gray: #6c757d;
-    --sidebar-width: 70px;
-    --sidebar-expanded: 170px;
+    --sidebar-width: 250px;
+    --sidebar-expanded: 250px;
     --danger-color: #e63946;
     --light-bg: #f8f9fa;
     --dark-text: #212529;
@@ -245,7 +245,6 @@ img {
     height: 100vh;
     position: fixed;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    transition: width 0.3s ease;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -253,34 +252,23 @@ img {
     align-items: center;
 }
 
-.sidebar:hover {
-    width: var(--sidebar-expanded);
-}
-
 .sidebar-logo-collapsed {
     width: 40px;
     height: 40px;
     margin-bottom: 20px;
-    opacity: 1;
-}
-
-.sidebar:hover .sidebar-logo-collapsed {
     opacity: 0;
+    display: none;
 }
 
 .sidebar-header {
     padding: 20px;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    opacity: 0;
+    opacity: 1;
     position: absolute;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-}
-
-.sidebar:hover .sidebar-header {
-    opacity: 1;
 }
 
 .sidebar-header h2 {
@@ -324,20 +312,14 @@ img {
 }
 
 .menu-item {
-    padding: 12px 0;
+    padding: 12px 20px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
+    justify-content: flex-start;
     cursor: pointer;
     border-left: 3px solid transparent;
     width: 100%;
     position: relative;
-}
-
-.sidebar:hover .menu-item {
-    padding: 12px 20px;
-    justify-content: flex-start;
 }
 
 .menu-item:hover {
@@ -351,13 +333,12 @@ img {
 }
 
 .menu-item i {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-right: 0;
-    font-size: 1.1rem;
+    position: static;
+    transform: none;
+    margin-right: 10px;
     width: 20px;
-    height: 20px;
+    min-width: 20px;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -368,19 +349,7 @@ img {
     font-size: 1.05rem;
 }
 
-.sidebar:hover .menu-item i {
-    position: static;
-    transform: none;
-    margin-right: 10px;
-    width: 20px;
-    min-width: 20px;
-}
-
 .menu-item span {
-    opacity: 0;
-}
-
-.sidebar:hover .menu-item span {
     opacity: 1;
 }
 
